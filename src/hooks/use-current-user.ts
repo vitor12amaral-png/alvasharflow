@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "client";
+export type AppRole = "admin" | "editor" | "client";
 
 export interface CurrentUser {
   id: string;
@@ -24,7 +24,8 @@ export function useCurrentUser() {
         supabase.from("user_roles").select("role").eq("user_id", user.id),
       ]);
 
-      const role: AppRole = roles?.some((r) => r.role === "admin") ? "admin" : "client";
+      const rs = (roles ?? []).map((r) => r.role);
+      const role: AppRole = rs.includes("admin") ? "admin" : rs.includes("editor") ? "editor" : "client";
 
       return {
         id: user.id,
