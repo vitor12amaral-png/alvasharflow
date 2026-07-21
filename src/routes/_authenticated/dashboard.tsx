@@ -199,7 +199,7 @@ function DashboardPage() {
   );
 }
 
-function KPI({ icon: Icon, label, value, tint, alert }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number; tint: string; alert?: boolean }) {
+function KPI({ icon: Icon, label, value, tint, alert }: { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; label: string; value: number; tint: string; alert?: boolean }) {
   return (
     <Card className={`relative overflow-hidden p-4 ${alert ? "border-destructive/40" : ""}`}>
       <div className="absolute -top-6 -right-6 h-16 w-16 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: tint }} />
