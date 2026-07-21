@@ -14,164 +14,217 @@ export type Database = {
   }
   public: {
     Tables: {
-      clients: {
+      activity_log: {
         Row: {
-          company: string | null
+          action: string
+          actor_id: string | null
+          client_id: string | null
           created_at: string
-          email: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_library: {
+        Row: {
+          category: Database["public"]["Enums"]["library_category"]
+          client_id: string
+          created_at: string
           id: string
           name: string
           notes: string | null
-          phone: string | null
           updated_at: string
-          user_id: string | null
+          url: string
         }
         Insert: {
-          company?: string | null
+          category?: Database["public"]["Enums"]["library_category"]
+          client_id: string
           created_at?: string
-          email?: string | null
           id?: string
           name: string
           notes?: string | null
-          phone?: string | null
           updated_at?: string
-          user_id?: string | null
+          url: string
         }
         Update: {
-          company?: string | null
+          category?: Database["public"]["Enums"]["library_category"]
+          client_id?: string
           created_at?: string
-          email?: string | null
           id?: string
           name?: string
           notes?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_library_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_packages: {
+        Row: {
+          client_id: string
+          created_at: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          payment_day: number | null
+          price: number
+          size: Database["public"]["Enums"]["package_size"]
+          start_date: string
+          status: Database["public"]["Enums"]["package_status"]
+          total_videos: number
+          updated_at: string
+          videos_used: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          payment_day?: number | null
+          price?: number
+          size?: Database["public"]["Enums"]["package_size"]
+          start_date?: string
+          status?: Database["public"]["Enums"]["package_status"]
+          total_videos?: number
+          updated_at?: string
+          videos_used?: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          payment_day?: number | null
+          price?: number
+          size?: Database["public"]["Enums"]["package_size"]
+          start_date?: string
+          status?: Database["public"]["Enums"]["package_status"]
+          total_videos?: number
+          updated_at?: string
+          videos_used?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_packages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          brand_colors: Json | null
+          brand_fonts: Json | null
+          brand_references: Json | null
+          company: string | null
+          created_at: string
+          delivery_link: string | null
+          delivery_method: Database["public"]["Enums"]["delivery_method"] | null
+          email: string | null
+          id: string
+          instagram: string | null
+          logo_url: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          brand_colors?: Json | null
+          brand_fonts?: Json | null
+          brand_references?: Json | null
+          company?: string | null
+          created_at?: string
+          delivery_link?: string | null
+          delivery_method?:
+            | Database["public"]["Enums"]["delivery_method"]
+            | null
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          name: string
+          notes?: string | null
           phone?: string | null
+          status?: string
           updated_at?: string
           user_id?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          brand_colors?: Json | null
+          brand_fonts?: Json | null
+          brand_references?: Json | null
+          company?: string | null
+          created_at?: string
+          delivery_link?: string | null
+          delivery_method?:
+            | Database["public"]["Enums"]["delivery_method"]
+            | null
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
-      }
-      demand_comments: {
-        Row: {
-          author_id: string
-          body: string
-          created_at: string
-          demand_id: string
-          id: string
-        }
-        Insert: {
-          author_id: string
-          body: string
-          created_at?: string
-          demand_id: string
-          id?: string
-        }
-        Update: {
-          author_id?: string
-          body?: string
-          created_at?: string
-          demand_id?: string
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "demand_comments_demand_id_fkey"
-            columns: ["demand_id"]
-            isOneToOne: false
-            referencedRelation: "demands"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      demands: {
-        Row: {
-          client_id: string
-          created_at: string
-          description: string | null
-          due_date: string | null
-          id: string
-          position: number
-          priority: Database["public"]["Enums"]["demand_priority"]
-          status: Database["public"]["Enums"]["demand_status"]
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          client_id: string
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          position?: number
-          priority?: Database["public"]["Enums"]["demand_priority"]
-          status?: Database["public"]["Enums"]["demand_status"]
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          client_id?: string
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          position?: number
-          priority?: Database["public"]["Enums"]["demand_priority"]
-          status?: Database["public"]["Enums"]["demand_status"]
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "demands_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      invoices: {
-        Row: {
-          amount_cents: number
-          client_id: string
-          created_at: string
-          description: string
-          due_date: string | null
-          id: string
-          paid_at: string | null
-          status: Database["public"]["Enums"]["invoice_status"]
-          updated_at: string
-        }
-        Insert: {
-          amount_cents: number
-          client_id: string
-          created_at?: string
-          description: string
-          due_date?: string | null
-          id?: string
-          paid_at?: string | null
-          status?: Database["public"]["Enums"]["invoice_status"]
-          updated_at?: string
-        }
-        Update: {
-          amount_cents?: number
-          client_id?: string
-          created_at?: string
-          description?: string
-          due_date?: string | null
-          id?: string
-          paid_at?: string | null
-          status?: Database["public"]["Enums"]["invoice_status"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invoices_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       profiles: {
         Row: {
@@ -221,6 +274,123 @@ export type Database = {
         }
         Relationships: []
       }
+      video_files: {
+        Row: {
+          created_at: string
+          file_type: string | null
+          id: string
+          name: string
+          size_bytes: number | null
+          url: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_type?: string | null
+          id?: string
+          name: string
+          size_bytes?: number | null
+          url: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          file_type?: string | null
+          id?: string
+          name?: string
+          size_bytes?: number | null
+          url?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_files_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      videos: {
+        Row: {
+          checklist: Json
+          client_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          editor_id: string | null
+          estimated_hours: number | null
+          final_file_link: string | null
+          id: string
+          package_id: string | null
+          position: number
+          priority: Database["public"]["Enums"]["video_priority"]
+          raw_files_link: string | null
+          status: Database["public"]["Enums"]["video_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          checklist?: Json
+          client_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          editor_id?: string | null
+          estimated_hours?: number | null
+          final_file_link?: string | null
+          id?: string
+          package_id?: string | null
+          position?: number
+          priority?: Database["public"]["Enums"]["video_priority"]
+          raw_files_link?: string | null
+          status?: Database["public"]["Enums"]["video_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          checklist?: Json
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          editor_id?: string | null
+          estimated_hours?: number | null
+          final_file_link?: string | null
+          id?: string
+          package_id?: string | null
+          position?: number
+          priority?: Database["public"]["Enums"]["video_priority"]
+          raw_files_link?: string | null
+          status?: Database["public"]["Enums"]["video_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_editor_id_fkey"
+            columns: ["editor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "client_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -235,10 +405,31 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "client"
-      demand_priority: "low" | "medium" | "high"
-      demand_status: "backlog" | "in_progress" | "review" | "done"
+      app_role: "admin" | "client" | "editor"
+      delivery_method: "drive" | "dropbox" | "wetransfer" | "upload_interno"
       invoice_status: "pending" | "paid" | "overdue"
+      library_category:
+        | "bruto"
+        | "exportado"
+        | "logo"
+        | "fonte"
+        | "musica"
+        | "lut"
+        | "documento"
+      package_size: "p10" | "p20" | "p30" | "custom"
+      package_status: "ativo" | "expirado" | "renovado" | "cancelado"
+      video_priority: "baixa" | "media" | "alta" | "urgente"
+      video_status:
+        | "recebido"
+        | "briefing"
+        | "organizacao"
+        | "fila"
+        | "editando"
+        | "revisao"
+        | "aguardando_cliente"
+        | "alteracoes"
+        | "aprovado"
+        | "entregue"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -366,10 +557,33 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "client"],
-      demand_priority: ["low", "medium", "high"],
-      demand_status: ["backlog", "in_progress", "review", "done"],
+      app_role: ["admin", "client", "editor"],
+      delivery_method: ["drive", "dropbox", "wetransfer", "upload_interno"],
       invoice_status: ["pending", "paid", "overdue"],
+      library_category: [
+        "bruto",
+        "exportado",
+        "logo",
+        "fonte",
+        "musica",
+        "lut",
+        "documento",
+      ],
+      package_size: ["p10", "p20", "p30", "custom"],
+      package_status: ["ativo", "expirado", "renovado", "cancelado"],
+      video_priority: ["baixa", "media", "alta", "urgente"],
+      video_status: [
+        "recebido",
+        "briefing",
+        "organizacao",
+        "fila",
+        "editando",
+        "revisao",
+        "aguardando_cliente",
+        "alteracoes",
+        "aprovado",
+        "entregue",
+      ],
     },
   },
 } as const
