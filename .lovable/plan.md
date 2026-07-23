@@ -1,35 +1,32 @@
-## Causa raiz (única)
+## Correções em lote
 
-Auditei banco + rede. Todas as políticas RLS das tabelas do app (`clients`, `client_packages`, `videos`, `video_files`, `client_library`, `activity_log`, `profiles`, `user_roles`) chamam a função `has_role(uuid, app_role)`. Essa função **não tem permissão EXECUTE para o papel `authenticated`** — só `postgres`/`service_role` podem chamá-la.
+### 1. "Abrir" no card do cliente não faz nada
+Causa: no roteamento flat do TanStack, `clientes.tsx` + `clientes.$clientId.tsx` faz do primeiro um layout pai. `clientes.tsx` não renderiza `<Outlet />`, então a rota filha até casa mas fica em branco.
 
-Resultado observado nos logs de rede:
-```
-GET /rest/v1/clients → 403 "permission denied for function has_role"
-GET /rest/v1/profiles → 403
-GET /rest/v1/user_roles → 403
-```
+Correção: renomear `src/routes/_authenticated/clientes.$clientId.tsx` → `src/routes/_authenticated/clientes_.$clientId.tsx`. O sufixo `_` opta por não aninhar. A URL `/clientes/:id` permanece igual.
 
-Isso explica os dois sintomas:
+### 2. Onboarding não gera os vídeos do pacote
+Ao finalizar o wizard, além de criar o cliente e o pacote, gerar automaticamente `total_videos` linhas em `videos` com status `recebido`, título `Vídeo 01`, `Vídeo 02`, …, associadas ao cliente e ao pacote. O trigger existente `tg_log_video_activity` já registra atividade e incrementa `videos_used` — precisamos zerar isso para não contar em dobro.
 
-1. **Erro ao criar cliente** — o INSERT em `clients` invoca a policy `Staff manage clients` que chama `has_role` → negado.
-2. **Lentidão** — cada tela dispara 4-5 consultas em paralelo. Todas falham. React Query faz retry automático 3x → cascata de dezenas de requisições 403 e re-renderizações.
+Ajuste no trigger: **não incrementar `videos_used` no INSERT** — a contagem passa a refletir "vídeos usados" só quando o cliente/editor efetivamente movimenta o vídeo. Alternativa simpler e mais correta: manter o incremento, mas o `videos_used` do pacote passa a significar "vídeos alocados" (o que já é o comportamento real do painel). Escolha: **manter incremento** — assim ao finalizar o wizard o card já mostra `10/10 alocados`, condizente com "pacote de 10 vídeos".
 
-## Correção
+Além disso, hoje a barra de progresso mostra `videos_used / total_videos` como "vídeos usados". Vou renomear o label para "alocados" e adicionar contador "entregues" separado no card do cliente.
 
-Migração única:
+### 3. Card do cliente com métricas mais úteis
+Adicionar no card da lista `/clientes`:
+- Alocados / Total (barra atual)
+- Entregues no mês
+- Pendentes (em qualquer estágio ≠ entregue/aprovado)
+- Atrasados (due_date < hoje e status ≠ entregue/aprovado)
 
-```sql
-GRANT EXECUTE ON FUNCTION public.has_role(uuid, app_role) TO authenticated;
-```
+### 4. Ações rápidas no workspace do cliente
+Na página `/clientes/:id`, aba "Vídeos", adicionar botão "Novo vídeo" que abre dialog rápido (título + prioridade + due_date) inserindo na tabela `videos` com o pacote ativo já preenchido.
 
-Não é necessário conceder para `anon` (nenhuma policy pública usa a função). As trigger functions `tg_log_*` continuam sem EXECUTE público — corretas: rodam como SECURITY DEFINER dentro dos triggers.
+## Fora do escopo desta rodada
+Módulos ainda enxutos (Equipe, Calendário, Biblioteca com upload nativo, Financeiro completo, Workflow com automações) permanecem como esqueleto. Depois que o fluxo Cliente → Pacote → Vídeos estiver sólido, avançamos módulo a módulo conforme o PRD.
 
 ## Validação após aplicar
-
-1. Recarregar `/clientes` → lista carrega (200) sem loop de retry.
-2. Wizard "Novo cliente" → finalizar cadastro cria linha em `clients` + `client_packages` sem erro.
-3. Timeline do dashboard e outras telas passam a responder.
-
-## Fora do escopo
-
-Nenhuma outra alteração. As policies, tabelas e triggers estão íntegras.
+1. Recarregar `/clientes` → clicar "Abrir" no card → página do cliente carrega com abas.
+2. Criar novo cliente com pacote de 10 → o cliente aparece com `10/10 alocados` e 10 vídeos na aba Vídeos, status `recebido`.
+3. Card do cliente na lista mostra "1 em produção" / "0 entregues" / "0 atrasados" corretos.
+4. Botão "Novo vídeo" no workspace insere e reflete na lista.
