@@ -21,7 +21,7 @@ import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authen
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedBibliotecaRouteImport } from './routes/_authenticated/biblioteca'
-import { Route as AuthenticatedClientesClientIdRouteImport } from './routes/_authenticated/clientes.$clientId'
+import { Route as AuthenticatedClientesClientIdRouteImport } from './routes/_authenticated/clientes_.$clientId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -85,9 +85,9 @@ const AuthenticatedBibliotecaRoute = AuthenticatedBibliotecaRouteImport.update({
 } as any)
 const AuthenticatedClientesClientIdRoute =
   AuthenticatedClientesClientIdRouteImport.update({
-    id: '/$clientId',
-    path: '/$clientId',
-    getParentRoute: () => AuthenticatedClientesRoute,
+    id: '/clientes_/$clientId',
+    path: '/clientes/$clientId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -95,7 +95,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
-  '/clientes': typeof AuthenticatedClientesRouteWithChildren
+  '/clientes': typeof AuthenticatedClientesRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
@@ -109,7 +109,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
-  '/clientes': typeof AuthenticatedClientesRouteWithChildren
+  '/clientes': typeof AuthenticatedClientesRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
@@ -125,14 +125,14 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
-  '/_authenticated/clientes': typeof AuthenticatedClientesRouteWithChildren
+  '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
   '/_authenticated/videos': typeof AuthenticatedVideosRoute
   '/_authenticated/workflow': typeof AuthenticatedWorkflowRoute
-  '/_authenticated/clientes/$clientId': typeof AuthenticatedClientesClientIdRoute
+  '/_authenticated/clientes_/$clientId': typeof AuthenticatedClientesClientIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,7 +177,7 @@ export interface FileRouteTypes {
     | '/_authenticated/financeiro'
     | '/_authenticated/videos'
     | '/_authenticated/workflow'
-    | '/_authenticated/clientes/$clientId'
+    | '/_authenticated/clientes_/$clientId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -272,51 +272,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBibliotecaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/clientes/$clientId': {
-      id: '/_authenticated/clientes/$clientId'
-      path: '/$clientId'
+    '/_authenticated/clientes_/$clientId': {
+      id: '/_authenticated/clientes_/$clientId'
+      path: '/clientes/$clientId'
       fullPath: '/clientes/$clientId'
       preLoaderRoute: typeof AuthenticatedClientesClientIdRouteImport
-      parentRoute: typeof AuthenticatedClientesRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
-interface AuthenticatedClientesRouteChildren {
-  AuthenticatedClientesClientIdRoute: typeof AuthenticatedClientesClientIdRoute
-}
-
-const AuthenticatedClientesRouteChildren: AuthenticatedClientesRouteChildren = {
-  AuthenticatedClientesClientIdRoute: AuthenticatedClientesClientIdRoute,
-}
-
-const AuthenticatedClientesRouteWithChildren =
-  AuthenticatedClientesRoute._addFileChildren(
-    AuthenticatedClientesRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBibliotecaRoute: typeof AuthenticatedBibliotecaRoute
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
-  AuthenticatedClientesRoute: typeof AuthenticatedClientesRouteWithChildren
+  AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
   AuthenticatedVideosRoute: typeof AuthenticatedVideosRoute
   AuthenticatedWorkflowRoute: typeof AuthenticatedWorkflowRoute
+  AuthenticatedClientesClientIdRoute: typeof AuthenticatedClientesClientIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBibliotecaRoute: AuthenticatedBibliotecaRoute,
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
-  AuthenticatedClientesRoute: AuthenticatedClientesRouteWithChildren,
+  AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
   AuthenticatedVideosRoute: AuthenticatedVideosRoute,
   AuthenticatedWorkflowRoute: AuthenticatedWorkflowRoute,
+  AuthenticatedClientesClientIdRoute: AuthenticatedClientesClientIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

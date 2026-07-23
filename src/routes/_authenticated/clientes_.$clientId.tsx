@@ -1,16 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Instagram, Phone, Mail, ExternalLink, Loader2, Palette } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Instagram, Phone, Mail, ExternalLink, Loader2, Palette, Plus } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { initials, formatBRL, formatDate, relativeTime } from "@/lib/format";
 import { STAGE_LABEL, STAGE_ACCENT, DELIVERY_LABEL, LIBRARY_LABEL, PACKAGE_LABEL, PRIORITY_LABEL } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority, PackageSize, DeliveryMethod, LibraryCategory } from "@/lib/video-workflow";
 
-export const Route = createFileRoute("/_authenticated/clientes/$clientId")({
+export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
   component: ClientDetail,
   head: () => ({ meta: [{ title: "Cliente — Cortex" }] }),
 });
@@ -109,6 +115,9 @@ function ClientDetail() {
         </TabsContent>
 
         <TabsContent value="demands" className="mt-4">
+          <div className="mb-3 flex justify-end">
+            <NewVideoDialog clientId={clientId} packageId={activePack?.id ?? null} nextPosition={client.videos.length} />
+          </div>
           {client.videos.length === 0 ? (
             <Card className="p-8 text-center text-sm text-muted-foreground">Nenhum vídeo ainda.</Card>
           ) : (
@@ -241,4 +250,79 @@ export function describeActivity(entity: string, action: string, meta: Record<st
   if (entity === "client" && action === "created") return `Cliente cadastrado: ${title}`;
   if (entity === "package" && action === "created") return `Pacote criado: ${meta.total_videos} vídeos`;
   return `${entity} · ${action}`;
+}
+
+function NewVideoDialog({ clientId, packageId, nextPosition }: { clientId: string; packageId: string | null; nextPosition: number }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [priority, setPriority] = useState<VideoPriority>("media");
+  const [dueDate, setDueDate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    if (!title.trim()) { toast.error("Título obrigatório"); return; }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("videos").insert({
+        client_id: clientId,
+        package_id: packageId,
+        title: title.trim(),
+        priority,
+        status: "recebido",
+        due_date: dueDate || null,
+        position: nextPosition,
+      });
+      if (error) throw error;
+      toast.success("Vídeo criado");
+      qc.invalidateQueries({ queryKey: ["client", clientId] });
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      setOpen(false);
+      setTitle(""); setDueDate(""); setPriority("media");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm"><Plus className="mr-1 h-4 w-4" />Novo vídeo</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Novo vídeo</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Título</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} autoFocus placeholder="Ex: Reels lançamento" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Prioridade</Label>
+              <Select value={priority} onValueChange={(v) => setPriority(v as VideoPriority)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="urgente">Urgente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Prazo</Label>
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end pt-2">
+          <Button onClick={submit} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
