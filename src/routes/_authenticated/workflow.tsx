@@ -272,19 +272,30 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                     });
                     return (
                       <Column key={g.id} id={g.id} label={g.label} dot={g.dot} count={vids.length}>
-                        {Array.from(byClient.entries()).map(([cid, arr]) => (
-                          <ClientGroup key={cid} name={arr[0].clients?.name ?? "—"} count={arr.length} showHeader={clientId === "all"}>
-                            {arr.map((v) => (
-                              <VideoCard key={v.id} video={v}
-                                selected={selected.has(v.id)}
-                                onToggle={() => toggle(v.id)}
-                                onExpand={() => setDetailId(v.id)}
-                                anySelected={selected.size > 0}
-                                selectedCount={selected.size}
-                              />
-                            ))}
-                          </ClientGroup>
-                        ))}
+                        {Array.from(byClient.entries()).map(([cid, arr]) => {
+                          const key = `${g.id}::${cid}`;
+                          const isExpanded = expandedGroups.has(key);
+                          return (
+                            <ClientStack
+                              key={cid}
+                              stackId={`stack::${g.id}::${cid}`}
+                              name={arr[0].clients?.name ?? "—"}
+                              count={arr.length}
+                              expanded={isExpanded}
+                              onToggle={() => toggleGroup(key)}
+                            >
+                              {arr.map((v) => (
+                                <VideoCard key={v.id} video={v}
+                                  selected={selected.has(v.id)}
+                                  onToggle={() => toggle(v.id)}
+                                  onExpand={() => setDetailId(v.id)}
+                                  anySelected={selected.size > 0}
+                                  selectedCount={selected.size}
+                                />
+                              ))}
+                            </ClientStack>
+                          );
+                        })}
                       </Column>
                     );
                   })}
