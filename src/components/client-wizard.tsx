@@ -72,7 +72,7 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
       }).select().single();
       if (cErr) throw cErr;
 
-      const { error: pErr } = await supabase.from("client_packages").insert({
+      const { data: pack, error: pErr } = await supabase.from("client_packages").insert({
         client_id: client.id,
         size: form.size,
         total_videos: form.total_videos,
@@ -81,8 +81,23 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
         start_date: form.start_date,
         end_date: form.end_date || null,
         status: "ativo",
-      });
+      }).select().single();
       if (pErr) throw pErr;
+
+      // Gerar slots de vídeo automaticamente conforme o pacote
+      const n = Math.max(0, form.total_videos || 0);
+      if (n > 0) {
+        const rows = Array.from({ length: n }, (_, i) => ({
+          client_id: client.id,
+          package_id: pack.id,
+          title: `Vídeo ${String(i + 1).padStart(2, "0")}`,
+          status: "recebido" as const,
+          priority: "media" as const,
+          position: i,
+        }));
+        const { error: vErr } = await supabase.from("videos").insert(rows);
+        if (vErr) throw vErr;
+      }
 
       toast.success(`${form.name} cadastrado com pacote ativo`);
       qc.invalidateQueries({ queryKey: ["clients"] });
