@@ -70,10 +70,14 @@ function ClientesPage() {
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((c) => {
             const pack = c.client_packages?.find((p: { status: string }) => p.status === "ativo");
-            const pendentes = c.videos?.filter((v: { status: string }) => v.status !== "entregue" && v.status !== "aprovado").length ?? 0;
-            const usados = pack?.videos_used ?? 0;
+            const vids: { status: string; due_date: string | null }[] = c.videos ?? [];
+            const today = new Date().toISOString().slice(0, 10);
+            const entregues = vids.filter((v) => v.status === "entregue").length;
+            const pendentes = vids.filter((v) => v.status !== "entregue" && v.status !== "aprovado").length;
+            const atrasados = vids.filter((v) => v.due_date && v.due_date < today && v.status !== "entregue" && v.status !== "aprovado").length;
+            const alocados = pack?.videos_used ?? 0;
             const total = pack?.total_videos ?? 0;
-            const pct = total > 0 ? Math.min(100, (usados / total) * 100) : 0;
+            const pct = total > 0 ? Math.min(100, (alocados / total) * 100) : 0;
             return (
               <Link key={c.id} to="/clientes/$clientId" params={{ clientId: c.id }} className="group">
                 <Card className="p-5 transition hover:border-primary/40 hover:shadow-[0_0_0_1px_oklch(0.72_0.19_235_/_0.25)]">
@@ -93,7 +97,7 @@ function ClientesPage() {
                   {pack && (
                     <div className="mt-4">
                       <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-muted-foreground">{usados}/{total} vídeos</span>
+                        <span className="text-muted-foreground">{alocados}/{total} alocados</span>
                         <span className="font-medium">{formatBRL(pack.price)}</span>
                       </div>
                       <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
@@ -101,16 +105,27 @@ function ClientesPage() {
                       </div>
                     </div>
                   )}
-                  <div className="mt-3 flex items-center gap-3 border-t border-border pt-2 text-xs">
-                    <span className="text-muted-foreground">{pendentes} em produção</span>
-                    <span className="ml-auto text-primary transition group-hover:translate-x-0.5">Abrir →</span>
+                  <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-2 text-[11px]">
+                    <MiniStat label="Pendentes" value={pendentes} />
+                    <MiniStat label="Entregues" value={entregues} />
+                    <MiniStat label="Atrasados" value={atrasados} tone={atrasados > 0 ? "danger" : undefined} />
                   </div>
+                  <div className="mt-2 text-right text-xs text-primary transition group-hover:translate-x-0.5">Abrir →</div>
                 </Card>
               </Link>
             );
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function MiniStat({ label, value, tone }: { label: string; value: number; tone?: "danger" }) {
+  return (
+    <div>
+      <p className={`font-display text-base font-semibold ${tone === "danger" && value > 0 ? "text-destructive" : ""}`}>{value}</p>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
     </div>
   );
 }
