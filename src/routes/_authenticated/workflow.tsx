@@ -74,8 +74,9 @@ function WorkflowPage() {
     },
   });
 
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; priority?: VideoPriority };
   const patch = useMutation({
-    mutationFn: async ({ ids, changes }: { ids: string[]; changes: Partial<VideoRow> }) => {
+    mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
       if (error) throw error;
     },
