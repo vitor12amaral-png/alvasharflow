@@ -25,7 +25,7 @@ function ClientesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("*, client_packages(id, total_videos, videos_used, price, status), videos(id, status)")
+        .select("*, client_packages(id, total_videos, videos_used, price, status), videos(id, status, due_date)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
