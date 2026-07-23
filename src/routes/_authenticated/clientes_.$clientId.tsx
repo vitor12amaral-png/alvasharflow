@@ -115,6 +115,9 @@ function ClientDetail() {
         </TabsContent>
 
         <TabsContent value="demands" className="mt-4">
+          <div className="mb-3 flex justify-end">
+            <NewVideoDialog clientId={clientId} packageId={activePack?.id ?? null} nextPosition={client.videos.length} />
+          </div>
           {client.videos.length === 0 ? (
             <Card className="p-8 text-center text-sm text-muted-foreground">Nenhum vídeo ainda.</Card>
           ) : (
