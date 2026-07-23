@@ -84,7 +84,7 @@ function WorkflowPage() {
       await qc.cancelQueries({ queryKey: ["videos-workflow", clientFilter] });
       const prev = qc.getQueryData<VideoRow[]>(["videos-workflow", clientFilter]);
       qc.setQueryData<VideoRow[]>(["videos-workflow", clientFilter], (old) =>
-        (old ?? []).map((v) => (ids.includes(v.id) ? { ...v, ...changes } : v)),
+        (old ?? []).map((v) => (ids.includes(v.id) ? { ...v, ...changes } as VideoRow : v)),
       );
       return { prev };
     },
