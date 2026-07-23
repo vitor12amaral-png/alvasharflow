@@ -209,9 +209,19 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     const toGroup = e.over?.id as GroupId | undefined;
     if (!toGroup) return;
     const target = GROUPS.find((g) => g.id === toGroup)!;
+
+    // Stack drag: "stack::<groupId>::<clientId>" moves every video in that stack.
+    if (dragId.startsWith("stack::")) {
+      const [, fromGroup, cid] = dragId.split("::");
+      if (fromGroup === toGroup) return;
+      const vids = (videos ?? []).filter((v) => v.client_id === cid && STATUS_TO_GROUP[v.status] === fromGroup);
+      if (vids.length === 0) return;
+      patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
+      return;
+    }
+
     // If dragged item is part of selection, move whole selection; else move just it.
     const ids = selected.has(dragId) ? Array.from(selected) : [dragId];
-    // Filter out ones already in this group's first status
     const vids = (videos ?? []).filter((v) => ids.includes(v.id) && STATUS_TO_GROUP[v.status] !== toGroup);
     if (vids.length === 0) return;
     patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
