@@ -1,32 +1,45 @@
-## Correções em lote
+## Objetivo
+Substituir a página `/workflow` por uma tela dupla inspirada na referência: em cima um **kanban enxuto agrupado por cliente** dentro de cada estágio, embaixo uma **lista tabular** dos mesmos vídeos. Arrastar um card no topo muda o status na lista imediatamente (mesma fonte de dados, mesma mutation otimista).
 
-### 1. "Abrir" no card do cliente não faz nada
-Causa: no roteamento flat do TanStack, `clientes.tsx` + `clientes.$clientId.tsx` faz do primeiro um layout pai. `clientes.tsx` não renderiza `<Outlet />`, então a rota filha até casa mas fica em branco.
+## Mudanças
 
-Correção: renomear `src/routes/_authenticated/clientes.$clientId.tsx` → `src/routes/_authenticated/clientes_.$clientId.tsx`. O sufixo `_` opta por não aninhar. A URL `/clientes/:id` permanece igual.
+### 1. Estágios compactos (visual limpo)
+Hoje temos 10 colunas — polui muito. Vou reduzir a visualização do kanban para **5 grupos** inspirados na referência, mapeando internamente os 10 status:
 
-### 2. Onboarding não gera os vídeos do pacote
-Ao finalizar o wizard, além de criar o cliente e o pacote, gerar automaticamente `total_videos` linhas em `videos` com status `recebido`, título `Vídeo 01`, `Vídeo 02`, …, associadas ao cliente e ao pacote. O trigger existente `tg_log_video_activity` já registra atividade e incrementa `videos_used` — precisamos zerar isso para não contar em dobro.
+| Coluna visível | Status agrupados |
+|---|---|
+| Sem material | `recebido`, `briefing` |
+| Em produção | `organizacao`, `fila`, `editando` |
+| Enviado | `aguardando_cliente` |
+| Em revisão | `revisao`, `alteracoes` |
+| Aprovado | `aprovado`, `entregue` |
 
-Ajuste no trigger: **não incrementar `videos_used` no INSERT** — a contagem passa a refletir "vídeos usados" só quando o cliente/editor efetivamente movimenta o vídeo. Alternativa simpler e mais correta: manter o incremento, mas o `videos_used` do pacote passa a significar "vídeos alocados" (o que já é o comportamento real do painel). Escolha: **manter incremento** — assim ao finalizar o wizard o card já mostra `10/10 alocados`, condizente com "pacote de 10 vídeos".
+Ao soltar um card numa coluna, o status vai para o **primeiro** do grupo (ex.: soltar em "Em produção" → `organizacao`). A lista de baixo mostra o status real (10 estágios) com badge colorido.
 
-Além disso, hoje a barra de progresso mostra `videos_used / total_videos` como "vídeos usados". Vou renomear o label para "alocados" e adicionar contador "entregues" separado no card do cliente.
+### 2. Kanban por cliente (topo)
+- Colunas: os 5 grupos acima, com pill colorido igual à referência.
+- Dentro de cada coluna, cards **agrupados por cliente**: `Roney — 8 vídeos`, `Alef — 1 vídeo`. Cada card é arrastável e move **todos os vídeos daquele cliente naquela coluna** de uma vez.
+- Botão "+" por coluna abre o dialog "Novo vídeo" já com o status pré-selecionado.
 
-### 3. Card do cliente com métricas mais úteis
-Adicionar no card da lista `/clientes`:
-- Alocados / Total (barra atual)
-- Entregues no mês
-- Pendentes (em qualquer estágio ≠ entregue/aprovado)
-- Atrasados (due_date < hoje e status ≠ entregue/aprovado)
+### 3. Lista sincronizada (base)
+Tabela leve estilo Notion abaixo do kanban, colunas:
+- Checkbox • Prazo • Título • Cliente • Situação (badge do status real) • Prioridade
+- Ordenável por coluna, filtro rápido por cliente reaproveitando o select do topo.
+- Editar status inline pelo badge (popover com os 10 estágios) — também dispara a mesma mutation.
 
-### 4. Ações rápidas no workspace do cliente
-Na página `/clientes/:id`, aba "Vídeos", adicionar botão "Novo vídeo" que abre dialog rápido (título + prioridade + due_date) inserindo na tabela `videos` com o pacote ativo já preenchido.
+### 4. Sincronia real
+Ambas as views leem `videos-workflow` (react-query). A mutation `move` atualiza otimisticamente o cache, então **arrastar no topo re-renderiza a lista de baixo no mesmo frame** sem round-trip. Nenhum estado local duplicado.
 
-## Fora do escopo desta rodada
-Módulos ainda enxutos (Equipe, Calendário, Biblioteca com upload nativo, Financeiro completo, Workflow com automações) permanecem como esqueleto. Depois que o fluxo Cliente → Pacote → Vídeos estiver sólido, avançamos módulo a módulo conforme o PRD.
+### 5. Alternador de visualização
+Barra superior estilo referência: `Histórico` · `Lista` · `Kanban` (default = ambos empilhados). "Lista" esconde o kanban, "Kanban" esconde a lista, o modo split é o padrão.
 
-## Validação após aplicar
-1. Recarregar `/clientes` → clicar "Abrir" no card → página do cliente carrega com abas.
-2. Criar novo cliente com pacote de 10 → o cliente aparece com `10/10 alocados` e 10 vídeos na aba Vídeos, status `recebido`.
-3. Card do cliente na lista mostra "1 em produção" / "0 entregues" / "0 atrasados" corretos.
-4. Botão "Novo vídeo" no workspace insere e reflete na lista.
+## Fora do escopo
+- Não mexo em outros módulos (Dashboard, Clientes, etc.).
+- Não altero o schema: continua com os 10 estágios no banco — o agrupamento é só visual.
+- Não adiciono a coluna "Valor total" da referência (fluxo financeiro fica no módulo Financeiro).
+
+## Validação
+1. `/workflow` mostra kanban de 5 colunas em cima e lista embaixo.
+2. Arrastar "Roney — 3 vídeos" de "Em produção" para "Em revisão" → os 3 vídeos do Roney na lista viram status `revisao` na mesma hora.
+3. Trocar o status pelo badge da lista → o card correspondente pula de coluna no kanban.
+4. Filtro de cliente afeta as duas views ao mesmo tempo.
