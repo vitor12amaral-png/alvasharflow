@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Loader2, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
@@ -52,22 +53,96 @@ type VideoRow = {
 };
 
 function WorkflowPage() {
-  const [open, setOpen] = useState(false);
-  const [clientFilter, setClientFilter] = useState<string>("all");
-  const [view, setView] = useState<"split" | "kanban" | "list">("split");
-  const [detailId, setDetailId] = useState<string | null>(null);
-  const qc = useQueryClient();
+  const [selectedClient, setSelectedClient] = useState<string | null>(null);
 
   const { data: clients } = useQuery({
     queryKey: ["clients-min"],
     queryFn: async () => (await supabase.from("clients").select("id, name").order("name")).data ?? [],
   });
 
+  if (!selectedClient) {
+    return <ClientPicker clients={clients ?? []} onPick={setSelectedClient} />;
+  }
+  return <WorkflowBoard clientId={selectedClient} clients={clients ?? []} onBack={() => setSelectedClient(null)} />;
+}
+
+function ClientPicker({ clients, onPick }: { clients: { id: string; name: string }[]; onPick: (id: string) => void }) {
+  const [q, setQ] = useState("");
+  const { data: counts } = useQuery({
+    queryKey: ["clients-video-counts"],
+    queryFn: async () => {
+      const { data } = await supabase.from("videos").select("client_id, status");
+      const map = new Map<string, { total: number; pendentes: number }>();
+      (data ?? []).forEach((v) => {
+        const c = map.get(v.client_id) ?? { total: 0, pendentes: 0 };
+        c.total++;
+        if (v.status !== "entregue" && v.status !== "aprovado") c.pendentes++;
+        map.set(v.client_id, c);
+      });
+      return map;
+    },
+  });
+
+  const filtered = clients.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));
+
+  return (
+    <div className="px-6 pt-6 md:px-8 md:pt-8">
+      <PageHeader title="Workflow" subtitle="Escolha o cliente para abrir o quadro de demandas" />
+      <div className="mt-6 max-w-md">
+        <Input placeholder="Buscar cliente…" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      <div className="mt-6 grid grid-cols-1 gap-3 pb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <button
+          onClick={() => onPick("all")}
+          className="group flex items-center gap-3 rounded-lg border border-dashed border-border bg-card/30 px-4 py-4 text-left transition hover:border-primary/50 hover:bg-card/60"
+        >
+          <div className="rounded-md bg-primary/10 p-2 text-primary"><Users className="h-4 w-4" /></div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">Todos os clientes</p>
+            <p className="text-xs text-muted-foreground">Visão consolidada</p>
+          </div>
+        </button>
+        {filtered.map((c) => {
+          const info = counts?.get(c.id);
+          return (
+            <button
+              key={c.id}
+              onClick={() => onPick(c.id)}
+              className="group flex items-center gap-3 rounded-lg border border-border bg-card/40 px-4 py-4 text-left transition hover:border-primary/50 hover:bg-card"
+            >
+              <div className="rounded-md bg-muted/60 p-2 text-muted-foreground group-hover:text-foreground"><Folder className="h-4 w-4" /></div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{c.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {info ? `${info.pendentes} pendentes · ${info.total} vídeos` : "Sem vídeos"}
+                </p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WorkflowBoard({ clientId, clients, onBack }: {
+  clientId: string;
+  clients: { id: string; name: string }[];
+  onBack: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState<"split" | "kanban" | "list">("split");
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const qc = useQueryClient();
+
+  const clientName = clientId === "all" ? "Todos os clientes" : clients.find((c) => c.id === clientId)?.name ?? "Cliente";
+
   const { data: videos, isLoading } = useQuery({
-    queryKey: ["videos-workflow", clientFilter],
+    queryKey: ["videos-workflow", clientId],
     queryFn: async () => {
       let q = supabase.from("videos").select("id, title, status, priority, due_date, client_id, clients(name)").order("position");
-      if (clientFilter !== "all") q = q.eq("client_id", clientFilter);
+      if (clientId !== "all") q = q.eq("client_id", clientId);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as VideoRow[];
@@ -81,15 +156,15 @@ function WorkflowPage() {
       if (error) throw error;
     },
     onMutate: async ({ ids, changes }) => {
-      await qc.cancelQueries({ queryKey: ["videos-workflow", clientFilter] });
-      const prev = qc.getQueryData<VideoRow[]>(["videos-workflow", clientFilter]);
-      qc.setQueryData<VideoRow[]>(["videos-workflow", clientFilter], (old) =>
+      await qc.cancelQueries({ queryKey: ["videos-workflow", clientId] });
+      const prev = qc.getQueryData<VideoRow[]>(["videos-workflow", clientId]);
+      qc.setQueryData<VideoRow[]>(["videos-workflow", clientId], (old) =>
         (old ?? []).map((v) => (ids.includes(v.id) ? { ...v, ...changes } as VideoRow : v)),
       );
       return { prev };
     },
     onError: (_e, _v, ctx) => {
-      qc.setQueryData(["videos-workflow", clientFilter], ctx?.prev);
+      qc.setQueryData(["videos-workflow", clientId], ctx?.prev);
       toast.error("Falha ao atualizar");
     },
     onSuccess: () => {
@@ -101,38 +176,47 @@ function WorkflowPage() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const grouped = useMemo(() => {
-    const out: Record<GroupId, Map<string, VideoRow[]>> = {
-      sem_material: new Map(), em_producao: new Map(), enviado: new Map(),
-      em_revisao: new Map(), aprovado: new Map(),
+    const out: Record<GroupId, VideoRow[]> = {
+      sem_material: [], em_producao: [], enviado: [], em_revisao: [], aprovado: [],
     };
     (videos ?? []).forEach((v) => {
       const g = STATUS_TO_GROUP[v.status];
-      if (!g) return;
-      const bucket = out[g];
-      const arr = bucket.get(v.client_id) ?? [];
-      arr.push(v);
-      bucket.set(v.client_id, arr);
+      if (g) out[g].push(v);
     });
     return out;
   }, [videos]);
+
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function clearSel() { setSelected(new Set()); }
 
   function onDragEnd(e: DragEndEvent) {
     const dragId = String(e.active.id);
     const toGroup = e.over?.id as GroupId | undefined;
     if (!toGroup) return;
-    const [fromGroup, clientId] = dragId.split(":");
-    if (fromGroup === toGroup) return;
-    const bucket = grouped[fromGroup as GroupId].get(clientId) ?? [];
-    if (bucket.length === 0) return;
     const target = GROUPS.find((g) => g.id === toGroup)!;
-    patch.mutate({ ids: bucket.map((v) => v.id), changes: { status: target.statuses[0] } });
+    // If dragged item is part of selection, move whole selection; else move just it.
+    const ids = selected.has(dragId) ? Array.from(selected) : [dragId];
+    // Filter out ones already in this group's first status
+    const vids = (videos ?? []).filter((v) => ids.includes(v.id) && STATUS_TO_GROUP[v.status] !== toGroup);
+    if (vids.length === 0) return;
+    patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
+    if (selected.has(dragId)) clearSel();
   }
 
   return (
     <div className="flex min-h-[calc(100vh-3rem)] flex-col md:min-h-screen">
       <div className="px-6 pt-6 md:px-8 md:pt-8">
+        <button onClick={onBack} className="mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground">
+          <ArrowLeft className="h-3.5 w-3.5" /> Trocar cliente
+        </button>
         <PageHeader
-          title="Workflow"
+          title={clientName}
           subtitle="Kanban e lista sincronizados"
           actions={
             <div className="flex items-center gap-2">
@@ -141,16 +225,9 @@ function WorkflowPage() {
                 <ViewBtn active={view === "kanban"} onClick={() => setView("kanban")} icon={<LayoutGrid className="h-3.5 w-3.5" />} label="Kanban" />
                 <ViewBtn active={view === "list"} onClick={() => setView("list")} icon={<Rows3 className="h-3.5 w-3.5" />} label="Lista" />
               </div>
-              <Select value={clientFilter} onValueChange={setClientFilter}>
-                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Todos os clientes" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os clientes</SelectItem>
-                  {(clients ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Novo vídeo</Button></DialogTrigger>
-                <NewVideoDialog onClose={() => setOpen(false)} clients={clients ?? []} />
+                <NewVideoDialog onClose={() => setOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} />
               </Dialog>
             </div>
           }
@@ -160,20 +237,34 @@ function WorkflowPage() {
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="mt-4 flex flex-1 flex-col gap-6 px-6 pb-8 md:px-8">
+        <div className="mt-4 flex flex-1 flex-col gap-6 px-6 pb-24 md:px-8">
           {view !== "list" && (
             <DndContext sensors={sensors} onDragEnd={onDragEnd}>
               <div className="overflow-x-auto">
                 <div className="flex min-w-max gap-3">
                   {GROUPS.map((g) => {
-                    const bucket = grouped[g.id];
-                    const totalVideos = Array.from(bucket.values()).reduce((n, arr) => n + arr.length, 0);
+                    const vids = grouped[g.id];
+                    // group cards by client inside column for visual organization
+                    const byClient = new Map<string, VideoRow[]>();
+                    vids.forEach((v) => {
+                      const arr = byClient.get(v.client_id) ?? [];
+                      arr.push(v);
+                      byClient.set(v.client_id, arr);
+                    });
                     return (
-                      <Column key={g.id} id={g.id} label={g.label} dot={g.dot} count={totalVideos}>
-                        {Array.from(bucket.entries()).map(([clientId, vids]) => (
-                          <ClientCard key={clientId} groupId={g.id} clientId={clientId}
-                            name={vids[0].clients?.name ?? "—"} count={vids.length}
-                            onExpand={() => setDetailId(vids[0].id)} />
+                      <Column key={g.id} id={g.id} label={g.label} dot={g.dot} count={vids.length}>
+                        {Array.from(byClient.entries()).map(([cid, arr]) => (
+                          <ClientGroup key={cid} name={arr[0].clients?.name ?? "—"} count={arr.length} showHeader={clientId === "all"}>
+                            {arr.map((v) => (
+                              <VideoCard key={v.id} video={v}
+                                selected={selected.has(v.id)}
+                                onToggle={() => toggle(v.id)}
+                                onExpand={() => setDetailId(v.id)}
+                                anySelected={selected.size > 0}
+                                selectedCount={selected.size}
+                              />
+                            ))}
+                          </ClientGroup>
                         ))}
                       </Column>
                     );
@@ -186,6 +277,13 @@ function WorkflowPage() {
           {view !== "kanban" && (
             <ListView
               videos={videos ?? []}
+              selected={selected}
+              onToggle={toggle}
+              onToggleAll={(ids, on) => setSelected((prev) => {
+                const next = new Set(prev);
+                ids.forEach((id) => { if (on) next.add(id); else next.delete(id); });
+                return next;
+              })}
               onStatusChange={(id, status) => patch.mutate({ ids: [id], changes: { status } })}
               onDueChange={(id, due_date) => patch.mutate({ ids: [id], changes: { due_date } })}
               onOpen={(id) => setDetailId(id)}
@@ -195,6 +293,61 @@ function WorkflowPage() {
       )}
 
       <VideoDetailSheet videoId={detailId} onClose={() => setDetailId(null)} />
+
+      {selected.size > 0 && (
+        <BulkBar
+          count={selected.size}
+          onClear={clearSel}
+          onSetStatus={(s) => { patch.mutate({ ids: Array.from(selected), changes: { status: s } }); clearSel(); }}
+          onSetPriority={(p) => { patch.mutate({ ids: Array.from(selected), changes: { priority: p } }); clearSel(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function BulkBar({ count, onClear, onSetStatus, onSetPriority }: {
+  count: number;
+  onClear: () => void;
+  onSetStatus: (s: VideoStatus) => void;
+  onSetPriority: (p: VideoPriority) => void;
+}) {
+  return (
+    <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+      <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 shadow-lg">
+        <span className="pl-1 text-xs font-medium">{count} selecionado{count > 1 ? "s" : ""}</span>
+        <div className="mx-1 h-4 w-px bg-border" />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="outline" className="h-7 text-xs">Alterar situação</Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-52 p-1" align="center">
+            {ALL_STATUSES.map((s) => (
+              <button key={s} onClick={() => onSetStatus(s)}
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-muted">
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: STAGE_ACCENT[s] }} />
+                {STAGE_LABEL[s]}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="outline" className="h-7 text-xs">Prioridade</Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-40 p-1" align="center">
+            {(["baixa","media","alta","urgente"] as VideoPriority[]).map((p) => (
+              <button key={p} onClick={() => onSetPriority(p)}
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs hover:bg-muted">
+                {PRIORITY_LABEL[p]}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
+        <button onClick={onClear} className="ml-1 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Limpar">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -212,7 +365,7 @@ function Column({ id, label, dot, count, children }: { id: GroupId; label: strin
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
     <div ref={setNodeRef} className={cn(
-      "flex w-64 shrink-0 flex-col rounded-lg border border-border bg-card/40 transition",
+      "flex w-72 shrink-0 flex-col rounded-lg border border-border bg-card/40 transition",
       isOver && "border-primary/60 bg-primary/5",
     )}>
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
@@ -220,28 +373,56 @@ function Column({ id, label, dot, count, children }: { id: GroupId; label: strin
         <p className="text-xs font-semibold">{label}</p>
         <span className="ml-auto text-[10px] text-muted-foreground">{count}</span>
       </div>
-      <div className="min-h-24 space-y-1.5 p-2">{children}</div>
+      <div className="min-h-24 space-y-2 p-2">{children}</div>
     </div>
   );
 }
 
-function ClientCard({ groupId, clientId, name, count, onExpand }: {
-  groupId: GroupId; clientId: string; name: string; count: number; onExpand: () => void;
+function ClientGroup({ name, count, showHeader, children }: { name: string; count: number; showHeader: boolean; children: React.ReactNode }) {
+  if (!showHeader) return <div className="space-y-1.5">{children}</div>;
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5 px-1 pt-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{name}</span>
+        <span className="text-[10px] text-muted-foreground/60">· {count}</span>
+      </div>
+      <div className="space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedCount }: {
+  video: VideoRow;
+  selected: boolean;
+  onToggle: () => void;
+  onExpand: () => void;
+  anySelected: boolean;
+  selectedCount: number;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `${groupId}:${clientId}` });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: video.id });
   return (
     <div ref={setNodeRef}
       style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined}
       className={cn(
-        "group rounded-md border border-border bg-card px-3 py-2 text-sm shadow-sm transition hover:border-primary/40",
+        "group rounded-md border border-border bg-card px-2.5 py-2 text-sm shadow-sm transition hover:border-primary/40",
+        selected && "border-primary/60 ring-1 ring-primary/40",
         isDragging && "opacity-40",
       )}
     >
-      <div className="flex items-center gap-2">
-        <span {...listeners} {...attributes} className="flex-1 cursor-grab active:cursor-grabbing">
-          <span className="font-medium">{name}</span>{" "}
-          <span className="text-muted-foreground">— {count} {count === 1 ? "vídeo" : "vídeos"}</span>
-        </span>
+      <div className="flex items-start gap-2">
+        <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
+          <Checkbox checked={selected} onCheckedChange={onToggle} className="h-3.5 w-3.5" />
+        </div>
+        <div {...listeners} {...attributes} className="min-w-0 flex-1 cursor-grab active:cursor-grabbing">
+          <p className="truncate text-xs font-medium">{video.title}</p>
+          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+            {video.due_date && <span>{formatDate(video.due_date)}</span>}
+            <span className={cn("font-medium", PRIORITY_COLOR[video.priority])}>{PRIORITY_LABEL[video.priority]}</span>
+            {selected && anySelected && selectedCount > 1 && (
+              <span className="text-primary">· move {selectedCount}</span>
+            )}
+          </div>
+        </div>
         <button onClick={onExpand} className="opacity-0 transition group-hover:opacity-100" aria-label="Abrir">
           <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
         </button>
@@ -250,17 +431,25 @@ function ClientCard({ groupId, clientId, name, count, onExpand }: {
   );
 }
 
-function ListView({ videos, onStatusChange, onDueChange, onOpen }: {
+function ListView({ videos, selected, onToggle, onToggleAll, onStatusChange, onDueChange, onOpen }: {
   videos: VideoRow[];
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+  onToggleAll: (ids: string[], on: boolean) => void;
   onStatusChange: (id: string, status: VideoStatus) => void;
   onDueChange: (id: string, due: string | null) => void;
   onOpen: (id: string) => void;
 }) {
+  const allIds = videos.map((v) => v.id);
+  const allSelected = allIds.length > 0 && allIds.every((id) => selected.has(id));
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card/30">
       <table className="w-full text-sm">
         <thead className="text-xs text-muted-foreground">
           <tr className="border-b border-border">
+            <th className="w-10 px-3 py-2.5">
+              <Checkbox checked={allSelected} onCheckedChange={(v) => onToggleAll(allIds, !!v)} />
+            </th>
             <th className="w-32 px-4 py-2.5 text-left font-medium">Prazo</th>
             <th className="px-4 py-2.5 text-left font-medium">Título</th>
             <th className="px-4 py-2.5 text-left font-medium">Cliente</th>
@@ -271,9 +460,12 @@ function ListView({ videos, onStatusChange, onDueChange, onOpen }: {
         </thead>
         <tbody>
           {videos.length === 0 ? (
-            <tr><td colSpan={6} className="px-4 py-10 text-center text-xs text-muted-foreground">Nenhum vídeo</td></tr>
+            <tr><td colSpan={7} className="px-4 py-10 text-center text-xs text-muted-foreground">Nenhum vídeo</td></tr>
           ) : videos.map((v) => (
-            <tr key={v.id} className="border-b border-border/60 last:border-0 hover:bg-muted/20">
+            <tr key={v.id} className={cn("border-b border-border/60 last:border-0 hover:bg-muted/20", selected.has(v.id) && "bg-primary/5")}>
+              <td className="px-3 py-1.5">
+                <Checkbox checked={selected.has(v.id)} onCheckedChange={() => onToggle(v.id)} />
+              </td>
               <td className="px-4 py-1.5">
                 <input type="date" value={v.due_date ?? ""} onChange={(e) => onDueChange(v.id, e.target.value || null)}
                   className="bg-transparent text-xs text-muted-foreground outline-none hover:text-foreground focus:text-foreground" />
@@ -507,8 +699,8 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
   );
 }
 
-function NewVideoDialog({ onClose, clients }: { onClose: () => void; clients: { id: string; name: string }[] }) {
-  const [form, setForm] = useState({ title: "", description: "", client_id: "", priority: "media" as VideoPriority, due_date: "" });
+function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => void; clients: { id: string; name: string }[]; defaultClientId?: string }) {
+  const [form, setForm] = useState({ title: "", description: "", client_id: defaultClientId ?? "", priority: "media" as VideoPriority, due_date: "" });
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
 
@@ -559,5 +751,4 @@ function NewVideoDialog({ onClose, clients }: { onClose: () => void; clients: { 
   );
 }
 
-// Format helper reference to keep the import used elsewhere
 export const _fmt = formatDate;
