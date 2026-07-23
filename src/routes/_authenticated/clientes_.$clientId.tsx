@@ -251,3 +251,78 @@ export function describeActivity(entity: string, action: string, meta: Record<st
   if (entity === "package" && action === "created") return `Pacote criado: ${meta.total_videos} vídeos`;
   return `${entity} · ${action}`;
 }
+
+function NewVideoDialog({ clientId, packageId, nextPosition }: { clientId: string; packageId: string | null; nextPosition: number }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [priority, setPriority] = useState<VideoPriority>("media");
+  const [dueDate, setDueDate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    if (!title.trim()) { toast.error("Título obrigatório"); return; }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("videos").insert({
+        client_id: clientId,
+        package_id: packageId,
+        title: title.trim(),
+        priority,
+        status: "recebido",
+        due_date: dueDate || null,
+        position: nextPosition,
+      });
+      if (error) throw error;
+      toast.success("Vídeo criado");
+      qc.invalidateQueries({ queryKey: ["client", clientId] });
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      setOpen(false);
+      setTitle(""); setDueDate(""); setPriority("media");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm"><Plus className="mr-1 h-4 w-4" />Novo vídeo</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Novo vídeo</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Título</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} autoFocus placeholder="Ex: Reels lançamento" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Prioridade</Label>
+              <Select value={priority} onValueChange={(v) => setPriority(v as VideoPriority)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="urgente">Urgente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Prazo</Label>
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end pt-2">
+          <Button onClick={submit} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
