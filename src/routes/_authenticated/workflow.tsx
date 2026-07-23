@@ -408,15 +408,62 @@ function Column({ id, label, dot, count, children }: { id: GroupId; label: strin
   );
 }
 
-function ClientGroup({ name, count, showHeader, children }: { name: string; count: number; showHeader: boolean; children: React.ReactNode }) {
-  if (!showHeader) return <div className="space-y-1.5">{children}</div>;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1.5 px-1 pt-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{name}</span>
-        <span className="text-[10px] text-muted-foreground/60">· {count}</span>
+function ClientStack({ stackId, name, count, expanded, onToggle, children }: {
+  stackId: string;
+  name: string;
+  count: number;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: stackId });
+  if (expanded) {
+    return (
+      <div className="space-y-1 rounded-md border border-border/60 bg-background/40 p-1.5">
+        <button
+          onClick={onToggle}
+          className="flex w-full items-center gap-1.5 rounded-sm px-1 py-0.5 text-left transition hover:bg-muted/40"
+        >
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{name}</span>
+          <span className="ml-auto text-[10px] text-muted-foreground/60">{count}</span>
+        </button>
+        <div className="space-y-1.5">{children}</div>
       </div>
-      <div className="space-y-1.5">{children}</div>
+    );
+  }
+  return (
+    <div
+      ref={setNodeRef}
+      style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined}
+      className={cn(
+        "group flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 shadow-sm transition hover:border-primary/40",
+        isDragging && "opacity-40",
+      )}
+    >
+      <button
+        onClick={onToggle}
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        aria-label="Expandir"
+      >
+        <div className="rounded-md bg-muted/60 p-1 text-muted-foreground group-hover:text-foreground">
+          <Layers className="h-3.5 w-3.5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-medium">{name}</p>
+          <p className="text-[10px] text-muted-foreground">{count} vídeo{count > 1 ? "s" : ""}</p>
+        </div>
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
+      </button>
+      <div
+        {...listeners}
+        {...attributes}
+        className="cursor-grab rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground active:cursor-grabbing"
+        aria-label="Arrastar"
+        title="Arrastar para mover todos"
+      >
+        <span className="block h-3 w-3 rounded-sm border border-current" />
+      </div>
     </div>
   );
 }
