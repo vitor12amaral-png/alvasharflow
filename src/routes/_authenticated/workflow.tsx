@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users } from "lucide-react";
+import { Plus, Loader2, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
@@ -134,7 +134,16 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   const [view, setView] = useState<"split" | "kanban" | "list">("split");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const qc = useQueryClient();
+
+  function toggleGroup(key: string) {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
 
   const clientName = clientId === "all" ? "Todos os clientes" : clients.find((c) => c.id === clientId)?.name ?? "Cliente";
 
@@ -200,9 +209,19 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     const toGroup = e.over?.id as GroupId | undefined;
     if (!toGroup) return;
     const target = GROUPS.find((g) => g.id === toGroup)!;
+
+    // Stack drag: "stack::<groupId>::<clientId>" moves every video in that stack.
+    if (dragId.startsWith("stack::")) {
+      const [, fromGroup, cid] = dragId.split("::");
+      if (fromGroup === toGroup) return;
+      const vids = (videos ?? []).filter((v) => v.client_id === cid && STATUS_TO_GROUP[v.status] === fromGroup);
+      if (vids.length === 0) return;
+      patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
+      return;
+    }
+
     // If dragged item is part of selection, move whole selection; else move just it.
     const ids = selected.has(dragId) ? Array.from(selected) : [dragId];
-    // Filter out ones already in this group's first status
     const vids = (videos ?? []).filter((v) => ids.includes(v.id) && STATUS_TO_GROUP[v.status] !== toGroup);
     if (vids.length === 0) return;
     patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
@@ -253,19 +272,30 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                     });
                     return (
                       <Column key={g.id} id={g.id} label={g.label} dot={g.dot} count={vids.length}>
-                        {Array.from(byClient.entries()).map(([cid, arr]) => (
-                          <ClientGroup key={cid} name={arr[0].clients?.name ?? "—"} count={arr.length} showHeader={clientId === "all"}>
-                            {arr.map((v) => (
-                              <VideoCard key={v.id} video={v}
-                                selected={selected.has(v.id)}
-                                onToggle={() => toggle(v.id)}
-                                onExpand={() => setDetailId(v.id)}
-                                anySelected={selected.size > 0}
-                                selectedCount={selected.size}
-                              />
-                            ))}
-                          </ClientGroup>
-                        ))}
+                        {Array.from(byClient.entries()).map(([cid, arr]) => {
+                          const key = `${g.id}::${cid}`;
+                          const isExpanded = expandedGroups.has(key);
+                          return (
+                            <ClientStack
+                              key={cid}
+                              stackId={`stack::${g.id}::${cid}`}
+                              name={arr[0].clients?.name ?? "—"}
+                              count={arr.length}
+                              expanded={isExpanded}
+                              onToggle={() => toggleGroup(key)}
+                            >
+                              {arr.map((v) => (
+                                <VideoCard key={v.id} video={v}
+                                  selected={selected.has(v.id)}
+                                  onToggle={() => toggle(v.id)}
+                                  onExpand={() => setDetailId(v.id)}
+                                  anySelected={selected.size > 0}
+                                  selectedCount={selected.size}
+                                />
+                              ))}
+                            </ClientStack>
+                          );
+                        })}
                       </Column>
                     );
                   })}
@@ -378,15 +408,62 @@ function Column({ id, label, dot, count, children }: { id: GroupId; label: strin
   );
 }
 
-function ClientGroup({ name, count, showHeader, children }: { name: string; count: number; showHeader: boolean; children: React.ReactNode }) {
-  if (!showHeader) return <div className="space-y-1.5">{children}</div>;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1.5 px-1 pt-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{name}</span>
-        <span className="text-[10px] text-muted-foreground/60">· {count}</span>
+function ClientStack({ stackId, name, count, expanded, onToggle, children }: {
+  stackId: string;
+  name: string;
+  count: number;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: stackId });
+  if (expanded) {
+    return (
+      <div className="space-y-1 rounded-md border border-border/60 bg-background/40 p-1.5">
+        <button
+          onClick={onToggle}
+          className="flex w-full items-center gap-1.5 rounded-sm px-1 py-0.5 text-left transition hover:bg-muted/40"
+        >
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{name}</span>
+          <span className="ml-auto text-[10px] text-muted-foreground/60">{count}</span>
+        </button>
+        <div className="space-y-1.5">{children}</div>
       </div>
-      <div className="space-y-1.5">{children}</div>
+    );
+  }
+  return (
+    <div
+      ref={setNodeRef}
+      style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined}
+      className={cn(
+        "group flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 shadow-sm transition hover:border-primary/40",
+        isDragging && "opacity-40",
+      )}
+    >
+      <button
+        onClick={onToggle}
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        aria-label="Expandir"
+      >
+        <div className="rounded-md bg-muted/60 p-1 text-muted-foreground group-hover:text-foreground">
+          <Layers className="h-3.5 w-3.5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-medium">{name}</p>
+          <p className="text-[10px] text-muted-foreground">{count} vídeo{count > 1 ? "s" : ""}</p>
+        </div>
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
+      </button>
+      <div
+        {...listeners}
+        {...attributes}
+        className="cursor-grab rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground active:cursor-grabbing"
+        aria-label="Arrastar"
+        title="Arrastar para mover todos"
+      >
+        <span className="block h-3 w-3 rounded-sm border border-current" />
+      </div>
     </div>
   );
 }
