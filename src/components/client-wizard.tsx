@@ -44,6 +44,7 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState<Form>(initialForm);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const { data: me } = useCurrentUser();
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
