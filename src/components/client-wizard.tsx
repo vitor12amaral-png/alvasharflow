@@ -77,6 +77,7 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
       if (cErr) throw cErr;
 
       const { data: pack, error: pErr } = await supabase.from("client_packages").insert({
+        workspace_id: me.workspaceId,
         client_id: client.id,
         size: form.size,
         total_videos: form.total_videos,
@@ -92,6 +93,7 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
       const n = Math.max(0, form.total_videos || 0);
       if (n > 0) {
         const rows = Array.from({ length: n }, (_, i) => ({
+          workspace_id: me.workspaceId!,
           client_id: client.id,
           package_id: pack.id,
           title: `Vídeo ${String(i + 1).padStart(2, "0")}`,
