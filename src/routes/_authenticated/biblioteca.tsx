@@ -107,12 +107,14 @@ function NewLibraryItem({ clients, onClose }: { clients: { id: string; name: str
   });
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const { data: me } = useCurrentUser();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.client_id) { toast.error("Selecione um cliente"); return; }
+    if (!me?.workspaceId) { toast.error("Workspace não encontrado"); return; }
     setSaving(true);
-    const { error } = await supabase.from("client_library").insert(form);
+    const { error } = await supabase.from("client_library").insert({ ...form, workspace_id: me.workspaceId });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Arquivo adicionado");
