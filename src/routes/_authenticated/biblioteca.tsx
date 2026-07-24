@@ -14,6 +14,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { LIBRARY_LABEL } from "@/lib/video-workflow";
 import type { LibraryCategory } from "@/lib/video-workflow";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/biblioteca")({
   component: BibliotecaPage,
