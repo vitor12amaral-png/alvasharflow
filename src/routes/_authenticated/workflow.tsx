@@ -782,13 +782,16 @@ function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => 
   const [form, setForm] = useState({ title: "", description: "", client_id: defaultClientId ?? "", priority: "media" as VideoPriority, due_date: "" });
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const { data: me } = useCurrentUser();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.client_id) { toast.error("Selecione um cliente"); return; }
+    if (!me?.workspaceId) { toast.error("Workspace não encontrado"); return; }
     setSaving(true);
     const { data: pkg } = await supabase.from("client_packages").select("id").eq("client_id", form.client_id).eq("status", "ativo").maybeSingle();
     const { error } = await supabase.from("videos").insert({
+      workspace_id: me.workspaceId,
       title: form.title, description: form.description || null, client_id: form.client_id,
       priority: form.priority, due_date: form.due_date || null, package_id: pkg?.id ?? null,
     });
