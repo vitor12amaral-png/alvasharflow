@@ -55,9 +55,11 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
 
   async function submit() {
     if (!form.name.trim()) { toast.error("Nome é obrigatório"); setStep(1); return; }
+    if (!me?.workspaceId) { toast.error("Workspace não encontrado"); return; }
     setSaving(true);
     try {
       const { data: client, error: cErr } = await supabase.from("clients").insert({
+        workspace_id: me.workspaceId,
         name: form.name.trim(),
         company: form.company || null,
         email: form.email || null,
