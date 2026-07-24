@@ -261,11 +261,15 @@ function NewVideoDialog({ clientId, packageId, nextPosition }: { clientId: strin
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const { data: me } = useCurrentUser();
+
   async function submit() {
     if (!title.trim()) { toast.error("Título obrigatório"); return; }
+    if (!me?.workspaceId) { toast.error("Workspace não encontrado"); return; }
     setSaving(true);
     try {
       const { error } = await supabase.from("videos").insert({
+        workspace_id: me.workspaceId,
         client_id: clientId,
         package_id: packageId,
         title: title.trim(),
