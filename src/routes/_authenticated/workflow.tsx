@@ -19,6 +19,7 @@ import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -648,7 +649,8 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
 
   const addFile = useMutation({
     mutationFn: async ({ name, url }: { name: string; url: string }) => {
-      const { error } = await supabase.from("video_files").insert({ video_id: videoId!, name, url });
+      if (!video?.workspace_id) throw new Error("Workspace não encontrado");
+      const { error } = await supabase.from("video_files").insert({ workspace_id: video.workspace_id, video_id: videoId!, name, url });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -780,13 +782,16 @@ function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => 
   const [form, setForm] = useState({ title: "", description: "", client_id: defaultClientId ?? "", priority: "media" as VideoPriority, due_date: "" });
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const { data: me } = useCurrentUser();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.client_id) { toast.error("Selecione um cliente"); return; }
+    if (!me?.workspaceId) { toast.error("Workspace não encontrado"); return; }
     setSaving(true);
     const { data: pkg } = await supabase.from("client_packages").select("id").eq("client_id", form.client_id).eq("status", "ativo").maybeSingle();
     const { error } = await supabase.from("videos").insert({
+      workspace_id: me.workspaceId,
       title: form.title, description: form.description || null, client_id: form.client_id,
       priority: form.priority, due_date: form.due_date || null, package_id: pkg?.id ?? null,
     });

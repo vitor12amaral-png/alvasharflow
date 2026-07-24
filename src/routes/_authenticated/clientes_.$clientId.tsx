@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { initials, formatBRL, formatDate, relativeTime } from "@/lib/format";
 import { STAGE_LABEL, STAGE_ACCENT, DELIVERY_LABEL, LIBRARY_LABEL, PACKAGE_LABEL, PRIORITY_LABEL } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority, PackageSize, DeliveryMethod, LibraryCategory } from "@/lib/video-workflow";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
   component: ClientDetail,
@@ -260,11 +261,15 @@ function NewVideoDialog({ clientId, packageId, nextPosition }: { clientId: strin
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const { data: me } = useCurrentUser();
+
   async function submit() {
     if (!title.trim()) { toast.error("Título obrigatório"); return; }
+    if (!me?.workspaceId) { toast.error("Workspace não encontrado"); return; }
     setSaving(true);
     try {
       const { error } = await supabase.from("videos").insert({
+        workspace_id: me.workspaceId,
         client_id: clientId,
         package_id: packageId,
         title: title.trim(),

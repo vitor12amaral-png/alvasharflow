@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,7 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState<Form>(initialForm);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const { data: me } = useCurrentUser();
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -53,9 +55,11 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
 
   async function submit() {
     if (!form.name.trim()) { toast.error("Nome é obrigatório"); setStep(1); return; }
+    if (!me?.workspaceId) { toast.error("Workspace não encontrado"); return; }
     setSaving(true);
     try {
       const { data: client, error: cErr } = await supabase.from("clients").insert({
+        workspace_id: me.workspaceId,
         name: form.name.trim(),
         company: form.company || null,
         email: form.email || null,
@@ -73,6 +77,7 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
       if (cErr) throw cErr;
 
       const { data: pack, error: pErr } = await supabase.from("client_packages").insert({
+        workspace_id: me.workspaceId,
         client_id: client.id,
         size: form.size,
         total_videos: form.total_videos,
@@ -88,6 +93,7 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
       const n = Math.max(0, form.total_videos || 0);
       if (n > 0) {
         const rows = Array.from({ length: n }, (_, i) => ({
+          workspace_id: me.workspaceId!,
           client_id: client.id,
           package_id: pack.id,
           title: `Vídeo ${String(i + 1).padStart(2, "0")}`,
