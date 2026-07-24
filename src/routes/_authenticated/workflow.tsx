@@ -649,7 +649,8 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
 
   const addFile = useMutation({
     mutationFn: async ({ name, url }: { name: string; url: string }) => {
-      const { error } = await supabase.from("video_files").insert({ video_id: videoId!, name, url });
+      if (!video?.workspace_id) throw new Error("Workspace não encontrado");
+      const { error } = await supabase.from("video_files").insert({ workspace_id: video.workspace_id, video_id: videoId!, name, url });
       if (error) throw error;
     },
     onSuccess: () => {
