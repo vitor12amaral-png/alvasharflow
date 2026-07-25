@@ -24,14 +24,13 @@ export const Route = createFileRoute("/_authenticated/tarefas")({
   head: () => ({ meta: [{ title: "Tarefas — Cortex" }] }),
 });
 
-type TaskStatus = "aberta" | "em_andamento" | "concluida";
+type TaskStatus = "aberta" | "concluida";
 type TaskPriority = "baixa" | "media" | "alta" | "urgente";
 type TaskCategory = "financeiro" | "atendimento" | "marketing" | "edicao" | "administrativo" | "geral";
 type TaskRecurrence = "none" | "daily" | "weekly" | "monthly";
 
 const STATUS_COLS: { id: TaskStatus; label: string }[] = [
   { id: "aberta", label: "A Fazer" },
-  { id: "em_andamento", label: "Em andamento" },
   { id: "concluida", label: "Concluído" },
 ];
 
