@@ -9,11 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiCopilotRouteImport } from './routes/api/copilot'
 import { Route as AuthenticatedWorkflowRouteImport } from './routes/_authenticated/workflow'
 import { Route as AuthenticatedVideosRouteImport } from './routes/_authenticated/videos'
+import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
+import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -23,6 +27,11 @@ import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBibliotecaRouteImport } from './routes/_authenticated/biblioteca'
 import { Route as AuthenticatedClientesClientIdRouteImport } from './routes/_authenticated/clientes_.$clientId'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -37,6 +46,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCopilotRoute = ApiCopilotRouteImport.update({
+  id: '/api/copilot',
+  path: '/api/copilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedWorkflowRoute = AuthenticatedWorkflowRouteImport.update({
   id: '/workflow',
   path: '/workflow',
@@ -45,6 +59,16 @@ const AuthenticatedWorkflowRoute = AuthenticatedWorkflowRouteImport.update({
 const AuthenticatedVideosRoute = AuthenticatedVideosRouteImport.update({
   id: '/videos',
   path: '/videos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTarefasRoute = AuthenticatedTarefasRouteImport.update({
+  id: '/tarefas',
+  path: '/tarefas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
@@ -93,6 +117,7 @@ const AuthenticatedClientesClientIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -100,13 +125,17 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
+  '/marketing': typeof AuthenticatedMarketingRoute
+  '/tarefas': typeof AuthenticatedTarefasRoute
   '/videos': typeof AuthenticatedVideosRoute
   '/workflow': typeof AuthenticatedWorkflowRoute
+  '/api/copilot': typeof ApiCopilotRoute
   '/clientes/$clientId': typeof AuthenticatedClientesClientIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -114,8 +143,11 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
+  '/marketing': typeof AuthenticatedMarketingRoute
+  '/tarefas': typeof AuthenticatedTarefasRoute
   '/videos': typeof AuthenticatedVideosRoute
   '/workflow': typeof AuthenticatedWorkflowRoute
+  '/api/copilot': typeof ApiCopilotRoute
   '/clientes/$clientId': typeof AuthenticatedClientesClientIdRoute
 }
 export interface FileRoutesById {
@@ -123,6 +155,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
@@ -130,8 +163,11 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
+  '/_authenticated/marketing': typeof AuthenticatedMarketingRoute
+  '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
   '/_authenticated/videos': typeof AuthenticatedVideosRoute
   '/_authenticated/workflow': typeof AuthenticatedWorkflowRoute
+  '/api/copilot': typeof ApiCopilotRoute
   '/_authenticated/clientes_/$clientId': typeof AuthenticatedClientesClientIdRoute
 }
 export interface FileRouteTypes {
@@ -139,6 +175,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/reset-password'
     | '/biblioteca'
     | '/calendario'
     | '/clientes'
@@ -146,13 +183,17 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/equipe'
     | '/financeiro'
+    | '/marketing'
+    | '/tarefas'
     | '/videos'
     | '/workflow'
+    | '/api/copilot'
     | '/clientes/$clientId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/reset-password'
     | '/biblioteca'
     | '/calendario'
     | '/clientes'
@@ -160,14 +201,18 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/equipe'
     | '/financeiro'
+    | '/marketing'
+    | '/tarefas'
     | '/videos'
     | '/workflow'
+    | '/api/copilot'
     | '/clientes/$clientId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/reset-password'
     | '/_authenticated/biblioteca'
     | '/_authenticated/calendario'
     | '/_authenticated/clientes'
@@ -175,8 +220,11 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/equipe'
     | '/_authenticated/financeiro'
+    | '/_authenticated/marketing'
+    | '/_authenticated/tarefas'
     | '/_authenticated/videos'
     | '/_authenticated/workflow'
+    | '/api/copilot'
     | '/_authenticated/clientes_/$clientId'
   fileRoutesById: FileRoutesById
 }
@@ -184,10 +232,19 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiCopilotRoute: typeof ApiCopilotRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -209,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/copilot': {
+      id: '/api/copilot'
+      path: '/api/copilot'
+      fullPath: '/api/copilot'
+      preLoaderRoute: typeof ApiCopilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/workflow': {
       id: '/_authenticated/workflow'
       path: '/workflow'
@@ -221,6 +285,20 @@ declare module '@tanstack/react-router' {
       path: '/videos'
       fullPath: '/videos'
       preLoaderRoute: typeof AuthenticatedVideosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tarefas': {
+      id: '/_authenticated/tarefas'
+      path: '/tarefas'
+      fullPath: '/tarefas'
+      preLoaderRoute: typeof AuthenticatedTarefasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing': {
+      id: '/_authenticated/marketing'
+      path: '/marketing'
+      fullPath: '/marketing'
+      preLoaderRoute: typeof AuthenticatedMarketingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/financeiro': {
@@ -290,6 +368,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
+  AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRoute
+  AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
   AuthenticatedVideosRoute: typeof AuthenticatedVideosRoute
   AuthenticatedWorkflowRoute: typeof AuthenticatedWorkflowRoute
   AuthenticatedClientesClientIdRoute: typeof AuthenticatedClientesClientIdRoute
@@ -303,6 +383,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
+  AuthenticatedMarketingRoute: AuthenticatedMarketingRoute,
+  AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
   AuthenticatedVideosRoute: AuthenticatedVideosRoute,
   AuthenticatedWorkflowRoute: AuthenticatedWorkflowRoute,
   AuthenticatedClientesClientIdRoute: AuthenticatedClientesClientIdRoute,
@@ -315,17 +397,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  ApiCopilotRoute: ApiCopilotRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
