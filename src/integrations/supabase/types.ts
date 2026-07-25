@@ -267,6 +267,139 @@ export type Database = {
           },
         ]
       }
+      marketing_campaigns: {
+        Row: {
+          budget: number | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          objective: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          budget?: number | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          objective?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          budget?: number | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          objective?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_campaigns_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_content: {
+        Row: {
+          client_id: string | null
+          content_type: Database["public"]["Enums"]["marketing_content_type"]
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          platform: string | null
+          scheduled_for: string | null
+          script_id: string | null
+          status: Database["public"]["Enums"]["marketing_status"]
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          content_type?: Database["public"]["Enums"]["marketing_content_type"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          platform?: string | null
+          scheduled_for?: string | null
+          script_id?: string | null
+          status?: Database["public"]["Enums"]["marketing_status"]
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          content_type?: Database["public"]["Enums"]["marketing_content_type"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          platform?: string | null
+          scheduled_for?: string | null
+          script_id?: string | null
+          status?: Database["public"]["Enums"]["marketing_status"]
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_content_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_content_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_scripts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_content_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_references: {
         Row: {
           author_id: string | null
@@ -310,11 +443,17 @@ export type Database = {
           author_id: string | null
           body: string | null
           channel: Database["public"]["Enums"]["marketing_channel"]
+          client_id: string | null
+          content_type: Database["public"]["Enums"]["marketing_content_type"]
           created_at: string
+          cta: string | null
+          development: string | null
+          hook: string | null
           id: string
           published_at: string | null
           scheduled_for: string | null
           status: Database["public"]["Enums"]["marketing_status"]
+          technical_notes: string | null
           title: string
           updated_at: string
           workspace_id: string
@@ -323,11 +462,17 @@ export type Database = {
           author_id?: string | null
           body?: string | null
           channel?: Database["public"]["Enums"]["marketing_channel"]
+          client_id?: string | null
+          content_type?: Database["public"]["Enums"]["marketing_content_type"]
           created_at?: string
+          cta?: string | null
+          development?: string | null
+          hook?: string | null
           id?: string
           published_at?: string | null
           scheduled_for?: string | null
           status?: Database["public"]["Enums"]["marketing_status"]
+          technical_notes?: string | null
           title: string
           updated_at?: string
           workspace_id: string
@@ -336,16 +481,29 @@ export type Database = {
           author_id?: string | null
           body?: string | null
           channel?: Database["public"]["Enums"]["marketing_channel"]
+          client_id?: string | null
+          content_type?: Database["public"]["Enums"]["marketing_content_type"]
           created_at?: string
+          cta?: string | null
+          development?: string | null
+          hook?: string | null
           id?: string
           published_at?: string | null
           scheduled_for?: string | null
           status?: Database["public"]["Enums"]["marketing_status"]
+          technical_notes?: string | null
           title?: string
           updated_at?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "marketing_scripts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marketing_scripts_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -396,6 +554,7 @@ export type Database = {
       tasks: {
         Row: {
           assignee_id: string | null
+          category: Database["public"]["Enums"]["task_category"]
           client_id: string | null
           created_at: string
           created_by: string | null
@@ -404,6 +563,7 @@ export type Database = {
           id: string
           position: number
           priority: Database["public"]["Enums"]["video_priority"]
+          recurrence: Database["public"]["Enums"]["task_recurrence"]
           status: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at: string
@@ -411,6 +571,7 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          category?: Database["public"]["Enums"]["task_category"]
           client_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -419,6 +580,7 @@ export type Database = {
           id?: string
           position?: number
           priority?: Database["public"]["Enums"]["video_priority"]
+          recurrence?: Database["public"]["Enums"]["task_recurrence"]
           status?: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at?: string
@@ -426,6 +588,7 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          category?: Database["public"]["Enums"]["task_category"]
           client_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -434,6 +597,7 @@ export type Database = {
           id?: string
           position?: number
           priority?: Database["public"]["Enums"]["video_priority"]
+          recurrence?: Database["public"]["Enums"]["task_recurrence"]
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
           updated_at?: string
@@ -759,6 +923,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "client" | "editor"
+      campaign_status:
+        | "planejada"
+        | "em_andamento"
+        | "concluida"
+        | "pausada"
+        | "cancelada"
       delivery_method: "drive" | "dropbox" | "wetransfer" | "upload_interno"
       invoice_status: "pending" | "paid" | "overdue"
       library_category:
@@ -775,6 +945,15 @@ export type Database = {
         | "youtube"
         | "linkedin"
         | "outro"
+      marketing_content_type:
+        | "reels"
+        | "post"
+        | "story"
+        | "carousel"
+        | "video_longo"
+        | "shorts"
+        | "artigo"
+        | "outro"
       marketing_status: "ideia" | "roteiro" | "gravado" | "publicado"
       package_size: "p10" | "p20" | "p30" | "custom"
       package_status:
@@ -783,6 +962,14 @@ export type Database = {
         | "renovado"
         | "cancelado"
         | "concluido"
+      task_category:
+        | "financeiro"
+        | "atendimento"
+        | "marketing"
+        | "edicao"
+        | "administrativo"
+        | "geral"
+      task_recurrence: "none" | "daily" | "weekly" | "monthly"
       task_status: "aberta" | "concluida"
       video_priority: "baixa" | "media" | "alta" | "urgente"
       video_status:
@@ -926,6 +1113,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "client", "editor"],
+      campaign_status: [
+        "planejada",
+        "em_andamento",
+        "concluida",
+        "pausada",
+        "cancelada",
+      ],
       delivery_method: ["drive", "dropbox", "wetransfer", "upload_interno"],
       invoice_status: ["pending", "paid", "overdue"],
       library_category: [
@@ -944,6 +1138,16 @@ export const Constants = {
         "linkedin",
         "outro",
       ],
+      marketing_content_type: [
+        "reels",
+        "post",
+        "story",
+        "carousel",
+        "video_longo",
+        "shorts",
+        "artigo",
+        "outro",
+      ],
       marketing_status: ["ideia", "roteiro", "gravado", "publicado"],
       package_size: ["p10", "p20", "p30", "custom"],
       package_status: [
@@ -953,6 +1157,15 @@ export const Constants = {
         "cancelado",
         "concluido",
       ],
+      task_category: [
+        "financeiro",
+        "atendimento",
+        "marketing",
+        "edicao",
+        "administrativo",
+        "geral",
+      ],
+      task_recurrence: ["none", "daily", "weekly", "monthly"],
       task_status: ["aberta", "concluida"],
       video_priority: ["baixa", "media", "alta", "urgente"],
       video_status: [
