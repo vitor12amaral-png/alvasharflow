@@ -25,10 +25,10 @@ export function MonthPicker({ className }: { className?: string }) {
   function go(delta: number) {
     const d = new Date(year, month + delta, 1);
     const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, month: ym }), replace: true });
+    navigate({ to: ".", search: (prev: Record<string, unknown>) => ({ ...prev, month: ym }) as never, replace: true });
   }
   function goToday() {
-    navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, month: undefined }), replace: true });
+    navigate({ to: ".", search: (prev: Record<string, unknown>) => ({ ...prev, month: undefined }) as never, replace: true });
   }
 
   const label = new Date(year, month, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
