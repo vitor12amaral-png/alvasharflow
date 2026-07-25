@@ -46,7 +46,7 @@ export const Route = createFileRoute("/api/copilot")({
         if (!Array.isArray(body.messages)) return new Response("Messages required", { status: 400 });
 
         async function findClient(nameOrId: string) {
-          const { data } = await supabase.from("clients").select("id, name").eq("workspace_id", workspaceId).ilike("name", `%${nameOrId}%`).limit(5);
+          const { data } = await supabase.from("clients").select("id, name").eq("workspace_id", workspaceId!).ilike("name", `%${nameOrId}%`).limit(5);
           return data ?? [];
         }
 
