@@ -70,7 +70,7 @@ export const Route = createFileRoute("/api/copilot")({
               company: z.string().nullable(),
               package_size: z.enum(["p10", "p20", "p30", "custom"]).nullable(),
               total_videos: z.number().int().nullable(),
-              delivery_method: z.enum(["drive", "dropbox", "wetransfer", "outro"]).nullable(),
+              delivery_method: z.enum(["drive", "dropbox", "wetransfer", "upload_interno"]).nullable(),
               notes: z.string().nullable(),
             }),
             execute: async (input) => {
