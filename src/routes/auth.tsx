@@ -113,7 +113,20 @@ function AuthPage() {
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" placeholder="seu@email.com" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Senha</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Senha</Label>
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!email) return toast.error("Digite seu email primeiro");
+                      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+                      if (error) toast.error(error.message); else toast.success("Verifique seu email");
+                    }}
+                    className="text-[11px] text-muted-foreground hover:text-primary"
+                  >Esqueci a senha</button>
+                )}
+              </div>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} autoComplete={mode === "signup" ? "new-password" : "current-password"} />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
