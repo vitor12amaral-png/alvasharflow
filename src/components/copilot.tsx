@@ -29,7 +29,7 @@ export function CopilotButton() {
 
   const transport = new DefaultChatTransport({
     api: "/api/copilot",
-    headers: () => (token ? { Authorization: `Bearer ${token}` } : {}),
+    headers: () => (token ? { Authorization: `Bearer ${token}` } : {}) as Record<string, string>,
   });
 
   const { messages, sendMessage, status, setMessages } = useChat({
