@@ -143,7 +143,7 @@ function TarefasPage() {
       {isLoading ? (
         <div className="mt-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : view === "kanban" ? (
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
           {STATUS_COLS.map((col) => {
             const items = filtered.filter((t) => t.status === col.id);
             return (
