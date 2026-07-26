@@ -72,14 +72,124 @@ export type Database = {
           },
         ]
       }
+      client_feedback: {
+        Row: {
+          client_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          nps: number
+          submitted_via: string
+          video_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          client_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          nps: number
+          submitted_via?: string
+          video_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          nps?: number
+          submitted_via?: string
+          video_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_feedback_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_feedback_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_feedback_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_interactions: {
+        Row: {
+          author_id: string | null
+          client_id: string
+          created_at: string
+          happened_at: string
+          id: string
+          kind: string
+          notes: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          client_id: string
+          created_at?: string
+          happened_at?: string
+          id?: string
+          kind?: string
+          notes: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          author_id?: string | null
+          client_id?: string
+          created_at?: string
+          happened_at?: string
+          id?: string
+          kind?: string
+          notes?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_interactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_interactions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_library: {
         Row: {
           category: Database["public"]["Enums"]["library_category"]
           client_id: string
           created_at: string
           id: string
+          is_favorite: boolean
+          kind: string
+          link_category: string | null
           name: string
           notes: string | null
+          thumbnail_url: string | null
           updated_at: string
           url: string
           workspace_id: string
@@ -89,8 +199,12 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          is_favorite?: boolean
+          kind?: string
+          link_category?: string | null
           name: string
           notes?: string | null
+          thumbnail_url?: string | null
           updated_at?: string
           url: string
           workspace_id: string
@@ -100,8 +214,12 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          is_favorite?: boolean
+          kind?: string
+          link_category?: string | null
           name?: string
           notes?: string | null
+          thumbnail_url?: string | null
           updated_at?: string
           url?: string
           workspace_id?: string
@@ -182,6 +300,54 @@ export type Database = {
           },
           {
             foreignKeyName: "client_packages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_portal_tokens: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          revoked_at: string | null
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          token: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_portal_tokens_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -620,6 +786,70 @@ export type Database = {
           },
         ]
       }
+      time_entries: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          notes: string | null
+          started_at: string
+          task_id: string | null
+          updated_at: string
+          user_id: string
+          video_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          task_id?: string | null
+          updated_at?: string
+          user_id: string
+          video_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          task_id?: string | null
+          updated_at?: string
+          user_id?: string
+          video_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -919,6 +1149,43 @@ export type Database = {
       is_workspace_member: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
+      }
+      portal_approve_video: {
+        Args: { _comment: string; _token: string; _video_id: string }
+        Returns: undefined
+      }
+      portal_list_videos: {
+        Args: { _token: string }
+        Returns: {
+          description: string
+          due_date: string
+          id: string
+          status: Database["public"]["Enums"]["video_status"]
+          title: string
+          updated_at: string
+        }[]
+      }
+      portal_request_changes: {
+        Args: { _comment: string; _token: string; _video_id: string }
+        Returns: undefined
+      }
+      portal_resolve_token: {
+        Args: { _token: string }
+        Returns: {
+          client_company: string
+          client_id: string
+          client_name: string
+          workspace_id: string
+        }[]
+      }
+      portal_submit_feedback: {
+        Args: {
+          _comment: string
+          _nps: number
+          _token: string
+          _video_id: string
+        }
+        Returns: string
       }
     }
     Enums: {

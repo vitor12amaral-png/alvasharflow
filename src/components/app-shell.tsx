@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Users, Film, Kanban, Calendar, FolderOpen,
-  Wallet, Settings, UsersRound, LogOut, Loader2, Sparkles,
+  LayoutDashboard, Users, Kanban, Calendar, FolderOpen,
+  Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -11,11 +11,11 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CopilotButton } from "@/components/copilot";
+import { TimerBadge } from "@/components/timer";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/videos", label: "Vídeos", icon: Film },
   { to: "/workflow", label: "Workflow", icon: Kanban },
   { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
   { to: "/marketing", label: "Marketing", icon: Megaphone },
@@ -52,11 +52,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="hidden w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/85 backdrop-blur md:flex">
         <div className="flex items-center gap-2.5 px-4 py-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)] shadow-[0_0_24px_-6px_oklch(0.72_0.19_235_/_0.7)]">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
+            <span className="font-display text-sm font-bold text-primary-foreground">A</span>
           </div>
           <div>
-            <p className="font-display text-sm leading-tight font-semibold">Cortex</p>
-            <p className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">Agência</p>
+            <p className="font-display text-sm leading-tight font-semibold">alves.edt</p>
+            <p className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">Alta gestão</p>
           </div>
         </div>
 
@@ -104,8 +104,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex flex-1 flex-col min-w-0">
         <header className="flex items-center justify-between border-b border-border bg-background/60 px-4 py-2.5 backdrop-blur md:hidden">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="font-display text-sm font-semibold">Cortex</span>
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)]">
+              <span className="font-display text-[10px] font-bold text-primary-foreground">A</span>
+            </div>
+            <span className="font-display text-sm font-semibold">alves.edt</span>
           </div>
           <button onClick={signOut} className="text-xs text-muted-foreground">Sair</button>
         </header>
@@ -131,6 +133,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
       </div>
+      <TimerBadge />
       <CopilotButton />
     </div>
   );

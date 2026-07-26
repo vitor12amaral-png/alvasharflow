@@ -13,7 +13,7 @@ import { ClientWizard } from "@/components/client-wizard";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,
-  head: () => ({ meta: [{ title: "Clientes — Cortex" }] }),
+  head: () => ({ meta: [{ title: "Clientes — alves.edt" }] }),
 });
 
 function ClientesPage() {

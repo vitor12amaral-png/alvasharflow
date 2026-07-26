@@ -23,7 +23,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
-  head: () => ({ meta: [{ title: "Workflow — Cortex" }] }),
+  head: () => ({ meta: [{ title: "Workflow — alves.edt" }] }),
 });
 
 type GroupId = "sem_material" | "em_producao" | "enviado" | "em_revisao" | "aprovado";

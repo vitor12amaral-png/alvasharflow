@@ -19,7 +19,7 @@ export const Route = createFileRoute("/auth")({
     if (data.user) throw redirect({ to: (search.redirect as "/dashboard") ?? "/dashboard" });
   },
   component: AuthPage,
-  head: () => ({ meta: [{ title: "Entrar — Nexo" }] }),
+  head: () => ({ meta: [{ title: "Entrar — alves.edt" }] }),
 });
 
 function AuthPage() {
@@ -79,9 +79,9 @@ function AuthPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)] shadow-[0_0_50px_-6px_oklch(0.72_0.19_235_/_0.7)]">
-            <span className="font-display text-xl font-bold text-primary-foreground">N</span>
+            <span className="font-display text-xl font-bold text-primary-foreground">A</span>
           </div>
-          <h1 className="mt-5 font-display text-2xl font-semibold">Nexo</h1>
+          <h1 className="mt-5 font-display text-2xl font-semibold">alves.edt</h1>
           <p className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">Acesso ao painel</p>
         </div>
 
@@ -147,7 +147,7 @@ function AuthPage() {
           </Button>
         </div>
 
-        <p className="mt-6 text-center text-[10px] tracking-widest text-muted-foreground uppercase">Premium management suite</p>
+        <p className="mt-6 text-center text-[10px] tracking-widest text-muted-foreground uppercase">alves.edt · Alta gestão para editores</p>
       </div>
     </div>
   );

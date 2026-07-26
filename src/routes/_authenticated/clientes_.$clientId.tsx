@@ -19,7 +19,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
   component: ClientDetail,
-  head: () => ({ meta: [{ title: "Cliente — Cortex" }] }),
+  head: () => ({ meta: [{ title: "Cliente — alves.edt" }] }),
 });
 
 function ClientDetail() {

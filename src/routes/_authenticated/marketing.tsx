@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/marketing")({
   component: MarketingPage,
-  head: () => ({ meta: [{ title: "Marketing — Cortex" }] }),
+  head: () => ({ meta: [{ title: "Marketing — alves.edt" }] }),
 });
 
 type Channel = "instagram" | "tiktok" | "youtube" | "linkedin" | "outro";
