@@ -147,7 +147,7 @@ function AuthPage() {
           </Button>
         </div>
 
-        <p className="mt-6 text-center text-[10px] tracking-widest text-muted-foreground uppercase">Premium management suite</p>
+        <p className="mt-6 text-center text-[10px] tracking-widest text-muted-foreground uppercase">alves.edt · Alta gestão para editores</p>
       </div>
     </div>
   );
