@@ -133,6 +133,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
       </div>
+      <TimerBadge />
       <CopilotButton />
     </div>
   );
