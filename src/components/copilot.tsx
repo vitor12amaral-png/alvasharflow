@@ -10,7 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 
-const STORAGE_KEY = "cortex-copilot-messages";
+const STORAGE_KEY = "alvesedt-copilot-messages";
 
 export function CopilotButton() {
   const [open, setOpen] = useState(false);

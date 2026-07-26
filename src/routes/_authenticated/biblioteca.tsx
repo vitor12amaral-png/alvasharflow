@@ -18,7 +18,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Route = createFileRoute("/_authenticated/biblioteca")({
   component: BibliotecaPage,
-  head: () => ({ meta: [{ title: "Biblioteca — Cortex" }] }),
+  head: () => ({ meta: [{ title: "Biblioteca — alves.edt" }] }),
 });
 
 function BibliotecaPage() {
