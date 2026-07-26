@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Users, Film, Kanban, Calendar, FolderOpen,
-  Wallet, Settings, UsersRound, LogOut, Loader2, Sparkles,
+  LayoutDashboard, Users, Kanban, Calendar, FolderOpen,
+  Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -11,11 +11,11 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CopilotButton } from "@/components/copilot";
+import { TimerBadge } from "@/components/timer";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/videos", label: "Vídeos", icon: Film },
   { to: "/workflow", label: "Workflow", icon: Kanban },
   { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
   { to: "/marketing", label: "Marketing", icon: Megaphone },
