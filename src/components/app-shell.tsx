@@ -52,11 +52,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="hidden w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/85 backdrop-blur md:flex">
         <div className="flex items-center gap-2.5 px-4 py-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)] shadow-[0_0_24px_-6px_oklch(0.72_0.19_235_/_0.7)]">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
+            <span className="font-display text-sm font-bold text-primary-foreground">A</span>
           </div>
           <div>
-            <p className="font-display text-sm leading-tight font-semibold">Cortex</p>
-            <p className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">Agência</p>
+            <p className="font-display text-sm leading-tight font-semibold">alves.edt</p>
+            <p className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">Alta gestão</p>
           </div>
         </div>
 
