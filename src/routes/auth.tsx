@@ -19,7 +19,7 @@ export const Route = createFileRoute("/auth")({
     if (data.user) throw redirect({ to: (search.redirect as "/dashboard") ?? "/dashboard" });
   },
   component: AuthPage,
-  head: () => ({ meta: [{ title: "Entrar — Nexo" }] }),
+  head: () => ({ meta: [{ title: "Entrar — alves.edt" }] }),
 });
 
 function AuthPage() {
