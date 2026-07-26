@@ -14,7 +14,7 @@ import { formatDate, daysUntil } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/videos")({
   component: VideosPage,
-  head: () => ({ meta: [{ title: "Vídeos — Cortex" }] }),
+  head: () => ({ meta: [{ title: "Vídeos — alves.edt" }] }),
 });
 
 function VideosPage() {

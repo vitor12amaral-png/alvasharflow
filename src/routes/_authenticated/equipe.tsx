@@ -10,7 +10,7 @@ import type { VideoStatus } from "@/lib/video-workflow";
 
 export const Route = createFileRoute("/_authenticated/equipe")({
   component: EquipePage,
-  head: () => ({ meta: [{ title: "Equipe — Cortex" }] }),
+  head: () => ({ meta: [{ title: "Equipe — alves.edt" }] }),
 });
 
 function EquipePage() {
