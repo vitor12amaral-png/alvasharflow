@@ -459,7 +459,7 @@ function LinksTab({ clientId, items, onChange }: { clientId: string; items: any[
           <Star className="mr-1 h-3.5 w-3.5" />Favoritos
         </Button>
         <div className="ml-auto">
-          <NewLinkDialog clientId={clientId} workspaceId={me?.workspaceId} open={open} setOpen={setOpen} onSaved={onChange} />
+          <NewLinkDialog clientId={clientId} workspaceId={me?.workspaceId ?? undefined} open={open} setOpen={setOpen} onSaved={onChange} />
         </div>
       </div>
 
