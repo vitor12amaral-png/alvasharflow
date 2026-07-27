@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat } from "lucide-react";
+import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2 } from "lucide-react";
+import { StartTimerButton } from "@/components/timer";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
