@@ -163,7 +163,7 @@ function TarefasPage() {
                   <span className="text-xs text-muted-foreground">{items.length}</span>
                 </div>
                 <div className="space-y-2">
-                  {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => updateStatus.mutate({ id: t.id, status: s })} />)}
+                  {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => updateStatus.mutate({ id: t.id, status: s })} onDelete={() => remove.mutate(t.id)} />)}
                   {items.length === 0 && <p className="py-6 text-center text-xs text-muted-foreground">Nada aqui.</p>}
                 </div>
               </div>
@@ -171,7 +171,7 @@ function TarefasPage() {
           })}
         </div>
       ) : (
-        <AgendaView tasks={filtered} onStatus={(id, s) => updateStatus.mutate({ id, status: s })} />
+        <AgendaView tasks={filtered} onStatus={(id, s) => updateStatus.mutate({ id, status: s })} onDelete={(id) => remove.mutate(id)} />
       )}
     </div>
   );
