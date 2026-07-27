@@ -105,6 +105,15 @@ function TarefasPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
   });
 
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("tasks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Tarefa excluída"); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   return (
     <div className="p-6 md:p-8">
       <PageHeader
