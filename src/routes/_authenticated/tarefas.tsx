@@ -251,7 +251,7 @@ function AgendaView({ tasks, onStatus, onDelete }: { tasks: Task[]; onStatus: (i
           <div key={label}>
             <p className="mb-2 font-display text-xs uppercase tracking-wider text-muted-foreground">{label} · {items.length}</p>
             <div className="space-y-2">
-              {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => onStatus(t.id, s)} />)}
+              {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => onStatus(t.id, s)} onDelete={() => onDelete(t.id)} />)}
             </div>
           </div>
         );
