@@ -177,7 +177,7 @@ function TarefasPage() {
   );
 }
 
-function TaskCard({ task, onStatus }: { task: Task; onStatus: (s: TaskStatus) => void }) {
+function TaskCard({ task, onStatus, onDelete }: { task: Task; onStatus: (s: TaskStatus) => void; onDelete: () => void }) {
   const d = daysUntil(task.due_date);
   const overdue = d !== null && d < 0 && task.status !== "concluida";
   const today = d === 0 && task.status !== "concluida";
@@ -209,13 +209,23 @@ function TaskCard({ task, onStatus }: { task: Task; onStatus: (s: TaskStatus) =>
               </span>
             )}
           </div>
+          <div className="mt-2 flex items-center gap-2">
+            <StartTimerButton taskId={task.id} label={task.title} />
+            <button
+              onClick={() => { if (confirm(`Excluir a tarefa "${task.title}"?`)) onDelete(); }}
+              className="ml-auto text-muted-foreground hover:text-destructive"
+              title="Excluir tarefa"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </Card>
   );
 }
 
-function AgendaView({ tasks, onStatus }: { tasks: Task[]; onStatus: (id: string, s: TaskStatus) => void }) {
+function AgendaView({ tasks, onStatus, onDelete }: { tasks: Task[]; onStatus: (id: string, s: TaskStatus) => void; onDelete: (id: string) => void }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
   const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
