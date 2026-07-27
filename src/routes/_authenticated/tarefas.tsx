@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat } from "lucide-react";
+import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2 } from "lucide-react";
+import { StartTimerButton } from "@/components/timer";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -104,6 +105,15 @@ function TarefasPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
   });
 
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("tasks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Tarefa excluída"); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   return (
     <div className="p-6 md:p-8">
       <PageHeader
@@ -153,7 +163,7 @@ function TarefasPage() {
                   <span className="text-xs text-muted-foreground">{items.length}</span>
                 </div>
                 <div className="space-y-2">
-                  {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => updateStatus.mutate({ id: t.id, status: s })} />)}
+                  {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => updateStatus.mutate({ id: t.id, status: s })} onDelete={() => remove.mutate(t.id)} />)}
                   {items.length === 0 && <p className="py-6 text-center text-xs text-muted-foreground">Nada aqui.</p>}
                 </div>
               </div>
@@ -161,13 +171,13 @@ function TarefasPage() {
           })}
         </div>
       ) : (
-        <AgendaView tasks={filtered} onStatus={(id, s) => updateStatus.mutate({ id, status: s })} />
+        <AgendaView tasks={filtered} onStatus={(id, s) => updateStatus.mutate({ id, status: s })} onDelete={(id) => remove.mutate(id)} />
       )}
     </div>
   );
 }
 
-function TaskCard({ task, onStatus }: { task: Task; onStatus: (s: TaskStatus) => void }) {
+function TaskCard({ task, onStatus, onDelete }: { task: Task; onStatus: (s: TaskStatus) => void; onDelete: () => void }) {
   const d = daysUntil(task.due_date);
   const overdue = d !== null && d < 0 && task.status !== "concluida";
   const today = d === 0 && task.status !== "concluida";
@@ -199,13 +209,23 @@ function TaskCard({ task, onStatus }: { task: Task; onStatus: (s: TaskStatus) =>
               </span>
             )}
           </div>
+          <div className="mt-2 flex items-center gap-2">
+            <StartTimerButton taskId={task.id} label={task.title} />
+            <button
+              onClick={() => { if (confirm(`Excluir a tarefa "${task.title}"?`)) onDelete(); }}
+              className="ml-auto text-muted-foreground hover:text-destructive"
+              title="Excluir tarefa"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </Card>
   );
 }
 
-function AgendaView({ tasks, onStatus }: { tasks: Task[]; onStatus: (id: string, s: TaskStatus) => void }) {
+function AgendaView({ tasks, onStatus, onDelete }: { tasks: Task[]; onStatus: (id: string, s: TaskStatus) => void; onDelete: (id: string) => void }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
   const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
@@ -231,7 +251,7 @@ function AgendaView({ tasks, onStatus }: { tasks: Task[]; onStatus: (id: string,
           <div key={label}>
             <p className="mb-2 font-display text-xs uppercase tracking-wider text-muted-foreground">{label} · {items.length}</p>
             <div className="space-y-2">
-              {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => onStatus(t.id, s)} />)}
+              {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => onStatus(t.id, s)} onDelete={() => onDelete(t.id)} />)}
             </div>
           </div>
         );
