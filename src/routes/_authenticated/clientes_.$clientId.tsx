@@ -18,6 +18,8 @@ import { STAGE_LABEL, STAGE_ACCENT, DELIVERY_LABEL, LIBRARY_LABEL, PACKAGE_LABEL
 import type { VideoStatus, VideoPriority, PackageSize, DeliveryMethod, LibraryCategory } from "@/lib/video-workflow";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { StartTimerButton } from "@/components/timer";
+import { AddSubClientButton } from "@/routes/_authenticated/clientes";
+import { ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
   component: ClientDetail,
