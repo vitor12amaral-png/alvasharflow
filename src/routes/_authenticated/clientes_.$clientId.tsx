@@ -18,6 +18,8 @@ import { STAGE_LABEL, STAGE_ACCENT, DELIVERY_LABEL, LIBRARY_LABEL, PACKAGE_LABEL
 import type { VideoStatus, VideoPriority, PackageSize, DeliveryMethod, LibraryCategory } from "@/lib/video-workflow";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { StartTimerButton } from "@/components/timer";
+import { AddSubClientButton } from "@/routes/_authenticated/clientes";
+import { ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
   component: ClientDetail,
@@ -49,7 +51,7 @@ function ClientDetail() {
   const { data: client, isLoading } = useQuery({
     queryKey: ["client", clientId],
     queryFn: async () => {
-      const [c, packs, vids, lib, acts, ints, fbs, tokens] = await Promise.all([
+      const [c, packs, vids, lib, acts, ints, fbs, tokens, subs] = await Promise.all([
         supabase.from("clients").select("*").eq("id", clientId).maybeSingle(),
         supabase.from("client_packages").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("videos").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
@@ -58,10 +60,18 @@ function ClientDetail() {
         supabase.from("client_interactions").select("*").eq("client_id", clientId).order("happened_at", { ascending: false }),
         supabase.from("client_feedback").select("nps, comment, created_at").eq("client_id", clientId),
         supabase.from("client_portal_tokens").select("token, expires_at, revoked_at, created_at").eq("client_id", clientId).is("revoked_at", null).order("created_at", { ascending: false }).limit(1),
+        supabase.from("clients").select("id, name, company, status, videos(id, status)").eq("parent_client_id", clientId).order("name"),
       ]);
       if (c.error) throw c.error;
+      let parent: { id: string; name: string } | null = null;
+      if (c.data?.parent_client_id) {
+        const { data: p } = await supabase.from("clients").select("id, name").eq("id", c.data.parent_client_id).maybeSingle();
+        parent = p ?? null;
+      }
       return {
         client: c.data,
+        parent,
+        subs: (subs.data ?? []) as { id: string; name: string; company: string | null; status: string; videos: { id: string; status: string }[] | null }[],
         packages: packs.data ?? [],
         videos: vids.data ?? [],
         library: lib.data ?? [],
@@ -86,18 +96,33 @@ function ClientDetail() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["client", clientId] });
 
+  const isParent = client.subs.length > 0;
+  const isSub = !!client.parent;
+
   return (
     <div className="p-6 md:p-8">
-      <Link to="/clientes" className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-3 w-3" />Todos os clientes
-      </Link>
+      {isSub && client.parent ? (
+        <Link to="/clientes/$clientId" params={{ clientId: client.parent.id }} className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-3 w-3" />Voltar para {client.parent.name}
+        </Link>
+      ) : (
+        <Link to="/clientes" className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-3 w-3" />Todos os clientes
+        </Link>
+      )}
 
       <div className="flex flex-wrap items-start gap-4">
         <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/15 font-display text-xl font-bold text-primary">
           {initials(c.name)}
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="font-display text-2xl font-semibold tracking-tight">{c.name}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-display text-2xl font-semibold tracking-tight">{c.name}</h1>
+            {isParent && (
+              <Badge variant="outline" className="text-[10px]">Cliente-mãe · {client.subs.length} marca{client.subs.length === 1 ? "" : "s"}</Badge>
+            )}
+            {isSub && <Badge variant="secondary" className="text-[10px]">Marca</Badge>}
+          </div>
           {c.company && <p className="text-sm text-muted-foreground">{c.company}</p>}
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {c.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{c.email}</span>}
@@ -105,7 +130,7 @@ function ClientDetail() {
             {c.instagram && <span className="inline-flex items-center gap-1"><Instagram className="h-3 w-3" />{c.instagram}</span>}
           </div>
         </div>
-        {activePack && (
+        {activePack && !isSub && (
           <Card className="p-4 min-w-[220px]">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pacote ativo</p>
             <p className="font-display text-lg font-semibold">{PACKAGE_LABEL[activePack.size as PackageSize]}</p>
@@ -114,19 +139,34 @@ function ClientDetail() {
             </p>
           </Card>
         )}
+        {isSub && client.parent && (
+          <Card className="p-4 min-w-[220px]">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pacote</p>
+            <p className="text-sm">Pertence ao pacote de <Link to="/clientes/$clientId" params={{ clientId: client.parent.id }} className="font-medium text-primary hover:underline">{client.parent.name}</Link></p>
+          </Card>
+        )}
       </div>
 
-      <Tabs defaultValue="overview" className="mt-6">
+      <Tabs defaultValue={isParent ? "subs" : "overview"} className="mt-6">
         <TabsList className="flex-wrap h-auto">
+          {isParent && <TabsTrigger value="subs">Marcas ({client.subs.length})</TabsTrigger>}
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
           <TabsTrigger value="demands">Vídeos ({client.videos.length})</TabsTrigger>
           <TabsTrigger value="library">Biblioteca ({files.length})</TabsTrigger>
           <TabsTrigger value="links">Links ({links.length})</TabsTrigger>
           <TabsTrigger value="briefing">Briefing</TabsTrigger>
-          <TabsTrigger value="financial">Financeiro</TabsTrigger>
+          {!isSub && <TabsTrigger value="financial">Financeiro</TabsTrigger>}
           <TabsTrigger value="relationship">Relacionamento</TabsTrigger>
           <TabsTrigger value="history">Histórico</TabsTrigger>
         </TabsList>
+
+        {isParent && (
+          <TabsContent value="subs" className="mt-4">
+            <SubClientsTab parentId={clientId} subs={client.subs} onChange={invalidate} />
+          </TabsContent>
+        )}
+
+
 
         <TabsContent value="overview" className="mt-4 grid gap-3 md:grid-cols-3">
           <Card className="p-4"><Stat label="Vídeos totais" value={String(client.videos.length)} /></Card>
@@ -836,5 +876,40 @@ function NewVideoDialog({ clientId, packageId, nextPosition }: { clientId: strin
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SubClientsTab({ parentId, subs, onChange }: { parentId: string; subs: { id: string; name: string; company: string | null; status: string; videos: { id: string; status: string }[] | null }[]; onChange: () => void }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">{subs.length} marca{subs.length === 1 ? "" : "s"} vinculada{subs.length === 1 ? "" : "s"}</p>
+        <AddSubClientButton parentId={parentId} />
+      </div>
+      {subs.length === 0 ? (
+        <Card className="p-8 text-center text-sm text-muted-foreground">Nenhuma marca ainda. Adicione a primeira.</Card>
+      ) : (
+        <div className="space-y-2">
+          {subs.map((s) => {
+            const vids = s.videos ?? [];
+            const pend = vids.filter((v) => v.status !== "entregue" && v.status !== "aprovado").length;
+            return (
+              <Link key={s.id} to="/clientes/$clientId" params={{ clientId: s.id }} onClick={onChange}
+                className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 transition hover:border-primary/40">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 font-display text-sm font-semibold text-primary">
+                  {initials(s.name)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{s.name}</p>
+                  {s.company && <p className="truncate text-xs text-muted-foreground">{s.company}</p>}
+                </div>
+                <span className="text-xs text-muted-foreground">{vids.length} vídeos · {pend} pendentes</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

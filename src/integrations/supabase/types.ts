@@ -370,6 +370,7 @@ export type Database = {
           logo_url: string | null
           name: string
           notes: string | null
+          parent_client_id: string | null
           phone: string | null
           status: string
           updated_at: string
@@ -393,6 +394,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           notes?: string | null
+          parent_client_id?: string | null
           phone?: string | null
           status?: string
           updated_at?: string
@@ -416,6 +418,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           notes?: string | null
+          parent_client_id?: string | null
           phone?: string | null
           status?: string
           updated_at?: string
@@ -424,6 +427,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_parent_client_id_fkey"
+            columns: ["parent_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_workspace_id_fkey"
             columns: ["workspace_id"]
