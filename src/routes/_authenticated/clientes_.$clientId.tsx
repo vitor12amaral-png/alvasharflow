@@ -49,7 +49,7 @@ function ClientDetail() {
   const { data: client, isLoading } = useQuery({
     queryKey: ["client", clientId],
     queryFn: async () => {
-      const [c, packs, vids, lib, acts, ints, fbs, tokens] = await Promise.all([
+      const [c, packs, vids, lib, acts, ints, fbs, tokens, subs] = await Promise.all([
         supabase.from("clients").select("*").eq("id", clientId).maybeSingle(),
         supabase.from("client_packages").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("videos").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
@@ -58,10 +58,18 @@ function ClientDetail() {
         supabase.from("client_interactions").select("*").eq("client_id", clientId).order("happened_at", { ascending: false }),
         supabase.from("client_feedback").select("nps, comment, created_at").eq("client_id", clientId),
         supabase.from("client_portal_tokens").select("token, expires_at, revoked_at, created_at").eq("client_id", clientId).is("revoked_at", null).order("created_at", { ascending: false }).limit(1),
+        supabase.from("clients").select("id, name, company, status, videos(id, status)").eq("parent_client_id", clientId).order("name"),
       ]);
       if (c.error) throw c.error;
+      let parent: { id: string; name: string } | null = null;
+      if (c.data?.parent_client_id) {
+        const { data: p } = await supabase.from("clients").select("id, name").eq("id", c.data.parent_client_id).maybeSingle();
+        parent = p ?? null;
+      }
       return {
         client: c.data,
+        parent,
+        subs: (subs.data ?? []) as { id: string; name: string; company: string | null; status: string; videos: { id: string; status: string }[] | null }[],
         packages: packs.data ?? [],
         videos: vids.data ?? [],
         library: lib.data ?? [],
