@@ -94,18 +94,33 @@ function ClientDetail() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["client", clientId] });
 
+  const isParent = client.subs.length > 0;
+  const isSub = !!client.parent;
+
   return (
     <div className="p-6 md:p-8">
-      <Link to="/clientes" className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-3 w-3" />Todos os clientes
-      </Link>
+      {isSub && client.parent ? (
+        <Link to="/clientes/$clientId" params={{ clientId: client.parent.id }} className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-3 w-3" />Voltar para {client.parent.name}
+        </Link>
+      ) : (
+        <Link to="/clientes" className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-3 w-3" />Todos os clientes
+        </Link>
+      )}
 
       <div className="flex flex-wrap items-start gap-4">
         <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/15 font-display text-xl font-bold text-primary">
           {initials(c.name)}
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="font-display text-2xl font-semibold tracking-tight">{c.name}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-display text-2xl font-semibold tracking-tight">{c.name}</h1>
+            {isParent && (
+              <Badge variant="outline" className="text-[10px]">Cliente-mãe · {client.subs.length} marca{client.subs.length === 1 ? "" : "s"}</Badge>
+            )}
+            {isSub && <Badge variant="secondary" className="text-[10px]">Marca</Badge>}
+          </div>
           {c.company && <p className="text-sm text-muted-foreground">{c.company}</p>}
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {c.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{c.email}</span>}
@@ -113,7 +128,7 @@ function ClientDetail() {
             {c.instagram && <span className="inline-flex items-center gap-1"><Instagram className="h-3 w-3" />{c.instagram}</span>}
           </div>
         </div>
-        {activePack && (
+        {activePack && !isSub && (
           <Card className="p-4 min-w-[220px]">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pacote ativo</p>
             <p className="font-display text-lg font-semibold">{PACKAGE_LABEL[activePack.size as PackageSize]}</p>
@@ -122,19 +137,34 @@ function ClientDetail() {
             </p>
           </Card>
         )}
+        {isSub && client.parent && (
+          <Card className="p-4 min-w-[220px]">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pacote</p>
+            <p className="text-sm">Pertence ao pacote de <Link to="/clientes/$clientId" params={{ clientId: client.parent.id }} className="font-medium text-primary hover:underline">{client.parent.name}</Link></p>
+          </Card>
+        )}
       </div>
 
-      <Tabs defaultValue="overview" className="mt-6">
+      <Tabs defaultValue={isParent ? "subs" : "overview"} className="mt-6">
         <TabsList className="flex-wrap h-auto">
+          {isParent && <TabsTrigger value="subs">Marcas ({client.subs.length})</TabsTrigger>}
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
           <TabsTrigger value="demands">Vídeos ({client.videos.length})</TabsTrigger>
           <TabsTrigger value="library">Biblioteca ({files.length})</TabsTrigger>
           <TabsTrigger value="links">Links ({links.length})</TabsTrigger>
           <TabsTrigger value="briefing">Briefing</TabsTrigger>
-          <TabsTrigger value="financial">Financeiro</TabsTrigger>
+          {!isSub && <TabsTrigger value="financial">Financeiro</TabsTrigger>}
           <TabsTrigger value="relationship">Relacionamento</TabsTrigger>
           <TabsTrigger value="history">Histórico</TabsTrigger>
         </TabsList>
+
+        {isParent && (
+          <TabsContent value="subs" className="mt-4">
+            <SubClientsTab parentId={clientId} subs={client.subs} onChange={invalidate} />
+          </TabsContent>
+        )}
+
+
 
         <TabsContent value="overview" className="mt-4 grid gap-3 md:grid-cols-3">
           <Card className="p-4"><Stat label="Vídeos totais" value={String(client.videos.length)} /></Card>
