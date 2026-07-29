@@ -233,7 +233,8 @@ export function AddSubClientButton({ parentId }: { parentId: string }) {
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const qc = useQueryClient();
-  const { workspaceId } = useCurrentUser();
+  const { data: me } = useCurrentUser();
+  const workspaceId = me?.workspaceId ?? null;
 
   const create = useMutation({
     mutationFn: async () => {
