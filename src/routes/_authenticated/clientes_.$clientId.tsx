@@ -878,3 +878,38 @@ function NewVideoDialog({ clientId, packageId, nextPosition }: { clientId: strin
     </Dialog>
   );
 }
+
+function SubClientsTab({ parentId, subs, onChange }: { parentId: string; subs: { id: string; name: string; company: string | null; status: string; videos: { id: string; status: string }[] | null }[]; onChange: () => void }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">{subs.length} marca{subs.length === 1 ? "" : "s"} vinculada{subs.length === 1 ? "" : "s"}</p>
+        <AddSubClientButton parentId={parentId} />
+      </div>
+      {subs.length === 0 ? (
+        <Card className="p-8 text-center text-sm text-muted-foreground">Nenhuma marca ainda. Adicione a primeira.</Card>
+      ) : (
+        <div className="space-y-2">
+          {subs.map((s) => {
+            const vids = s.videos ?? [];
+            const pend = vids.filter((v) => v.status !== "entregue" && v.status !== "aprovado").length;
+            return (
+              <Link key={s.id} to="/clientes/$clientId" params={{ clientId: s.id }} onClick={onChange}
+                className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 transition hover:border-primary/40">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 font-display text-sm font-semibold text-primary">
+                  {initials(s.name)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{s.name}</p>
+                  {s.company && <p className="truncate text-xs text-muted-foreground">{s.company}</p>}
+                </div>
+                <span className="text-xs text-muted-foreground">{vids.length} vídeos · {pend} pendentes</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
