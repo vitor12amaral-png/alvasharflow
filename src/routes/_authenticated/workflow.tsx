@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DeleteAction } from "@/components/delete-action";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Loader2, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
