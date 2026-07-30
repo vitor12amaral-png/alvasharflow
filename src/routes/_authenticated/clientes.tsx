@@ -189,7 +189,17 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
             </div>
           </div>
         </Link>
+        <DeleteAction
+          table="clients"
+          id={client.id}
+          title={`Excluir ${client.name}?`}
+          description="Todos os vídeos, pacotes, links e histórico deste cliente serão removidos permanentemente."
+          successMessage="Cliente excluído"
+          invalidate={[["clients"], ["dashboard"], ["clients-min"]]}
+          className="mt-1"
+        />
       </div>
+
       {open && hasSubs && (
         <div className="border-t border-border bg-muted/20">
           {subs.map((s) => {
