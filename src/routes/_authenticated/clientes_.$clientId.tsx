@@ -146,7 +146,19 @@ function ClientDetail() {
             <p className="text-sm">Pertence ao pacote de <Link to="/clientes/$clientId" params={{ clientId: client.parent.id }} className="font-medium text-primary hover:underline">{client.parent.name}</Link></p>
           </Card>
         )}
+        <DeleteAction
+          table="clients"
+          id={clientId}
+          variant="button"
+          label="Excluir cliente"
+          title={`Excluir ${c.name}?`}
+          description="Vídeos, pacotes, links, interações e histórico deste cliente serão removidos permanentemente."
+          successMessage="Cliente excluído"
+          invalidate={[["clients"], ["dashboard"], ["clients-min"]]}
+          onDeleted={() => navigate({ to: "/clientes" })}
+        />
       </div>
+
 
       <Tabs defaultValue={isParent ? "subs" : "overview"} className="mt-6">
         <TabsList className="flex-wrap h-auto">
