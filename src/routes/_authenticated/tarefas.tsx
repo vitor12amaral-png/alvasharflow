@@ -211,13 +211,17 @@ function TaskCard({ task, onStatus, onDelete }: { task: Task; onStatus: (s: Task
           </div>
           <div className="mt-2 flex items-center gap-2">
             <StartTimerButton taskId={task.id} label={task.title} />
-            <button
-              onClick={() => { if (confirm(`Excluir a tarefa "${task.title}"?`)) onDelete(); }}
-              className="ml-auto text-muted-foreground hover:text-destructive"
-              title="Excluir tarefa"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            <div className="ml-auto">
+              <DeleteAction
+                table="tasks"
+                id={task.id}
+                title={`Excluir a tarefa "${task.title}"?`}
+                description="A tarefa será removida permanentemente."
+                successMessage="Tarefa excluída"
+                invalidate={[["tasks"]]}
+              />
+            </div>
+
           </div>
         </div>
       </div>
