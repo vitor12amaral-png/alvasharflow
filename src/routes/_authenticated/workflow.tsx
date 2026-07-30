@@ -696,7 +696,23 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
         <SheetHeader>
           <SheetTitle>{video?.title ?? "Vídeo"}</SheetTitle>
           {video?.clients?.name && <p className="text-xs text-muted-foreground">{video.clients.name}</p>}
+          {videoId && (
+            <div className="pt-2">
+              <DeleteAction
+                table="videos"
+                id={videoId}
+                variant="button"
+                label="Excluir vídeo"
+                title={`Excluir "${video?.title ?? "vídeo"}"?`}
+                description="O vídeo, seus links e arquivos serão removidos permanentemente."
+                successMessage="Vídeo excluído"
+                invalidate={[["videos-workflow"], ["videos-all"], ["dashboard"], ["clients"]]}
+                onDeleted={onClose}
+              />
+            </div>
+          )}
         </SheetHeader>
+
 
         {!video ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
