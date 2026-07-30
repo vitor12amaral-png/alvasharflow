@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2 } from "lucide-react";
 import { StartTimerButton } from "@/components/timer";
+import { DeleteAction } from "@/components/delete-action";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -211,13 +212,17 @@ function TaskCard({ task, onStatus, onDelete }: { task: Task; onStatus: (s: Task
           </div>
           <div className="mt-2 flex items-center gap-2">
             <StartTimerButton taskId={task.id} label={task.title} />
-            <button
-              onClick={() => { if (confirm(`Excluir a tarefa "${task.title}"?`)) onDelete(); }}
-              className="ml-auto text-muted-foreground hover:text-destructive"
-              title="Excluir tarefa"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            <div className="ml-auto">
+              <DeleteAction
+                table="tasks"
+                id={task.id}
+                title={`Excluir a tarefa "${task.title}"?`}
+                description="A tarefa será removida permanentemente."
+                successMessage="Tarefa excluída"
+                invalidate={[["tasks"]]}
+              />
+            </div>
+
           </div>
         </div>
       </div>

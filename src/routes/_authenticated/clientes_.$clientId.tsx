@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DeleteAction } from "@/components/delete-action";
 import { ArrowLeft, Instagram, Phone, Mail, ExternalLink, Loader2, Palette, Plus, X, Pencil, Save, Star, Link2, Upload, Copy, MessageSquare, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -46,6 +47,8 @@ const INTERACTION_KINDS = [
 
 function ClientDetail() {
   const { clientId } = Route.useParams();
+  const navigate = useNavigate();
+
   const qc = useQueryClient();
 
   const { data: client, isLoading } = useQuery({
@@ -145,7 +148,19 @@ function ClientDetail() {
             <p className="text-sm">Pertence ao pacote de <Link to="/clientes/$clientId" params={{ clientId: client.parent.id }} className="font-medium text-primary hover:underline">{client.parent.name}</Link></p>
           </Card>
         )}
+        <DeleteAction
+          table="clients"
+          id={clientId}
+          variant="button"
+          label="Excluir cliente"
+          title={`Excluir ${c.name}?`}
+          description="Vídeos, pacotes, links, interações e histórico deste cliente serão removidos permanentemente."
+          successMessage="Cliente excluído"
+          invalidate={[["clients"], ["dashboard"], ["clients-min"]]}
+          onDeleted={() => navigate({ to: "/clientes" })}
+        />
       </div>
+
 
       <Tabs defaultValue={isParent ? "subs" : "overview"} className="mt-6">
         <TabsList className="flex-wrap h-auto">
@@ -214,6 +229,16 @@ function ClientDetail() {
                   </div>
                   <span className="text-xs text-muted-foreground">{formatDate(v.due_date)}</span>
                   <StartTimerButton videoId={v.id} label={v.title} />
+                  <DeleteAction
+                    table="videos"
+                    id={v.id}
+                    title={`Excluir "${v.title}"?`}
+                    description="O vídeo e seus arquivos vinculados serão removidos permanentemente."
+                    successMessage="Vídeo excluído"
+                    invalidate={[["client", clientId], ["videos-workflow"], ["videos-all"], ["dashboard"], ["clients"]]}
+                    onDeleted={invalidate}
+                  />
+
                 </Card>
               ))}
             </div>
@@ -227,12 +252,24 @@ function ClientDetail() {
             <div className="grid gap-2 sm:grid-cols-2">
               {files.map((f) => (
                 <Card key={f.id} className="p-3">
-                  <Badge variant="outline" className="text-[10px]">{LIBRARY_LABEL[f.category as LibraryCategory]}</Badge>
+                  <div className="flex items-start justify-between gap-2">
+                    <Badge variant="outline" className="text-[10px]">{LIBRARY_LABEL[f.category as LibraryCategory]}</Badge>
+                    <DeleteAction
+                      table="client_library"
+                      id={f.id}
+                      title={`Excluir ${f.name}?`}
+                      description="O item será removido da biblioteca deste cliente."
+                      successMessage="Arquivo removido"
+                      invalidate={[["client", clientId], ["library"]]}
+                      onDeleted={invalidate}
+                    />
+                  </div>
                   <p className="mt-1 truncate text-sm font-medium">{f.name}</p>
                   <a href={f.url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
                     Abrir <ExternalLink className="h-3 w-3" />
                   </a>
                 </Card>
+
               ))}
             </div>
           )}
@@ -264,7 +301,17 @@ function ClientDetail() {
                     <p className="font-display text-base font-semibold">{formatBRL(p.price)}</p>
                     <Badge variant={p.status === "ativo" ? "default" : "outline"} className="text-[10px]">{p.status}</Badge>
                   </div>
+                  <DeleteAction
+                    table="client_packages"
+                    id={p.id}
+                    title="Excluir pacote?"
+                    description="O pacote será removido. Os vídeos já criados continuam existindo."
+                    successMessage="Pacote excluído"
+                    invalidate={[["client", clientId], ["finance"], ["dashboard"], ["clients"]]}
+                    onDeleted={invalidate}
+                  />
                 </Card>
+
               ))}
             </div>
           )}

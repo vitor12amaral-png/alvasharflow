@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DeleteAction } from "@/components/delete-action";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Loader2, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -331,17 +332,22 @@ function WorkflowBoard({ clientId, clients, onBack }: {
           onClear={clearSel}
           onSetStatus={(s) => { patch.mutate({ ids: Array.from(selected), changes: { status: s } }); clearSel(); }}
           onSetPriority={(p) => { patch.mutate({ ids: Array.from(selected), changes: { priority: p } }); clearSel(); }}
+          ids={Array.from(selected)}
+          onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
       )}
     </div>
   );
 }
 
-function BulkBar({ count, onClear, onSetStatus, onSetPriority }: {
+function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted }: {
   count: number;
   onClear: () => void;
   onSetStatus: (s: VideoStatus) => void;
   onSetPriority: (p: VideoPriority) => void;
+  ids: string[];
+  onDeleted: () => void;
+
 }) {
   return (
     <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
@@ -375,7 +381,20 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority }: {
             ))}
           </PopoverContent>
         </Popover>
+        <DeleteAction
+          table="videos"
+          id={ids}
+          variant="button"
+          label={`Excluir ${count}`}
+          title={`Excluir ${count} vídeo${count > 1 ? "s" : ""}?`}
+          description="Os vídeos selecionados serão removidos permanentemente."
+          successMessage="Vídeos excluídos"
+          invalidate={[["videos-workflow"], ["videos-all"], ["dashboard"], ["clients"]]}
+          onDeleted={onDeleted}
+          className="h-7"
+        />
         <button onClick={onClear} className="ml-1 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Limpar">
+
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -677,7 +696,23 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
         <SheetHeader>
           <SheetTitle>{video?.title ?? "Vídeo"}</SheetTitle>
           {video?.clients?.name && <p className="text-xs text-muted-foreground">{video.clients.name}</p>}
+          {videoId && (
+            <div className="pt-2">
+              <DeleteAction
+                table="videos"
+                id={videoId}
+                variant="button"
+                label="Excluir vídeo"
+                title={`Excluir "${video?.title ?? "vídeo"}"?`}
+                description="O vídeo, seus links e arquivos serão removidos permanentemente."
+                successMessage="Vídeo excluído"
+                invalidate={[["videos-workflow"], ["videos-all"], ["dashboard"], ["clients"]]}
+                onDeleted={onClose}
+              />
+            </div>
+          )}
         </SheetHeader>
+
 
         {!video ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>

@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { DeleteAction } from "@/components/delete-action";
 
 export const Route = createFileRoute("/_authenticated/marketing")({
   component: MarketingPage,
@@ -140,12 +141,23 @@ function IdeasGrid() {
         <Card key={s.id} className="p-3 hover:border-primary/40 transition">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium">{s.title}</p>
-            <Badge variant="outline" className="text-[10px]">{CHANNEL_LABEL[s.channel as Channel]}</Badge>
+            <div className="flex items-center gap-1">
+              <Badge variant="outline" className="text-[10px]">{CHANNEL_LABEL[s.channel as Channel]}</Badge>
+              <DeleteAction
+                table="marketing_scripts"
+                id={s.id}
+                title={`Excluir "${s.title}"?`}
+                description="A ideia será removida permanentemente."
+                successMessage="Ideia excluída"
+                invalidate={[["marketing-scripts"]]}
+              />
+            </div>
           </div>
           {s.hook && <p className="mt-2 text-[11px] text-muted-foreground line-clamp-3">{s.hook}</p>}
           <Button size="sm" variant="outline" className="mt-3 w-full h-7 text-xs" onClick={() => promote.mutate(s.id)}>
             Promover a roteiro
           </Button>
+
         </Card>
       ))}
     </div>
@@ -159,8 +171,19 @@ function ScriptCard({ script, onStatus }: { script: any; onStatus: (s: ScriptSta
       <Card className="p-3 cursor-pointer hover:border-primary/40 transition" onClick={() => setOpen(true)}>
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-medium line-clamp-2">{script.title}</p>
-          <Badge variant="outline" className={cn("text-[10px]", STATUS_TINT[script.status as ScriptStatus])}>{STATUS_LABEL[script.status as ScriptStatus]}</Badge>
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className={cn("text-[10px]", STATUS_TINT[script.status as ScriptStatus])}>{STATUS_LABEL[script.status as ScriptStatus]}</Badge>
+            <DeleteAction
+              table="marketing_scripts"
+              id={script.id}
+              title={`Excluir "${script.title}"?`}
+              description="O roteiro será removido permanentemente."
+              successMessage="Roteiro excluído"
+              invalidate={[["marketing-scripts"]]}
+            />
+          </div>
         </div>
+
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           <Badge variant="outline" className="text-[10px]">{CHANNEL_LABEL[script.channel as Channel]}</Badge>
           <Badge variant="outline" className="text-[10px]">{CONTENT_LABEL[script.content_type as ContentType]}</Badge>
@@ -209,8 +232,19 @@ function ReferencesList() {
         <Card key={r.id} className="p-3">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium line-clamp-2">{r.title}</p>
-            <a href={r.url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary"><ExternalLink className="h-3.5 w-3.5" /></a>
+            <div className="flex items-center gap-1">
+              <a href={r.url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary"><ExternalLink className="h-3.5 w-3.5" /></a>
+              <DeleteAction
+                table="marketing_references"
+                id={r.id}
+                title={`Excluir "${r.title}"?`}
+                description="A referência será removida permanentemente."
+                successMessage="Referência excluída"
+                invalidate={[["marketing-refs"]]}
+              />
+            </div>
           </div>
+
           {r.note && <p className="mt-1 text-[11px] text-muted-foreground line-clamp-3">{r.note}</p>}
         </Card>
       ))}
