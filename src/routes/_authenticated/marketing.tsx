@@ -171,8 +171,19 @@ function ScriptCard({ script, onStatus }: { script: any; onStatus: (s: ScriptSta
       <Card className="p-3 cursor-pointer hover:border-primary/40 transition" onClick={() => setOpen(true)}>
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-medium line-clamp-2">{script.title}</p>
-          <Badge variant="outline" className={cn("text-[10px]", STATUS_TINT[script.status as ScriptStatus])}>{STATUS_LABEL[script.status as ScriptStatus]}</Badge>
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className={cn("text-[10px]", STATUS_TINT[script.status as ScriptStatus])}>{STATUS_LABEL[script.status as ScriptStatus]}</Badge>
+            <DeleteAction
+              table="marketing_scripts"
+              id={script.id}
+              title={`Excluir "${script.title}"?`}
+              description="O roteiro será removido permanentemente."
+              successMessage="Roteiro excluído"
+              invalidate={[["marketing-scripts"]]}
+            />
+          </div>
         </div>
+
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           <Badge variant="outline" className="text-[10px]">{CHANNEL_LABEL[script.channel as Channel]}</Badge>
           <Badge variant="outline" className="text-[10px]">{CONTENT_LABEL[script.content_type as ContentType]}</Badge>
