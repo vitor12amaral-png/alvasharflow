@@ -332,13 +332,16 @@ function WorkflowBoard({ clientId, clients, onBack }: {
           onClear={clearSel}
           onSetStatus={(s) => { patch.mutate({ ids: Array.from(selected), changes: { status: s } }); clearSel(); }}
           onSetPriority={(p) => { patch.mutate({ ids: Array.from(selected), changes: { priority: p } }); clearSel(); }}
+          ids={Array.from(selected)}
+          onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
       )}
     </div>
   );
 }
 
-function BulkBar({ count, onClear, onSetStatus, onSetPriority }: {
+function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted }: {
+
   count: number;
   onClear: () => void;
   onSetStatus: (s: VideoStatus) => void;
