@@ -100,7 +100,16 @@ function VideosPage() {
                     {formatDate(v.due_date)}
                   </span>
                 )}
+                <DeleteAction
+                  table="videos"
+                  id={v.id}
+                  title={`Excluir "${v.title}"?`}
+                  description="O vídeo será removido permanentemente."
+                  successMessage="Vídeo excluído"
+                  invalidate={[["videos-all"], ["videos-workflow"], ["dashboard"], ["clients"]]}
+                />
               </div>
+
             );
           })}
         </Card>
