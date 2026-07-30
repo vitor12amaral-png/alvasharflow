@@ -301,7 +301,17 @@ function ClientDetail() {
                     <p className="font-display text-base font-semibold">{formatBRL(p.price)}</p>
                     <Badge variant={p.status === "ativo" ? "default" : "outline"} className="text-[10px]">{p.status}</Badge>
                   </div>
+                  <DeleteAction
+                    table="client_packages"
+                    id={p.id}
+                    title="Excluir pacote?"
+                    description="O pacote será removido. Os vídeos já criados continuam existindo."
+                    successMessage="Pacote excluído"
+                    invalidate={[["client", clientId], ["finance"], ["dashboard"], ["clients"]]}
+                    onDeleted={invalidate}
+                  />
                 </Card>
+
               ))}
             </div>
           )}
