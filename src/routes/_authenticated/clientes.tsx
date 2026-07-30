@@ -207,24 +207,34 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
             const svids = s.videos ?? [];
             const sPend = svids.filter((v) => v.status !== "entregue" && v.status !== "aprovado").length;
             return (
-              <Link
-                key={s.id}
-                to="/clientes/$clientId"
-                params={{ clientId: s.id }}
-                className="flex items-center gap-3 border-b border-border/60 px-6 py-3 pl-14 last:border-0 hover:bg-muted/40"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted font-display text-xs font-semibold">
-                  {initials(s.name)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{s.name}</p>
-                  {s.company && <p className="truncate text-[11px] text-muted-foreground">{s.company}</p>}
-                </div>
-                <span className="text-[11px] text-muted-foreground">{svids.length} vídeos · {sPend} pendentes</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </Link>
+              <div key={s.id} className="flex items-center gap-2 border-b border-border/60 pr-4 last:border-0 hover:bg-muted/40">
+                <Link
+                  to="/clientes/$clientId"
+                  params={{ clientId: s.id }}
+                  className="flex flex-1 min-w-0 items-center gap-3 px-6 py-3 pl-14"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted font-display text-xs font-semibold">
+                    {initials(s.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{s.name}</p>
+                    {s.company && <p className="truncate text-[11px] text-muted-foreground">{s.company}</p>}
+                  </div>
+                  <span className="text-[11px] text-muted-foreground">{svids.length} vídeos · {sPend} pendentes</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+                <DeleteAction
+                  table="clients"
+                  id={s.id}
+                  title={`Excluir marca ${s.name}?`}
+                  description="Os vídeos e dados desta marca serão removidos permanentemente."
+                  successMessage="Marca excluída"
+                  invalidate={[["clients"], ["dashboard"], ["clients-min"]]}
+                />
+              </div>
             );
           })}
+
           <div className="px-6 py-2 pl-14">
             <AddSubClientButton parentId={client.id} />
           </div>
