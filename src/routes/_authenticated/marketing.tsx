@@ -232,8 +232,19 @@ function ReferencesList() {
         <Card key={r.id} className="p-3">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium line-clamp-2">{r.title}</p>
-            <a href={r.url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary"><ExternalLink className="h-3.5 w-3.5" /></a>
+            <div className="flex items-center gap-1">
+              <a href={r.url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary"><ExternalLink className="h-3.5 w-3.5" /></a>
+              <DeleteAction
+                table="marketing_references"
+                id={r.id}
+                title={`Excluir "${r.title}"?`}
+                description="A referência será removida permanentemente."
+                successMessage="Referência excluída"
+                invalidate={[["marketing-refs"]]}
+              />
+            </div>
           </div>
+
           {r.note && <p className="mt-1 text-[11px] text-muted-foreground line-clamp-3">{r.note}</p>}
         </Card>
       ))}
