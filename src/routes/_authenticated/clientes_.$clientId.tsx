@@ -252,12 +252,24 @@ function ClientDetail() {
             <div className="grid gap-2 sm:grid-cols-2">
               {files.map((f) => (
                 <Card key={f.id} className="p-3">
-                  <Badge variant="outline" className="text-[10px]">{LIBRARY_LABEL[f.category as LibraryCategory]}</Badge>
+                  <div className="flex items-start justify-between gap-2">
+                    <Badge variant="outline" className="text-[10px]">{LIBRARY_LABEL[f.category as LibraryCategory]}</Badge>
+                    <DeleteAction
+                      table="client_library"
+                      id={f.id}
+                      title={`Excluir ${f.name}?`}
+                      description="O item será removido da biblioteca deste cliente."
+                      successMessage="Arquivo removido"
+                      invalidate={[["client", clientId], ["library"]]}
+                      onDeleted={invalidate}
+                    />
+                  </div>
                   <p className="mt-1 truncate text-sm font-medium">{f.name}</p>
                   <a href={f.url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
                     Abrir <ExternalLink className="h-3 w-3" />
                   </a>
                 </Card>
+
               ))}
             </div>
           )}
