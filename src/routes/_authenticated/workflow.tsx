@@ -381,7 +381,20 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted }:
             ))}
           </PopoverContent>
         </Popover>
+        <DeleteAction
+          table="videos"
+          id={ids}
+          variant="button"
+          label={`Excluir ${count}`}
+          title={`Excluir ${count} vídeo${count > 1 ? "s" : ""}?`}
+          description="Os vídeos selecionados serão removidos permanentemente."
+          successMessage="Vídeos excluídos"
+          invalidate={[["videos-workflow"], ["videos-all"], ["dashboard"], ["clients"]]}
+          onDeleted={onDeleted}
+          className="h-7"
+        />
         <button onClick={onClear} className="ml-1 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Limpar">
+
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
