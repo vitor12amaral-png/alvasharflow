@@ -47,6 +47,8 @@ const INTERACTION_KINDS = [
 
 function ClientDetail() {
   const { clientId } = Route.useParams();
+  const navigate = useNavigate();
+
   const qc = useQueryClient();
 
   const { data: client, isLoading } = useQuery({
