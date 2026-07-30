@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { LIBRARY_LABEL } from "@/lib/video-workflow";
 import type { LibraryCategory } from "@/lib/video-workflow";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { DeleteAction } from "@/components/delete-action";
 
 export const Route = createFileRoute("/_authenticated/biblioteca")({
   component: BibliotecaPage,
@@ -87,9 +88,14 @@ function BibliotecaPage() {
                         Abrir <ExternalLink className="h-2.5 w-2.5" />
                       </a>
                     </div>
-                    <button onClick={() => confirm("Remover?") && del.mutate(i.id)} className="opacity-0 transition group-hover:opacity-100">
-                      <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                    </button>
+                    <DeleteAction
+                      table="client_library"
+                      id={i.id}
+                      title={`Excluir ${i.name}?`}
+                      description="O item será removido da biblioteca."
+                      successMessage="Arquivo removido"
+                      invalidate={[["library"], ["client"]]}
+                    />
                   </div>
                 ))}
               </div>
