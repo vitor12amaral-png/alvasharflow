@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { initials, formatBRL } from "@/lib/format";
 import { ClientWizard } from "@/components/client-wizard";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { DeleteAction } from "@/components/delete-action";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,
