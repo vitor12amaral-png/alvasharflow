@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { DeleteAction } from "@/components/delete-action";
 
 export const Route = createFileRoute("/_authenticated/marketing")({
   component: MarketingPage,
