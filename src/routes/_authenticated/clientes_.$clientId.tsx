@@ -229,6 +229,16 @@ function ClientDetail() {
                   </div>
                   <span className="text-xs text-muted-foreground">{formatDate(v.due_date)}</span>
                   <StartTimerButton videoId={v.id} label={v.title} />
+                  <DeleteAction
+                    table="videos"
+                    id={v.id}
+                    title={`Excluir "${v.title}"?`}
+                    description="O vídeo e seus arquivos vinculados serão removidos permanentemente."
+                    successMessage="Vídeo excluído"
+                    invalidate={[["client", clientId], ["videos-workflow"], ["videos-all"], ["dashboard"], ["clients"]]}
+                    onDeleted={invalidate}
+                  />
+
                 </Card>
               ))}
             </div>
