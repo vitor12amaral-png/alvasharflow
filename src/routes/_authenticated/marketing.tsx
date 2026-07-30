@@ -141,12 +141,23 @@ function IdeasGrid() {
         <Card key={s.id} className="p-3 hover:border-primary/40 transition">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium">{s.title}</p>
-            <Badge variant="outline" className="text-[10px]">{CHANNEL_LABEL[s.channel as Channel]}</Badge>
+            <div className="flex items-center gap-1">
+              <Badge variant="outline" className="text-[10px]">{CHANNEL_LABEL[s.channel as Channel]}</Badge>
+              <DeleteAction
+                table="marketing_scripts"
+                id={s.id}
+                title={`Excluir "${s.title}"?`}
+                description="A ideia será removida permanentemente."
+                successMessage="Ideia excluída"
+                invalidate={[["marketing-scripts"]]}
+              />
+            </div>
           </div>
           {s.hook && <p className="mt-2 text-[11px] text-muted-foreground line-clamp-3">{s.hook}</p>}
           <Button size="sm" variant="outline" className="mt-3 w-full h-7 text-xs" onClick={() => promote.mutate(s.id)}>
             Promover a roteiro
           </Button>
+
         </Card>
       ))}
     </div>
