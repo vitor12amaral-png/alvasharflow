@@ -213,6 +213,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   });
 
 
+  const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
   type VideoPatch = { status?: VideoStatus; due_date?: string | null; priority?: VideoPriority };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
@@ -220,15 +221,15 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       if (error) throw error;
     },
     onMutate: async ({ ids, changes }) => {
-      await qc.cancelQueries({ queryKey: ["videos-workflow", clientId] });
-      const prev = qc.getQueryData<VideoRow[]>(["videos-workflow", clientId]);
-      qc.setQueryData<VideoRow[]>(["videos-workflow", clientId], (old) =>
+      await qc.cancelQueries({ queryKey: qkey });
+      const prev = qc.getQueryData<VideoRow[]>(qkey);
+      qc.setQueryData<VideoRow[]>(qkey, (old) =>
         (old ?? []).map((v) => (ids.includes(v.id) ? { ...v, ...changes } as VideoRow : v)),
       );
       return { prev };
     },
     onError: (_e, _v, ctx) => {
-      qc.setQueryData(["videos-workflow", clientId], ctx?.prev);
+      qc.setQueryData(qkey, ctx?.prev);
       toast.error("Falha ao atualizar");
     },
     onSuccess: () => {
