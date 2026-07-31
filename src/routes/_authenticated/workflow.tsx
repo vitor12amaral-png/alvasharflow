@@ -567,7 +567,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: video.id });
   return (
-    <div ref={setNodeRef}
+    <div ref={setNodeRef} data-vid={video.id}
       style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined}
       className={cn(
         "group rounded-md border border-border bg-card px-2.5 py-2 text-sm shadow-sm transition hover:border-primary/40",
