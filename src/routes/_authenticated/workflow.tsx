@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DeleteAction } from "@/components/delete-action";
+import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Loader2, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -54,12 +55,15 @@ type VideoRow = {
   clients: { name: string } | null;
 };
 
+type ClientMin = { id: string; name: string; parent_client_id: string | null };
+
 function WorkflowPage() {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
 
   const { data: clients } = useQuery({
     queryKey: ["clients-min"],
-    queryFn: async () => (await supabase.from("clients").select("id, name").order("name")).data ?? [],
+    queryFn: async () =>
+      ((await supabase.from("clients").select("id, name, parent_client_id").order("name")).data ?? []) as ClientMin[],
   });
 
   if (!selectedClient) {
@@ -68,7 +72,7 @@ function WorkflowPage() {
   return <WorkflowBoard clientId={selectedClient} clients={clients ?? []} onBack={() => setSelectedClient(null)} />;
 }
 
-function ClientPicker({ clients, onPick }: { clients: { id: string; name: string }[]; onPick: (id: string) => void }) {
+function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: string) => void }) {
   const [q, setQ] = useState("");
   const { data: counts } = useQuery({
     queryKey: ["clients-video-counts"],
@@ -85,18 +89,40 @@ function ClientPicker({ clients, onPick }: { clients: { id: string; name: string
     },
   });
 
-  const filtered = clients.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));
+  const term = q.toLowerCase();
+  const parents = clients.filter((c) => !c.parent_client_id);
+  const childrenOf = (id: string) => clients.filter((c) => c.parent_client_id === id);
+
+  const visible = parents
+    .map((p) => {
+      const kids = childrenOf(p.id);
+      const matches = p.name.toLowerCase().includes(term);
+      const matchedKids = kids.filter((k) => k.name.toLowerCase().includes(term));
+      if (!term || matches) return { parent: p, kids };
+      if (matchedKids.length) return { parent: p, kids: matchedKids };
+      return null;
+    })
+    .filter(Boolean) as { parent: ClientMin; kids: ClientMin[] }[];
+
+  const sum = (ids: string[]) =>
+    ids.reduce(
+      (acc, id) => {
+        const i = counts?.get(id);
+        return { total: acc.total + (i?.total ?? 0), pendentes: acc.pendentes + (i?.pendentes ?? 0) };
+      },
+      { total: 0, pendentes: 0 },
+    );
 
   return (
     <div className="px-6 pt-6 md:px-8 md:pt-8">
       <PageHeader title="Workflow" subtitle="Escolha o cliente para abrir o quadro de demandas" />
       <div className="mt-6 max-w-md">
-        <Input placeholder="Buscar cliente…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Input placeholder="Buscar cliente ou marca…" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       <div className="mt-6 grid grid-cols-1 gap-3 pb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <button
           onClick={() => onPick("all")}
-          className="group flex items-center gap-3 rounded-lg border border-dashed border-border bg-card/30 px-4 py-4 text-left transition hover:border-primary/50 hover:bg-card/60"
+          className="group flex items-center gap-3 self-start rounded-lg border border-dashed border-border bg-card/30 px-4 py-4 text-left transition hover:border-primary/50 hover:bg-card/60"
         >
           <div className="rounded-md bg-primary/10 p-2 text-primary"><Users className="h-4 w-4" /></div>
           <div className="min-w-0">
@@ -104,22 +130,44 @@ function ClientPicker({ clients, onPick }: { clients: { id: string; name: string
             <p className="text-xs text-muted-foreground">Visão consolidada</p>
           </div>
         </button>
-        {filtered.map((c) => {
-          const info = counts?.get(c.id);
+        {visible.map(({ parent, kids }) => {
+          const info = sum([parent.id, ...kids.map((k) => k.id)]);
           return (
-            <button
-              key={c.id}
-              onClick={() => onPick(c.id)}
-              className="group flex items-center gap-3 rounded-lg border border-border bg-card/40 px-4 py-4 text-left transition hover:border-primary/50 hover:bg-card"
-            >
-              <div className="rounded-md bg-muted/60 p-2 text-muted-foreground group-hover:text-foreground"><Folder className="h-4 w-4" /></div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{c.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {info ? `${info.pendentes} pendentes · ${info.total} vídeos` : "Sem vídeos"}
-                </p>
-              </div>
-            </button>
+            <div key={parent.id} className="self-start rounded-lg border border-border bg-card/40 transition hover:border-primary/40">
+              <button
+                onClick={() => onPick(parent.id)}
+                className="group flex w-full items-center gap-3 px-4 py-4 text-left"
+              >
+                <div className="rounded-md bg-muted/60 p-2 text-muted-foreground group-hover:text-foreground">
+                  {kids.length > 0 ? <Layers className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{parent.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {info.total > 0 ? `${info.pendentes} pendentes · ${info.total} vídeos` : "Sem vídeos"}
+                    {kids.length > 0 && ` · ${kids.length} marca${kids.length > 1 ? "s" : ""}`}
+                  </p>
+                </div>
+              </button>
+              {kids.length > 0 && (
+                <div className="border-t border-border/60 px-2 pb-2 pt-1.5">
+                  {kids.map((k) => {
+                    const ki = counts?.get(k.id);
+                    return (
+                      <button
+                        key={k.id}
+                        onClick={() => onPick(k.id)}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-muted/50"
+                      >
+                        <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+                        <span className="min-w-0 flex-1 truncate text-xs">{k.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{ki?.total ?? 0}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -127,9 +175,10 @@ function ClientPicker({ clients, onPick }: { clients: { id: string; name: string
   );
 }
 
+
 function WorkflowBoard({ clientId, clients, onBack }: {
   clientId: string;
-  clients: { id: string; name: string }[];
+  clients: ClientMin[];
   onBack: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -148,18 +197,24 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   }
 
   const clientName = clientId === "all" ? "Todos os clientes" : clients.find((c) => c.id === clientId)?.name ?? "Cliente";
+  const scopeIds = useMemo(
+    () => (clientId === "all" ? [] : [clientId, ...clients.filter((c) => c.parent_client_id === clientId).map((c) => c.id)]),
+    [clientId, clients],
+  );
 
   const { data: videos, isLoading } = useQuery({
-    queryKey: ["videos-workflow", clientId],
+    queryKey: ["videos-workflow", clientId, scopeIds.join(",")],
     queryFn: async () => {
       let q = supabase.from("videos").select("id, title, status, priority, due_date, client_id, clients(name)").order("position");
-      if (clientId !== "all") q = q.eq("client_id", clientId);
+      if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as VideoRow[];
     },
   });
 
+
+  const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
   type VideoPatch = { status?: VideoStatus; due_date?: string | null; priority?: VideoPriority };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
@@ -167,15 +222,15 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       if (error) throw error;
     },
     onMutate: async ({ ids, changes }) => {
-      await qc.cancelQueries({ queryKey: ["videos-workflow", clientId] });
-      const prev = qc.getQueryData<VideoRow[]>(["videos-workflow", clientId]);
-      qc.setQueryData<VideoRow[]>(["videos-workflow", clientId], (old) =>
+      await qc.cancelQueries({ queryKey: qkey });
+      const prev = qc.getQueryData<VideoRow[]>(qkey);
+      qc.setQueryData<VideoRow[]>(qkey, (old) =>
         (old ?? []).map((v) => (ids.includes(v.id) ? { ...v, ...changes } as VideoRow : v)),
       );
       return { prev };
     },
     onError: (_e, _v, ctx) => {
-      qc.setQueryData(["videos-workflow", clientId], ctx?.prev);
+      qc.setQueryData(qkey, ctx?.prev);
       toast.error("Falha ao atualizar");
     },
     onSuccess: () => {
@@ -183,6 +238,14 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
+
+  const marquee = useMarquee((ids, additive) =>
+    setSelected((prev) => {
+      const next = additive ? new Set(prev) : new Set<string>();
+      ids.forEach((id) => next.add(id));
+      return next;
+    }),
+  );
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -261,8 +324,14 @@ function WorkflowBoard({ clientId, clients, onBack }: {
         <div className="mt-4 flex flex-1 flex-col gap-6 px-6 pb-24 md:px-8">
           {view !== "list" && (
             <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-              <div className="overflow-x-auto">
+              <div
+                ref={marquee.containerRef}
+                onPointerDown={marquee.onPointerDown}
+                className="relative overflow-x-auto select-none"
+              >
+                {marquee.overlay}
                 <div className="flex min-w-max gap-3">
+
                   {GROUPS.map((g) => {
                     const vids = grouped[g.id];
                     // group cards by client inside column for visual organization
@@ -498,7 +567,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: video.id });
   return (
-    <div ref={setNodeRef}
+    <div ref={setNodeRef} data-vid={video.id}
       style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined}
       className={cn(
         "group rounded-md border border-border bg-card px-2.5 py-2 text-sm shadow-sm transition hover:border-primary/40",
