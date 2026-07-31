@@ -177,7 +177,7 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
 
 function WorkflowBoard({ clientId, clients, onBack }: {
   clientId: string;
-  clients: { id: string; name: string }[];
+  clients: ClientMin[];
   onBack: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -196,17 +196,22 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   }
 
   const clientName = clientId === "all" ? "Todos os clientes" : clients.find((c) => c.id === clientId)?.name ?? "Cliente";
+  const scopeIds = useMemo(
+    () => (clientId === "all" ? [] : [clientId, ...clients.filter((c) => c.parent_client_id === clientId).map((c) => c.id)]),
+    [clientId, clients],
+  );
 
   const { data: videos, isLoading } = useQuery({
-    queryKey: ["videos-workflow", clientId],
+    queryKey: ["videos-workflow", clientId, scopeIds.join(",")],
     queryFn: async () => {
       let q = supabase.from("videos").select("id, title, status, priority, due_date, client_id, clients(name)").order("position");
-      if (clientId !== "all") q = q.eq("client_id", clientId);
+      if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as VideoRow[];
     },
   });
+
 
   type VideoPatch = { status?: VideoStatus; due_date?: string | null; priority?: VideoPriority };
   const patch = useMutation({
