@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DeleteAction } from "@/components/delete-action";
+import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Loader2, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -237,6 +238,14 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
+
+  const marquee = useMarquee((ids, additive) =>
+    setSelected((prev) => {
+      const next = additive ? new Set(prev) : new Set<string>();
+      ids.forEach((id) => next.add(id));
+      return next;
+    }),
+  );
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
