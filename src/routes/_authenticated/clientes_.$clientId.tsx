@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DeleteAction } from "@/components/delete-action";
+import { EditClientDialog } from "@/components/edit-client-dialog";
+import { EditPackageDialog } from "@/components/edit-package-dialog";
 import { ArrowLeft, Instagram, Phone, Mail, ExternalLink, Loader2, Palette, Plus, X, Pencil, Save, Star, Link2, Upload, Copy, MessageSquare, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -148,6 +150,7 @@ function ClientDetail() {
             <p className="text-sm">Pertence ao pacote de <Link to="/clientes/$clientId" params={{ clientId: client.parent.id }} className="font-medium text-primary hover:underline">{client.parent.name}</Link></p>
           </Card>
         )}
+        <EditClientDialog client={c as never} onSaved={invalidate} />
         <DeleteAction
           table="clients"
           id={clientId}
@@ -301,6 +304,7 @@ function ClientDetail() {
                     <p className="font-display text-base font-semibold">{formatBRL(p.price)}</p>
                     <Badge variant={p.status === "ativo" ? "default" : "outline"} className="text-[10px]">{p.status}</Badge>
                   </div>
+                  <EditPackageDialog pack={p as never} onSaved={invalidate} />
                   <DeleteAction
                     table="client_packages"
                     id={p.id}
