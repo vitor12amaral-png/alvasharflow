@@ -315,8 +315,14 @@ function WorkflowBoard({ clientId, clients, onBack }: {
         <div className="mt-4 flex flex-1 flex-col gap-6 px-6 pb-24 md:px-8">
           {view !== "list" && (
             <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-              <div className="overflow-x-auto">
+              <div
+                ref={marquee.containerRef}
+                onPointerDown={marquee.onPointerDown}
+                className="relative overflow-x-auto select-none"
+              >
+                {marquee.overlay}
                 <div className="flex min-w-max gap-3">
+
                   {GROUPS.map((g) => {
                     const vids = grouped[g.id];
                     // group cards by client inside column for visual organization
