@@ -54,12 +54,15 @@ type VideoRow = {
   clients: { name: string } | null;
 };
 
+type ClientMin = { id: string; name: string; parent_client_id: string | null };
+
 function WorkflowPage() {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
 
   const { data: clients } = useQuery({
     queryKey: ["clients-min"],
-    queryFn: async () => (await supabase.from("clients").select("id, name").order("name")).data ?? [],
+    queryFn: async () =>
+      ((await supabase.from("clients").select("id, name, parent_client_id").order("name")).data ?? []) as ClientMin[],
   });
 
   if (!selectedClient) {
@@ -68,7 +71,7 @@ function WorkflowPage() {
   return <WorkflowBoard clientId={selectedClient} clients={clients ?? []} onBack={() => setSelectedClient(null)} />;
 }
 
-function ClientPicker({ clients, onPick }: { clients: { id: string; name: string }[]; onPick: (id: string) => void }) {
+function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: string) => void }) {
   const [q, setQ] = useState("");
   const { data: counts } = useQuery({
     queryKey: ["clients-video-counts"],
@@ -85,18 +88,40 @@ function ClientPicker({ clients, onPick }: { clients: { id: string; name: string
     },
   });
 
-  const filtered = clients.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));
+  const term = q.toLowerCase();
+  const parents = clients.filter((c) => !c.parent_client_id);
+  const childrenOf = (id: string) => clients.filter((c) => c.parent_client_id === id);
+
+  const visible = parents
+    .map((p) => {
+      const kids = childrenOf(p.id);
+      const matches = p.name.toLowerCase().includes(term);
+      const matchedKids = kids.filter((k) => k.name.toLowerCase().includes(term));
+      if (!term || matches) return { parent: p, kids };
+      if (matchedKids.length) return { parent: p, kids: matchedKids };
+      return null;
+    })
+    .filter(Boolean) as { parent: ClientMin; kids: ClientMin[] }[];
+
+  const sum = (ids: string[]) =>
+    ids.reduce(
+      (acc, id) => {
+        const i = counts?.get(id);
+        return { total: acc.total + (i?.total ?? 0), pendentes: acc.pendentes + (i?.pendentes ?? 0) };
+      },
+      { total: 0, pendentes: 0 },
+    );
 
   return (
     <div className="px-6 pt-6 md:px-8 md:pt-8">
       <PageHeader title="Workflow" subtitle="Escolha o cliente para abrir o quadro de demandas" />
       <div className="mt-6 max-w-md">
-        <Input placeholder="Buscar cliente…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Input placeholder="Buscar cliente ou marca…" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       <div className="mt-6 grid grid-cols-1 gap-3 pb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <button
           onClick={() => onPick("all")}
-          className="group flex items-center gap-3 rounded-lg border border-dashed border-border bg-card/30 px-4 py-4 text-left transition hover:border-primary/50 hover:bg-card/60"
+          className="group flex items-center gap-3 self-start rounded-lg border border-dashed border-border bg-card/30 px-4 py-4 text-left transition hover:border-primary/50 hover:bg-card/60"
         >
           <div className="rounded-md bg-primary/10 p-2 text-primary"><Users className="h-4 w-4" /></div>
           <div className="min-w-0">
@@ -104,28 +129,51 @@ function ClientPicker({ clients, onPick }: { clients: { id: string; name: string
             <p className="text-xs text-muted-foreground">Visão consolidada</p>
           </div>
         </button>
-        {filtered.map((c) => {
-          const info = counts?.get(c.id);
+        {visible.map(({ parent, kids }) => {
+          const info = sum([parent.id, ...kids.map((k) => k.id)]);
           return (
-            <button
-              key={c.id}
-              onClick={() => onPick(c.id)}
-              className="group flex items-center gap-3 rounded-lg border border-border bg-card/40 px-4 py-4 text-left transition hover:border-primary/50 hover:bg-card"
-            >
-              <div className="rounded-md bg-muted/60 p-2 text-muted-foreground group-hover:text-foreground"><Folder className="h-4 w-4" /></div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{c.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {info ? `${info.pendentes} pendentes · ${info.total} vídeos` : "Sem vídeos"}
-                </p>
-              </div>
-            </button>
+            <div key={parent.id} className="self-start rounded-lg border border-border bg-card/40 transition hover:border-primary/40">
+              <button
+                onClick={() => onPick(parent.id)}
+                className="group flex w-full items-center gap-3 px-4 py-4 text-left"
+              >
+                <div className="rounded-md bg-muted/60 p-2 text-muted-foreground group-hover:text-foreground">
+                  {kids.length > 0 ? <Layers className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{parent.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {info.total > 0 ? `${info.pendentes} pendentes · ${info.total} vídeos` : "Sem vídeos"}
+                    {kids.length > 0 && ` · ${kids.length} marca${kids.length > 1 ? "s" : ""}`}
+                  </p>
+                </div>
+              </button>
+              {kids.length > 0 && (
+                <div className="border-t border-border/60 px-2 pb-2 pt-1.5">
+                  {kids.map((k) => {
+                    const ki = counts?.get(k.id);
+                    return (
+                      <button
+                        key={k.id}
+                        onClick={() => onPick(k.id)}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-muted/50"
+                      >
+                        <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+                        <span className="min-w-0 flex-1 truncate text-xs">{k.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{ki?.total ?? 0}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
     </div>
   );
 }
+
 
 function WorkflowBoard({ clientId, clients, onBack }: {
   clientId: string;
