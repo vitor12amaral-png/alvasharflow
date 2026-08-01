@@ -315,9 +315,10 @@ function WorkflowBoard({ clientId, clients, onBack }: {
         </button>
         <PageHeader
           title={clientName}
-          subtitle="Kanban e lista sincronizados"
+          subtitle={hiddenCount > 0 ? `${videos.length} vídeo(s) no mês · ${hiddenCount} fora do período` : "Kanban e lista sincronizados"}
           actions={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <MonthPicker />
               <div className="hidden items-center rounded-md border border-border p-0.5 md:flex">
                 <ViewBtn active={view === "split"} onClick={() => setView("split")} icon={<SplitSquareVertical className="h-3.5 w-3.5" />} label="Ambos" />
                 <ViewBtn active={view === "kanban"} onClick={() => setView("kanban")} icon={<LayoutGrid className="h-3.5 w-3.5" />} label="Kanban" />
