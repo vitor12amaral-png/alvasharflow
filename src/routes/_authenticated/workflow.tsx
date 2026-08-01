@@ -515,15 +515,24 @@ function Column({ id, label, dot, count, children }: { id: GroupId; label: strin
   );
 }
 
-function ClientStack({ stackId, name, count, expanded, onToggle, children }: {
+function ClientStack({ stackId, name, parentName, count, expanded, onToggle, children }: {
   stackId: string;
   name: string;
+  parentName?: string | null;
   count: number;
   expanded: boolean;
   onToggle: () => void;
   children: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: stackId });
+  const parentBadge = parentName ? (
+    <span
+      title={`Marca de ${parentName}`}
+      className="inline-flex h-4 shrink-0 items-center rounded-sm bg-primary/10 px-1 text-[9px] font-semibold uppercase text-primary"
+    >
+      {parentName.slice(0, 1)}
+    </span>
+  ) : null;
   if (expanded) {
     return (
       <div className="space-y-1 rounded-md border border-border/60 bg-background/40 p-1.5">
@@ -532,6 +541,7 @@ function ClientStack({ stackId, name, count, expanded, onToggle, children }: {
           className="flex w-full items-center gap-1.5 rounded-sm px-1 py-0.5 text-left transition hover:bg-muted/40"
         >
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          {parentBadge}
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{name}</span>
           <span className="ml-auto text-[10px] text-muted-foreground/60">{count}</span>
         </button>
