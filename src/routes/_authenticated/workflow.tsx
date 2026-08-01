@@ -22,9 +22,13 @@ import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    month: typeof search.month === "string" ? search.month : undefined,
+  }),
   head: () => ({ meta: [{ title: "Workflow — alves.edt" }] }),
 });
 
