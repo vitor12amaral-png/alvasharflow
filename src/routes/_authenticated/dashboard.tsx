@@ -20,7 +20,7 @@ function DashboardPage() {
     queryKey: ["dashboard"],
     queryFn: async () => {
       const [clients, videos, packages, activity] = await Promise.all([
-        supabase.from("clients").select("id, name, status, videos(id, status)"),
+        supabase.from("clients").select("id, name, status, parent_client_id, videos(id, status)"),
         supabase.from("videos").select("id, title, status, due_date, priority, client_id, created_at, clients(name)"),
         supabase.from("client_packages").select("id, client_id, size, total_videos, videos_used, end_date, status, clients(name)").eq("status", "ativo"),
         supabase.from("activity_log").select("*, profiles(full_name)").order("created_at", { ascending: false }).limit(20),
@@ -41,7 +41,8 @@ function DashboardPage() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const activeClients = data.clients.filter((c) => c.status === "ativo").length;
+  // Conta apenas clientes-mãe/independentes para não inflar com sub-marcas.
+  const activeClients = data.clients.filter((c) => c.status === "ativo" && !c.parent_client_id).length;
   const byStatus = (s: VideoStatus) => data.videos.filter((v) => v.status === s).length;
   const pendentes = byStatus("recebido") + byStatus("briefing") + byStatus("organizacao") + byStatus("fila");
   const editando = byStatus("editando") + byStatus("revisao") + byStatus("alteracoes");

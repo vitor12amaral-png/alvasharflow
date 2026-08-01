@@ -22,9 +22,13 @@ import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    month: typeof search.month === "string" ? search.month : undefined,
+  }),
   head: () => ({ meta: [{ title: "Workflow — alves.edt" }] }),
 });
 
@@ -51,6 +55,7 @@ type VideoRow = {
   status: VideoStatus;
   priority: VideoPriority;
   due_date: string | null;
+  created_at: string;
   client_id: string;
   clients: { name: string } | null;
 };
@@ -202,16 +207,25 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     [clientId, clients],
   );
 
-  const { data: videos, isLoading } = useQuery({
+  const { data: allVideos, isLoading } = useQuery({
     queryKey: ["videos-workflow", clientId, scopeIds.join(",")],
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, client_id, clients(name)").order("position");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, created_at, client_id, clients(name)").order("position");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as VideoRow[];
     },
   });
+
+  // Filtro por mês: usa o prazo do vídeo quando existe, senão a data de criação.
+  const { ym } = useMonthFromSearch();
+  const videos = useMemo(
+    () => (allVideos ?? []).filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym),
+    [allVideos, ym],
+  );
+  const hiddenCount = (allVideos?.length ?? 0) - videos.length;
+
 
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
@@ -301,9 +315,10 @@ function WorkflowBoard({ clientId, clients, onBack }: {
         </button>
         <PageHeader
           title={clientName}
-          subtitle="Kanban e lista sincronizados"
+          subtitle={hiddenCount > 0 ? `${videos.length} vídeo(s) no mês · ${hiddenCount} fora do período` : "Kanban e lista sincronizados"}
           actions={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <MonthPicker />
               <div className="hidden items-center rounded-md border border-border p-0.5 md:flex">
                 <ViewBtn active={view === "split"} onClick={() => setView("split")} icon={<SplitSquareVertical className="h-3.5 w-3.5" />} label="Ambos" />
                 <ViewBtn active={view === "kanban"} onClick={() => setView("kanban")} icon={<LayoutGrid className="h-3.5 w-3.5" />} label="Kanban" />
@@ -351,6 +366,9 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                               key={cid}
                               stackId={`stack::${g.id}::${cid}`}
                               name={arr[0].clients?.name ?? "—"}
+                              parentName={
+                                clients.find((c) => c.id === clients.find((x) => x.id === cid)?.parent_client_id)?.name ?? null
+                              }
                               count={arr.length}
                               expanded={isExpanded}
                               onToggle={() => toggleGroup(key)}
@@ -497,15 +515,24 @@ function Column({ id, label, dot, count, children }: { id: GroupId; label: strin
   );
 }
 
-function ClientStack({ stackId, name, count, expanded, onToggle, children }: {
+function ClientStack({ stackId, name, parentName, count, expanded, onToggle, children }: {
   stackId: string;
   name: string;
+  parentName?: string | null;
   count: number;
   expanded: boolean;
   onToggle: () => void;
   children: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: stackId });
+  const parentBadge = parentName ? (
+    <span
+      title={`Marca de ${parentName}`}
+      className="inline-flex h-4 shrink-0 items-center rounded-sm bg-primary/10 px-1 text-[9px] font-semibold uppercase text-primary"
+    >
+      {parentName.slice(0, 1)}
+    </span>
+  ) : null;
   if (expanded) {
     return (
       <div className="space-y-1 rounded-md border border-border/60 bg-background/40 p-1.5">
@@ -514,6 +541,7 @@ function ClientStack({ stackId, name, count, expanded, onToggle, children }: {
           className="flex w-full items-center gap-1.5 rounded-sm px-1 py-0.5 text-left transition hover:bg-muted/40"
         >
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          {parentBadge}
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{name}</span>
           <span className="ml-auto text-[10px] text-muted-foreground/60">{count}</span>
         </button>
@@ -539,8 +567,8 @@ function ClientStack({ stackId, name, count, expanded, onToggle, children }: {
           <Layers className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium">{name}</p>
-          <p className="text-[10px] text-muted-foreground">{count} vídeo{count > 1 ? "s" : ""}</p>
+          <p className="flex items-center gap-1 truncate text-xs font-medium">{parentBadge}{name}</p>
+          <p className="text-[10px] text-muted-foreground">{count} vídeo{count > 1 ? "s" : ""}{parentName ? ` · ${parentName}` : ""}</p>
         </div>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
       </button>
