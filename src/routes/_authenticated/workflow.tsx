@@ -567,8 +567,8 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
           <Layers className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium">{name}</p>
-          <p className="text-[10px] text-muted-foreground">{count} vídeo{count > 1 ? "s" : ""}</p>
+          <p className="flex items-center gap-1 truncate text-xs font-medium">{parentBadge}{name}</p>
+          <p className="text-[10px] text-muted-foreground">{count} vídeo{count > 1 ? "s" : ""}{parentName ? ` · ${parentName}` : ""}</p>
         </div>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
       </button>
