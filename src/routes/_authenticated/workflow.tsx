@@ -207,16 +207,25 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     [clientId, clients],
   );
 
-  const { data: videos, isLoading } = useQuery({
+  const { data: allVideos, isLoading } = useQuery({
     queryKey: ["videos-workflow", clientId, scopeIds.join(",")],
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, client_id, clients(name)").order("position");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, created_at, client_id, clients(name)").order("position");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as VideoRow[];
     },
   });
+
+  // Filtro por mês: usa o prazo do vídeo quando existe, senão a data de criação.
+  const { ym } = useMonthFromSearch();
+  const videos = useMemo(
+    () => (allVideos ?? []).filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym),
+    [allVideos, ym],
+  );
+  const hiddenCount = (allVideos?.length ?? 0) - videos.length;
+
 
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
