@@ -55,6 +55,7 @@ type VideoRow = {
   status: VideoStatus;
   priority: VideoPriority;
   due_date: string | null;
+  created_at: string;
   client_id: string;
   clients: { name: string } | null;
 };
