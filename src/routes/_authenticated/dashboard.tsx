@@ -41,7 +41,8 @@ function DashboardPage() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const activeClients = data.clients.filter((c) => c.status === "ativo").length;
+  // Conta apenas clientes-mãe/independentes para não inflar com sub-marcas.
+  const activeClients = data.clients.filter((c) => c.status === "ativo" && !c.parent_client_id).length;
   const byStatus = (s: VideoStatus) => data.videos.filter((v) => v.status === s).length;
   const pendentes = byStatus("recebido") + byStatus("briefing") + byStatus("organizacao") + byStatus("fila");
   const editando = byStatus("editando") + byStatus("revisao") + byStatus("alteracoes");
