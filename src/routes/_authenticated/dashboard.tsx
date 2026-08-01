@@ -20,7 +20,7 @@ function DashboardPage() {
     queryKey: ["dashboard"],
     queryFn: async () => {
       const [clients, videos, packages, activity] = await Promise.all([
-        supabase.from("clients").select("id, name, status, videos(id, status)"),
+        supabase.from("clients").select("id, name, status, parent_client_id, videos(id, status)"),
         supabase.from("videos").select("id, title, status, due_date, priority, client_id, created_at, clients(name)"),
         supabase.from("client_packages").select("id, client_id, size, total_videos, videos_used, end_date, status, clients(name)").eq("status", "ativo"),
         supabase.from("activity_log").select("*, profiles(full_name)").order("created_at", { ascending: false }).limit(20),
