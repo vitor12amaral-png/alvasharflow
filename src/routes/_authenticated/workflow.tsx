@@ -366,6 +366,9 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                               key={cid}
                               stackId={`stack::${g.id}::${cid}`}
                               name={arr[0].clients?.name ?? "—"}
+                              parentName={
+                                clients.find((c) => c.id === clients.find((x) => x.id === cid)?.parent_client_id)?.name ?? null
+                              }
                               count={arr.length}
                               expanded={isExpanded}
                               onToggle={() => toggleGroup(key)}
