@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Kanban, Users, Wallet, LineChart, Shield, Zap, Timer, ExternalLink } from "lucide-react";
+import { ArrowRight, Kanban, Users, LineChart, Shield, Zap, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Landing,
   head: () => ({ meta: [
     { title: "alves.edt — Alta gestão para agências de edição" },
-    { name: "description", content: "Painel completo para operar agências de edição em alto volume: clientes, workflow, cronômetro, portal do cliente e copiloto de IA." },
+    { name: "description", content: "Painel completo para operar agências de edição em alto volume: clientes, workflow, entregas e portal do cliente." },
     { property: "og:title", content: "alves.edt — Alta gestão para agências de edição" },
     { property: "og:description", content: "Painel completo para operar agências de edição em alto volume." },
     { property: "og:type", content: "website" },
@@ -43,8 +43,8 @@ function Landing() {
               </span>
             </h1>
             <p className="mt-5 max-w-lg text-base text-muted-foreground">
-              alves.edt centraliza clientes, demandas, workflow, cronômetro, financeiro e portal do
-              cliente. Feito para quem entrega dezenas de vídeos por semana sem perder o controle.
+              alves.edt centraliza clientes, demandas, workflow e portal do cliente. Feito para
+              quem entrega dezenas de vídeos por semana sem perder o controle.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
