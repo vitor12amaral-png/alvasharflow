@@ -95,13 +95,10 @@ function Landing() {
 const FEATURES = [
   { icon: Users, title: "Clientes", desc: "CRM, briefing, pacotes e portal público por cliente." },
   { icon: Kanban, title: "Workflow", desc: "Kanban de 10 estágios com multi-seleção e agrupamento." },
-  { icon: Timer, title: "Cronômetro", desc: "Tempo por vídeo, tarefa e editor — sempre no rodapé." },
-  { icon: Wallet, title: "Financeiro", desc: "Pacotes, ciclos, pagamentos e vencimentos." },
   { icon: ExternalLink, title: "Portal do cliente", desc: "Link público para aprovação, revisão e NPS." },
   { icon: LineChart, title: "Dashboard", desc: "KPIs de entrega, pipeline e produtividade em tempo real." },
-  { icon: Shield, title: "Multi-workspace", desc: "Convide editores e mantenha operações separadas." },
-  { icon: Zap, title: "Copiloto IA", desc: "Crie clientes, vídeos e tarefas conversando." },
 ];
+
 
 function LogoMark() {
   return (
