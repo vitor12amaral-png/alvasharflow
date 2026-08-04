@@ -283,7 +283,7 @@ function ClientDetail() {
         </TabsContent>
 
         <TabsContent value="briefing" className="mt-4">
-          <BriefingEditor client={c} onSaved={invalidate} />
+          <BriefingTab client={c} subs={client.subs} onSaved={invalidate} />
         </TabsContent>
 
         <TabsContent value="financial" className="mt-4">
@@ -373,6 +373,64 @@ export function describeActivity(entity: string, action: string, meta: Record<st
 }
 
 // ==================== BRIEFING EDITOR ====================
+
+function BriefingTab({ client, subs, onSaved }: {
+  client: any;
+  subs: { id: string; name: string }[];
+  onSaved: () => void;
+}) {
+  const [target, setTarget] = useState<string>(client.id);
+  const isSelf = target === client.id;
+
+  const { data: sub, isLoading } = useQuery({
+    queryKey: ["client-briefing", target],
+    enabled: !isSelf,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clients").select("*").eq("id", target).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const qc = useQueryClient();
+  const saved = () => {
+    onSaved();
+    qc.invalidateQueries({ queryKey: ["client-briefing", target] });
+  };
+
+  if (subs.length === 0) return <BriefingEditor client={client} onSaved={onSaved} />;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-card/40 p-1.5">
+        <span className="px-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">Briefing de</span>
+        <button
+          onClick={() => setTarget(client.id)}
+          className={`rounded-md px-2.5 py-1 text-xs transition ${isSelf ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          {client.name}
+        </button>
+        {subs.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setTarget(s.id)}
+            className={`rounded-md px-2.5 py-1 text-xs transition ${target === s.id ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {s.name}
+          </button>
+        ))}
+      </div>
+
+      {isSelf ? (
+        <BriefingEditor key={client.id} client={client} onSaved={saved} />
+      ) : isLoading || !sub ? (
+        <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+      ) : (
+        <BriefingEditor key={sub.id} client={sub} onSaved={saved} />
+      )}
+    </div>
+  );
+}
 
 function BriefingEditor({ client, onSaved }: { client: any; onSaved: () => void }) {
   const [editing, setEditing] = useState(false);
