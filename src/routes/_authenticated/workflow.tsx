@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
@@ -23,6 +23,8 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
+import { StartTimerButton } from "@/components/timer";
+import { useVideoTime, fmt as fmtTime } from "@/hooks/use-timer";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -187,6 +189,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   onBack: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [batchOpen, setBatchOpen] = useState(false);
   const [view, setView] = useState<"split" | "kanban" | "list">("split");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -324,6 +327,12 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                 <ViewBtn active={view === "kanban"} onClick={() => setView("kanban")} icon={<LayoutGrid className="h-3.5 w-3.5" />} label="Kanban" />
                 <ViewBtn active={view === "list"} onClick={() => setView("list")} icon={<Rows3 className="h-3.5 w-3.5" />} label="Lista" />
               </div>
+              <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline"><Layers3 className="mr-1 h-4 w-4" />Nova leva</Button>
+                </DialogTrigger>
+                <BatchVideosDialog onClose={() => setBatchOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} />
+              </Dialog>
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Novo vídeo</Button></DialogTrigger>
                 <NewVideoDialog onClose={() => setOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} />
@@ -671,9 +680,12 @@ function ListView({ videos, selected, onToggle, onToggleAll, onStatusChange, onD
               </td>
               <td className={cn("px-4 py-2 text-xs font-medium", PRIORITY_COLOR[v.priority])}>{PRIORITY_LABEL[v.priority]}</td>
               <td className="px-2">
-                <button onClick={() => onOpen(v.id)} className="text-muted-foreground hover:text-foreground" aria-label="Abrir">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </button>
+                <div className="flex items-center justify-end gap-1">
+                  <StartTimerButton videoId={v.id} label={v.title} compact variant="ghost" className="h-7 px-2" />
+                  <button onClick={() => onOpen(v.id)} className="text-muted-foreground hover:text-foreground" aria-label="Abrir">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -810,6 +822,13 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
           )}
         </SheetHeader>
 
+
+        {videoId && (
+          <div className="mt-4 flex items-center gap-3 rounded-md border border-border bg-card/40 px-3 py-2">
+            <StartTimerButton videoId={videoId} label={video?.title ?? "Vídeo"} />
+            <TotalTime videoId={videoId} />
+          </div>
+        )}
 
         {!video ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
@@ -960,6 +979,153 @@ function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => 
         </div>
         <div className="space-y-1.5"><Label>Descrição</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
         <DialogFooter><Button type="submit" disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar</Button></DialogFooter>
+      </form>
+    </DialogContent>
+  );
+}
+
+function TotalTime({ videoId }: { videoId: string }) {
+  const { data } = useVideoTime(videoId);
+  return (
+    <p className="text-xs text-muted-foreground">
+      Tempo registrado: <span className="font-mono tabular-nums text-foreground">{fmtTime(data ?? 0)}</span>
+    </p>
+  );
+}
+
+function BatchVideosDialog({ onClose, clients, defaultClientId }: {
+  onClose: () => void;
+  clients: ClientMin[];
+  defaultClientId?: string;
+}) {
+  const [clientId, setClientId] = useState(defaultClientId ?? "");
+  const [mode, setMode] = useState<"lista" | "quantidade">("lista");
+  const [titles, setTitles] = useState("");
+  const [prefix, setPrefix] = useState("");
+  const [qty, setQty] = useState(5);
+  const [status, setStatus] = useState<VideoStatus>("recebido");
+  const [priority, setPriority] = useState<VideoPriority>("media");
+  const [dueDate, setDueDate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+  const { data: me } = useCurrentUser();
+
+  const parsed = useMemo(() => {
+    if (mode === "lista") {
+      return titles.split("\n").map((t) => t.trim()).filter(Boolean);
+    }
+    const base = prefix.trim() || "Vídeo";
+    const n = Math.max(1, Math.min(100, Number(qty) || 1));
+    return Array.from({ length: n }, (_, i) => `${base} ${String(i + 1).padStart(2, "0")}`);
+  }, [mode, titles, prefix, qty]);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!clientId) { toast.error("Selecione um cliente"); return; }
+    if (!me?.workspaceId) { toast.error("Workspace não encontrado"); return; }
+    if (parsed.length === 0) { toast.error("Adicione ao menos um título"); return; }
+    setSaving(true);
+    const { data: pkg } = await supabase.from("client_packages")
+      .select("id").eq("client_id", clientId).eq("status", "ativo").maybeSingle();
+    const rows = parsed.map((title) => ({
+      workspace_id: me.workspaceId!,
+      client_id: clientId,
+      title,
+      status,
+      priority,
+      due_date: dueDate || null,
+      package_id: pkg?.id ?? null,
+    }));
+    const { error } = await supabase.from("videos").insert(rows);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${rows.length} vídeos criados`);
+    qc.invalidateQueries({ queryKey: ["videos-workflow"] });
+    qc.invalidateQueries({ queryKey: ["clients-video-counts"] });
+    qc.invalidateQueries({ queryKey: ["dashboard"] });
+    onClose();
+  }
+
+  return (
+    <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogHeader><DialogTitle>Nova leva de vídeos</DialogTitle></DialogHeader>
+      <form onSubmit={submit} className="space-y-3">
+        <div className="space-y-1.5">
+          <Label>Cliente *</Label>
+          <Select value={clientId} onValueChange={setClientId}>
+            <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+            <SelectContent>
+              {clients.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.parent_client_id ? `↳ ${c.name}` : c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center rounded-md border border-border p-0.5">
+          <ViewBtn active={mode === "lista"} onClick={() => setMode("lista")} icon={<Rows3 className="h-3.5 w-3.5" />} label="Lista de títulos" />
+          <ViewBtn active={mode === "quantidade"} onClick={() => setMode("quantidade")} icon={<Layers3 className="h-3.5 w-3.5" />} label="Quantidade" />
+        </div>
+
+        {mode === "lista" ? (
+          <div className="space-y-1.5">
+            <Label>Títulos (um por linha)</Label>
+            <Textarea
+              rows={6}
+              value={titles}
+              onChange={(e) => setTitles(e.target.value)}
+              placeholder={"Reels 01\nReels 02\nCorte podcast"}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-[1fr_100px] gap-3">
+            <div className="space-y-1.5">
+              <Label>Prefixo</Label>
+              <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="Ex: Reels agosto" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Quantidade</Label>
+              <Input type="number" min={1} max={100} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1.5">
+            <Label>Situação</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as VideoStatus)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ALL_STATUSES.map((s) => <SelectItem key={s} value={s}>{STAGE_LABEL[s]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Prioridade</Label>
+            <Select value={priority} onValueChange={(v) => setPriority(v as VideoPriority)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(["baixa","media","alta","urgente"] as VideoPriority[]).map((p) => (
+                  <SelectItem key={p} value={p}>{PRIORITY_LABEL[p]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Prazo</Label>
+            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          {parsed.length > 0 ? `${parsed.length} vídeo(s) serão criados: ${parsed.slice(0, 3).join(", ")}${parsed.length > 3 ? "…" : ""}` : "Nenhum vídeo definido ainda."}
+        </p>
+
+        <DialogFooter>
+          <Button type="submit" disabled={saving || parsed.length === 0}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar {parsed.length || ""} vídeos
+          </Button>
+        </DialogFooter>
       </form>
     </DialogContent>
   );
