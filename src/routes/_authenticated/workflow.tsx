@@ -25,6 +25,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
 import { StartTimerButton } from "@/components/timer";
 import { useVideoTime, fmt as fmtTime } from "@/hooks/use-timer";
+import { ColorPicker, colorValue } from "@/components/color-tag";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -59,6 +60,7 @@ type VideoRow = {
   due_date: string | null;
   created_at: string;
   client_id: string;
+  color: string | null;
   clients: { name: string } | null;
 };
 
@@ -213,7 +215,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   const { data: allVideos, isLoading } = useQuery({
     queryKey: ["videos-workflow", clientId, scopeIds.join(",")],
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, created_at, client_id, clients(name)").order("position");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, created_at, client_id, color, clients(name)").order("position");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -605,12 +607,15 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: video.id });
   return (
     <div ref={setNodeRef} data-vid={video.id}
-      style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined}
       className={cn(
         "group rounded-md border border-border bg-card px-2.5 py-2 text-sm shadow-sm transition hover:border-primary/40",
         selected && "border-primary/60 ring-1 ring-primary/40",
         isDragging && "opacity-40",
       )}
+      style={{
+        ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {}),
+        ...(colorValue(video.color) ? { borderLeft: `3px solid ${colorValue(video.color)}` } : {}),
+      }}
     >
       <div className="flex items-start gap-2">
         <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
@@ -626,6 +631,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
             )}
           </div>
         </div>
+        <ColorPicker table="videos" id={video.id} color={video.color} invalidate={[["videos-workflow"], ["fila-videos"]]} className="mt-0.5" />
         <button onClick={onExpand} className="opacity-0 transition group-hover:opacity-100" aria-label="Abrir">
           <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
         </button>
@@ -673,7 +679,12 @@ function ListView({ videos, selected, onToggle, onToggleAll, onStatusChange, onD
                 <input type="date" value={v.due_date ?? ""} onChange={(e) => onDueChange(v.id, e.target.value || null)}
                   className="bg-transparent text-xs text-muted-foreground outline-none hover:text-foreground focus:text-foreground" />
               </td>
-              <td className="px-4 py-2 font-medium">{v.title}</td>
+              <td className="px-4 py-2 font-medium">
+                <span className="flex items-center gap-2">
+                  <ColorPicker table="videos" id={v.id} color={v.color} invalidate={[["videos-workflow"], ["fila-videos"]]} />
+                  {v.title}
+                </span>
+              </td>
               <td className="px-4 py-2 text-xs text-muted-foreground">{v.clients?.name ?? "—"}</td>
               <td className="px-4 py-2">
                 <StatusBadge status={v.status} onChange={(s) => onStatusChange(v.id, s)} />
