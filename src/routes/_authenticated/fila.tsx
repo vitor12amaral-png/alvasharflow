@@ -68,7 +68,7 @@ function FilaPage() {
   });
 
   const patch = useMutation({
-    mutationFn: async ({ id, changes }: { id: string; changes: Partial<Row> }) => {
+    mutationFn: async ({ id, changes }: { id: string; changes: { status?: VideoStatus; due_date?: string | null } }) => {
       const { error } = await supabase.from("videos").update(changes).eq("id", id);
       if (error) throw error;
     },
@@ -206,8 +206,8 @@ function FilaPage() {
                 <DeleteAction
                   table="videos"
                   id={v.id}
-                  label={v.title}
-                  invalidateKeys={[["fila-videos"], ["videos-workflow"], ["dashboard"]]}
+                  title={`Excluir "${v.title}"?`}
+                  invalidate={[["fila-videos"], ["videos-workflow"], ["dashboard"]]}
                 />
               </div>
             );
