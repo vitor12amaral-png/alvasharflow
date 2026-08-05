@@ -360,6 +360,7 @@ export type Database = {
           brand_colors: Json | null
           brand_fonts: Json | null
           brand_references: Json | null
+          color: string | null
           company: string | null
           created_at: string
           delivery_link: string | null
@@ -382,6 +383,7 @@ export type Database = {
           brand_colors?: Json | null
           brand_fonts?: Json | null
           brand_references?: Json | null
+          color?: string | null
           company?: string | null
           created_at?: string
           delivery_link?: string | null
@@ -406,6 +408,7 @@ export type Database = {
           brand_colors?: Json | null
           brand_fonts?: Json | null
           brand_references?: Json | null
+          color?: string | null
           company?: string | null
           created_at?: string
           delivery_link?: string | null
@@ -732,6 +735,7 @@ export type Database = {
           assignee_id: string | null
           category: Database["public"]["Enums"]["task_category"]
           client_id: string | null
+          color: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -749,6 +753,7 @@ export type Database = {
           assignee_id?: string | null
           category?: Database["public"]["Enums"]["task_category"]
           client_id?: string | null
+          color?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -766,6 +771,7 @@ export type Database = {
           assignee_id?: string | null
           category?: Database["public"]["Enums"]["task_category"]
           client_id?: string | null
+          color?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -933,6 +939,7 @@ export type Database = {
         Row: {
           checklist: Json
           client_id: string
+          color: string | null
           created_at: string
           description: string | null
           due_date: string | null
@@ -952,6 +959,7 @@ export type Database = {
         Insert: {
           checklist?: Json
           client_id: string
+          color?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -971,6 +979,7 @@ export type Database = {
         Update: {
           checklist?: Json
           client_id?: string
+          color?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
