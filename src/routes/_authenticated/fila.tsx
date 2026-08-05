@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StartTimerButton } from "@/components/timer";
+import { ColorPicker } from "@/components/color-tag";
 import { DeleteAction } from "@/components/delete-action";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
@@ -37,6 +38,7 @@ type Row = {
   due_date: string | null;
   created_at: string;
   client_id: string;
+  color: string | null;
   clients: { name: string } | null;
 };
 
@@ -60,7 +62,7 @@ function FilaPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("videos")
-        .select("id, title, status, priority, due_date, created_at, client_id, clients(name)")
+        .select("id, title, status, priority, due_date, created_at, client_id, color, clients(name)")
         .order("due_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return (data ?? []) as unknown as Row[];
@@ -155,6 +157,7 @@ function FilaPage() {
               >
                 <span className="w-6 shrink-0 text-center font-mono text-[11px] text-muted-foreground">{i + 1}</span>
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: STAGE_ACCENT[v.status] }} />
+                <ColorPicker table="videos" id={v.id} color={v.color} invalidate={[["fila-videos"], ["videos-workflow"]]} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{v.title}</p>
                   <p className="truncate text-xs text-muted-foreground">

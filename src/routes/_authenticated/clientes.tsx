@@ -14,6 +14,7 @@ import { initials, formatBRL } from "@/lib/format";
 import { ClientWizard } from "@/components/client-wizard";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { DeleteAction } from "@/components/delete-action";
+import { ColorPicker, colorValue } from "@/components/color-tag";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,
@@ -28,6 +29,7 @@ type ClientRow = {
   whatsapp: string | null;
   instagram: string | null;
   parent_client_id: string | null;
+  color: string | null;
   client_packages: { id: string; total_videos: number; videos_used: number; price: number; status: string }[] | null;
   videos: { id: string; status: string; due_date: string | null }[] | null;
 };
@@ -153,7 +155,10 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
           <div className="w-6" />
         )}
         <Link to="/clientes/$clientId" params={{ clientId: client.id }} className="group flex flex-1 min-w-0 items-start gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/15 font-display font-semibold text-primary">
+          <div
+            className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/15 font-display font-semibold text-primary"
+            style={colorValue(client.color) ? { background: `color-mix(in oklab, ${colorValue(client.color)} 22%, transparent)`, color: colorValue(client.color)! } : undefined}
+          >
             {initials(client.name)}
           </div>
           <div className="min-w-0 flex-1">
@@ -190,6 +195,7 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
             </div>
           </div>
         </Link>
+        <ColorPicker table="clients" id={client.id} color={client.color} invalidate={[["clients"], ["clients-min"]]} size="md" className="mt-2" />
         <DeleteAction
           table="clients"
           id={client.id}
