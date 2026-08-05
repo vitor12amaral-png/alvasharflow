@@ -14,6 +14,7 @@ import { initials, formatBRL } from "@/lib/format";
 import { ClientWizard } from "@/components/client-wizard";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { DeleteAction } from "@/components/delete-action";
+import { ColorPicker, colorValue } from "@/components/color-tag";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,
@@ -194,6 +195,7 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
             </div>
           </div>
         </Link>
+        <ColorPicker table="clients" id={client.id} color={client.color} invalidate={[["clients"], ["clients-min"]]} size="md" className="mt-2" />
         <DeleteAction
           table="clients"
           id={client.id}
