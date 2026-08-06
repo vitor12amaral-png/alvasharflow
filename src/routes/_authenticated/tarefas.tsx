@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2 } from "lucide-react";
+import { DueDatePopover, formatDue } from "@/components/due-date-popover";
 import { StartTimerButton } from "@/components/timer";
 import { DeleteAction } from "@/components/delete-action";
 import { useState, useMemo } from "react";
@@ -59,6 +60,7 @@ type Task = {
   category: TaskCategory;
   recurrence: TaskRecurrence;
   due_date: string | null;
+  due_time: string | null;
   client_id: string | null;
   assignee_id: string | null;
   clients: { name: string } | null;
@@ -76,7 +78,7 @@ function TarefasPage() {
     queryKey: ["tasks"],
     queryFn: async () => {
       const { data, error } = await supabase.from("tasks")
-        .select("id, title, description, status, priority, category, recurrence, due_date, client_id, assignee_id, clients(name)")
+        .select("id, title, description, status, priority, category, recurrence, due_date, due_time, client_id, assignee_id, clients(name)")
         .order("position", { ascending: true });
       if (error) throw error;
       return (data ?? []) as unknown as Task[];
@@ -200,15 +202,23 @@ function TaskCard({ task, onStatus, onDelete }: { task: Task; onStatus: (s: Task
               <Badge variant="outline" className="text-[10px]"><Repeat className="mr-1 h-2.5 w-2.5" />{RECURRENCE_LABEL[task.recurrence]}</Badge>
             )}
             {task.clients && <Badge variant="secondary" className="text-[10px]">{task.clients.name}</Badge>}
-            {task.due_date && (
-              <span className={cn(
-                "inline-flex items-center gap-1 text-[10px]",
-                overdue ? "text-destructive font-semibold" : today ? "text-[oklch(0.78_0.16_75)] font-semibold" : "text-muted-foreground",
-              )}>
+            <DueDatePopover
+              table="tasks"
+              ids={[task.id]}
+              due={task.due_date}
+              time={task.due_time}
+              invalidate={[["tasks"], ["dashboard"]]}
+            >
+              <button
+                className={cn(
+                  "inline-flex items-center gap-1 rounded px-1 text-[10px] transition hover:bg-muted",
+                  overdue ? "text-destructive font-semibold" : today ? "text-[oklch(0.78_0.16_75)] font-semibold" : "text-muted-foreground",
+                )}
+              >
                 {overdue && <AlertCircle className="h-2.5 w-2.5" />}
-                {formatDate(task.due_date)}
-              </span>
-            )}
+                {task.due_date ? formatDue(task.due_date, task.due_time) : "definir prazo"}
+              </button>
+            </DueDatePopover>
           </div>
           <div className="mt-2 flex items-center gap-2">
             <StartTimerButton taskId={task.id} label={task.title} />
