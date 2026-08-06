@@ -101,7 +101,7 @@ function DashboardPage() {
         <Card className="p-5 lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-display text-sm font-semibold">Vídeos por estágio</p>
-            <Link to="/workflow" search={{}} className="text-xs text-primary hover:underline">Abrir workflow →</Link>
+            <Link to="/workflow" search={{ month: undefined }} className="text-xs text-primary hover:underline">Abrir workflow →</Link>
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
