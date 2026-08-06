@@ -18,7 +18,7 @@ export function TimerBadge() {
           <TimerIcon className="h-3.5 w-3.5 animate-pulse text-primary" />
           <span className="font-mono text-xs tabular-nums">{fmt(elapsed)}</span>
           {active.videoId ? (
-            <Link to="/workflow" className="max-w-[140px] truncate text-[11px] text-muted-foreground hover:text-foreground">
+            <Link to="/workflow" search={{}} className="max-w-[140px] truncate text-[11px] text-muted-foreground hover:text-foreground">
               {active.label}
             </Link>
           ) : (
