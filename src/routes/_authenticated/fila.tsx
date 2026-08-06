@@ -11,6 +11,7 @@ import { DeleteAction } from "@/components/delete-action";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { formatDate } from "@/lib/format";
+import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -20,9 +21,9 @@ export const Route = createFileRoute("/_authenticated/fila")({
   component: FilaPage,
   head: () => ({
     meta: [
-      { title: "Fila de produção — alves.edt" },
+      { title: "Fila de produção — AlvasharFlow" },
       { name: "description", content: "Fila do dia e fila geral de vídeos em produção da agência." },
-      { property: "og:title", content: "Fila de produção — alves.edt" },
+      { property: "og:title", content: "Fila de produção — AlvasharFlow" },
       { property: "og:description", content: "Acompanhe o que precisa ser editado hoje e a fila geral de demandas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -36,6 +37,7 @@ type Row = {
   status: VideoStatus;
   priority: VideoPriority;
   due_date: string | null;
+  due_time: string | null;
   created_at: string;
   client_id: string;
   color: string | null;
@@ -62,7 +64,7 @@ function FilaPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("videos")
-        .select("id, title, status, priority, due_date, created_at, client_id, color, clients(name)")
+        .select("id, title, status, priority, due_date, due_time, created_at, client_id, color, clients(name)")
         .order("due_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return (data ?? []) as unknown as Row[];
@@ -188,9 +190,18 @@ function FilaPage() {
                   </PopoverContent>
                 </Popover>
 
-                <span className={cn("w-24 shrink-0 text-right text-[11px]", isLate ? "text-destructive" : "text-muted-foreground")}>
-                  {v.due_date ? formatDate(v.due_date) : "sem prazo"}
-                </span>
+                <DueDatePopover
+                  table="videos"
+                  ids={[v.id]}
+                  due={v.due_date}
+                  time={v.due_time}
+                  align="end"
+                  invalidate={[["fila-videos"], ["videos-workflow"], ["dashboard"]]}
+                >
+                  <button className="shrink-0" aria-label="Prazo">
+                    <DueBadge due={v.due_date} time={v.due_time} />
+                  </button>
+                </DueDatePopover>
 
                 {v.due_date !== today && (
                   <Button

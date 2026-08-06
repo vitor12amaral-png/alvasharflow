@@ -10,7 +10,7 @@ import { Loader2, Sparkles } from "lucide-react";
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
   component: ResetPassword,
-  head: () => ({ meta: [{ title: "Redefinir senha — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Redefinir senha — AlvasharFlow" }] }),
 });
 
 function ResetPassword() {

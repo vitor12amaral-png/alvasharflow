@@ -18,7 +18,7 @@ export const Route = createFileRoute("/portal/$token")({
   component: PortalPage,
   head: () => ({
     meta: [
-      { title: "Portal do cliente — alves.edt" },
+      { title: "Portal do cliente — AlvasharFlow" },
       { name: "description", content: "Acompanhe, aprove e comente seus vídeos em produção." },
       { name: "robots", content: "noindex" },
     ],
@@ -93,7 +93,7 @@ function PortalPage() {
       )}
 
       <footer className="mt-10 text-center text-[10px] text-muted-foreground">
-        Feito com alves.edt
+        Feito com AlvasharFlow
       </footer>
     </div>
   );

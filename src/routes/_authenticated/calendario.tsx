@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   component: CalendarioPage,
-  head: () => ({ meta: [{ title: "Calendário — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Calendário — AlvasharFlow" }] }),
 });
 
 function CalendarioPage() {

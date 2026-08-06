@@ -15,7 +15,7 @@ import { DeleteAction } from "@/components/delete-action";
 
 export const Route = createFileRoute("/_authenticated/videos")({
   component: VideosPage,
-  head: () => ({ meta: [{ title: "Vídeos — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Vídeos — AlvasharFlow" }] }),
 });
 
 function VideosPage() {

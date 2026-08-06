@@ -23,7 +23,7 @@ import { formatDate, daysUntil } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
   component: TarefasPage,
-  head: () => ({ meta: [{ title: "Tarefas — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Tarefas — AlvasharFlow" }] }),
 });
 
 type TaskStatus = "aberta" | "concluida";

@@ -4,9 +4,9 @@ import { ArrowRight, Kanban, Users, LineChart, Shield, Zap, ExternalLink } from 
 export const Route = createFileRoute("/")({
   component: Landing,
   head: () => ({ meta: [
-    { title: "alves.edt — Alta gestão para agências de edição" },
+    { title: "AlvasharFlow — Alta gestão para agências de edição" },
     { name: "description", content: "Painel completo para operar agências de edição em alto volume: clientes, workflow, entregas e portal do cliente." },
-    { property: "og:title", content: "alves.edt — Alta gestão para agências de edição" },
+    { property: "og:title", content: "AlvasharFlow — Alta gestão para agências de edição" },
     { property: "og:description", content: "Painel completo para operar agências de edição em alto volume." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
@@ -19,7 +19,7 @@ function Landing() {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
           <LogoMark />
-          <span className="font-display text-lg font-semibold tracking-tight">alves.edt</span>
+          <span className="font-display text-lg font-semibold tracking-tight">AlvasharFlow</span>
         </div>
         <nav className="flex items-center gap-3 text-sm">
           <a href="#modulos" className="hidden text-muted-foreground hover:text-foreground md:inline">Módulos</a>
@@ -43,7 +43,7 @@ function Landing() {
               </span>
             </h1>
             <p className="mt-5 max-w-lg text-base text-muted-foreground">
-              alves.edt centraliza clientes, demandas, workflow e portal do cliente. Feito para
+              AlvasharFlow centraliza clientes, demandas, workflow e portal do cliente. Feito para
               quem entrega dezenas de vídeos por semana sem perder o controle.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -86,7 +86,7 @@ function Landing() {
       </main>
 
       <footer className="border-t border-border/60 py-6 text-center text-xs tracking-widest text-muted-foreground uppercase">
-        alves.edt · Alta gestão para editores
+        AlvasharFlow · Alta gestão para editores
       </footer>
     </div>
   );

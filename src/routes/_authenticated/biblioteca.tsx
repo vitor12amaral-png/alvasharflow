@@ -19,7 +19,7 @@ import { DeleteAction } from "@/components/delete-action";
 
 export const Route = createFileRoute("/_authenticated/biblioteca")({
   component: BibliotecaPage,
-  head: () => ({ meta: [{ title: "Biblioteca — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Biblioteca — AlvasharFlow" }] }),
 });
 
 function BibliotecaPage() {

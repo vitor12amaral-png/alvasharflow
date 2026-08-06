@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/workflow")({
   validateSearch: (search: Record<string, unknown>) => ({
     month: typeof search.month === "string" ? search.month : undefined,
   }),
-  head: () => ({ meta: [{ title: "Workflow — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Workflow — AlvasharFlow" }] }),
 });
 
 type GroupId = "sem_material" | "em_producao" | "enviado" | "em_revisao" | "aprovado";

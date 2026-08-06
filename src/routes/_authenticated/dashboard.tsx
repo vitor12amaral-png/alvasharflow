@@ -12,7 +12,7 @@ import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "rechar
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
-  head: () => ({ meta: [{ title: "Dashboard — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — AlvasharFlow" }] }),
 });
 
 function DashboardPage() {

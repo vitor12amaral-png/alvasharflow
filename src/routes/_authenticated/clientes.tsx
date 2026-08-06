@@ -18,7 +18,7 @@ import { ColorPicker, colorValue } from "@/components/color-tag";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,
-  head: () => ({ meta: [{ title: "Clientes — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Clientes — AlvasharFlow" }] }),
 });
 
 type ClientRow = {
