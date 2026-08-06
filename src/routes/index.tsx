@@ -4,10 +4,10 @@ import { ArrowRight, Kanban, Users, LineChart, Shield, Zap, ExternalLink } from 
 export const Route = createFileRoute("/")({
   component: Landing,
   head: () => ({ meta: [
-    { title: "AlvasharFlow — Alta gestão para agências de edição" },
-    { name: "description", content: "Painel completo para operar agências de edição em alto volume: clientes, workflow, entregas e portal do cliente." },
-    { property: "og:title", content: "AlvasharFlow — Alta gestão para agências de edição" },
-    { property: "og:description", content: "Painel completo para operar agências de edição em alto volume." },
+    { title: "AlvasharFlow — O sistema que trabalha por você" },
+    { name: "description", content: "Feito para creators, filmmakers e editores: clientes, demandas, workflow, prazos e portal do cliente em um só lugar." },
+    { property: "og:title", content: "AlvasharFlow — O sistema que trabalha por você" },
+    { property: "og:description", content: "Para creators, filmmakers e editores que querem um sistema que trabalha por eles." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
   ]}),
@@ -34,17 +34,17 @@ function Landing() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
               <Zap className="h-3.5 w-3.5 text-primary" />
-              Feito para operações de alto volume
+              Para creators, filmmakers e editores
             </div>
             <h1 className="mt-5 font-display text-5xl leading-[1.02] font-semibold tracking-tight md:text-6xl">
-              Sua agência de edição<br />
+              Um sistema que<br />
               <span className="bg-gradient-to-r from-primary to-[oklch(0.66_0.22_300)] bg-clip-text text-transparent">
                 rodando no ritmo certo.
               </span>
             </h1>
             <p className="mt-5 max-w-lg text-base text-muted-foreground">
-              AlvasharFlow centraliza clientes, demandas, workflow e portal do cliente. Feito para
-              quem entrega dezenas de vídeos por semana sem perder o controle.
+              AlvasharFlow centraliza clientes, demandas, prazos, workflow e portal do cliente.
+              Feito para creators, filmmakers e editores que entregam vídeo em volume.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -72,7 +72,7 @@ function Landing() {
 
         <section id="modulos" className="mt-24">
           <h2 className="font-display text-2xl font-semibold">Tudo em um só painel</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Feito para quem opera múltiplos clientes ao mesmo tempo.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Do briefing à entrega, sem planilha e sem caos.</p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div key={f.title} className="glass-card rounded-xl p-5">

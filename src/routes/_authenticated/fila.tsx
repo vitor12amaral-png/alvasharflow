@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/fila")({
   head: () => ({
     meta: [
       { title: "Fila de produção — AlvasharFlow" },
-      { name: "description", content: "Fila do dia e fila geral de vídeos em produção da agência." },
+      { name: "description", content: "Fila do dia e fila geral dos seus vídeos em produção." },
       { property: "og:title", content: "Fila de produção — AlvasharFlow" },
       { property: "og:description", content: "Acompanhe o que precisa ser editado hoje e a fila geral de demandas." },
       { property: "og:type", content: "website" },

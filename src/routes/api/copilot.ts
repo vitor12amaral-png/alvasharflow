@@ -205,7 +205,7 @@ export const Route = createFileRoute("/api/copilot")({
 
         const gateway = createLovableAiGatewayProvider(key);
         const today = new Date().toISOString().slice(0, 10);
-        const system = `Você é o Copiloto do AlvasharFlow — SaaS de alta gestão para agências de edição de vídeo. Data de hoje: ${today}. Usuário: ${profile?.full_name ?? "editor"} (papel: ${wsRole}).
+        const system = `Você é o Copiloto do AlvasharFlow — sistema de gestão para creators, filmmakers e editores de vídeo. Data de hoje: ${today}. Usuário: ${profile?.full_name ?? "editor"} (papel: ${wsRole}).
 
 Regras:
 - Sempre confirme ações com o usuário APÓS executar, resumindo o que foi criado.

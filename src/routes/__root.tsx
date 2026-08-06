@@ -58,14 +58,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AlvasharFlow — Gestão de agência de edição em alto volume" },
-      { name: "description", content: "Painel de alta gestão para agências de edição de vídeo: clientes, demandas, workflow, financeiro e portal do cliente em um só lugar." },
-      { property: "og:title", content: "AlvasharFlow — Gestão de agência de edição em alto volume" },
+      { title: "AlvasharFlow — O sistema que trabalha por você" },
+      { name: "description", content: "Sistema de gestão para creators, filmmakers e editores: clientes, demandas, prazos, workflow, financeiro e portal do cliente." },
+      { property: "og:title", content: "AlvasharFlow — O sistema que trabalha por você" },
       { property: "og:description", content: "Clientes, demandas, workflow e portal do cliente para operações de alto volume." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "AlvasharFlow" },
-      { name: "twitter:description", content: "Alta gestão para agências de edição de vídeo." },
+      { name: "twitter:description", content: "Gestão completa para creators, filmmakers e editores." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

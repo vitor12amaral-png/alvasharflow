@@ -147,7 +147,7 @@ function AuthPage() {
           </Button>
         </div>
 
-        <p className="mt-6 text-center text-[10px] tracking-widest text-muted-foreground uppercase">AlvasharFlow · Alta gestão para editores</p>
+        <p className="mt-6 text-center text-[10px] tracking-widest text-muted-foreground uppercase">AlvasharFlow · Para creators, filmmakers e editores</p>
       </div>
     </div>
   );

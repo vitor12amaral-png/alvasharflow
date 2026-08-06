@@ -119,7 +119,7 @@ function TarefasPage() {
     <div className="p-6 md:p-8">
       <PageHeader
         title="Tarefas"
-        subtitle="Organização do dia a dia da agência"
+        subtitle="Organização do seu dia a dia"
         actions={<NewTaskDialog />}
       />
 
