@@ -56,8 +56,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="font-display text-sm font-bold text-primary-foreground">A</span>
           </div>
           <div>
-            <p className="font-display text-sm leading-tight font-semibold">alves.edt</p>
-            <p className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">Alta gestão</p>
+            <p className="font-display text-sm leading-tight font-semibold">AlvasharFlow</p>
+            <p className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">Creators & editores</p>
           </div>
         </div>
 
@@ -108,7 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)]">
               <span className="font-display text-[10px] font-bold text-primary-foreground">A</span>
             </div>
-            <span className="font-display text-sm font-semibold">alves.edt</span>
+            <span className="font-display text-sm font-semibold">AlvasharFlow</span>
           </div>
           <button onClick={signOut} className="text-xs text-muted-foreground">Sair</button>
         </header>

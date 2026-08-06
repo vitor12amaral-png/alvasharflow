@@ -11,7 +11,7 @@ import type { PackageSize } from "@/lib/video-workflow";
 
 export const Route = createFileRoute("/_authenticated/financeiro")({
   component: FinanceiroPage,
-  head: () => ({ meta: [{ title: "Financeiro — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Financeiro — AlvasharFlow" }] }),
 });
 
 function FinanceiroPage() {

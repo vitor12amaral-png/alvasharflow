@@ -740,6 +740,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           due_date: string | null
+          due_time: string | null
           id: string
           position: number
           priority: Database["public"]["Enums"]["video_priority"]
@@ -758,6 +759,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           id?: string
           position?: number
           priority?: Database["public"]["Enums"]["video_priority"]
@@ -776,6 +778,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           id?: string
           position?: number
           priority?: Database["public"]["Enums"]["video_priority"]
@@ -943,6 +946,7 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string | null
+          due_time: string | null
           editor_id: string | null
           estimated_hours: number | null
           final_file_link: string | null
@@ -963,6 +967,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           editor_id?: string | null
           estimated_hours?: number | null
           final_file_link?: string | null
@@ -983,6 +988,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           editor_id?: string | null
           estimated_hours?: number | null
           final_file_link?: string | null

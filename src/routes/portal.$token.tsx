@@ -18,7 +18,7 @@ export const Route = createFileRoute("/portal/$token")({
   component: PortalPage,
   head: () => ({
     meta: [
-      { title: "Portal do cliente — alves.edt" },
+      { title: "Portal do cliente — AlvasharFlow" },
       { name: "description", content: "Acompanhe, aprove e comente seus vídeos em produção." },
       { name: "robots", content: "noindex" },
     ],
@@ -58,7 +58,7 @@ function PortalPage() {
       <div className="flex min-h-screen items-center justify-center p-6">
         <Card className="max-w-md p-8 text-center">
           <h1 className="font-display text-xl font-semibold">Link inválido ou expirado</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Peça um novo link à agência.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Peça um novo link ao seu editor.</p>
         </Card>
       </div>
     );
@@ -93,7 +93,7 @@ function PortalPage() {
       )}
 
       <footer className="mt-10 text-center text-[10px] text-muted-foreground">
-        Feito com alves.edt
+        Feito com AlvasharFlow
       </footer>
     </div>
   );
@@ -132,7 +132,7 @@ function VideoCard({ token, video, onChange }: { token: string; video: any; onCh
     const { error } = await supabase.rpc("portal_request_changes", { _token: token, _video_id: video.id, _comment: comment });
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Pedido enviado à agência");
+    toast.success("Pedido enviado");
     setChangesOpen(false); setComment("");
     onChange();
   }
@@ -212,7 +212,7 @@ function NpsPrompt({ token, videoId, title }: { token: string; videoId: string; 
         <Star className="mt-0.5 h-4 w-4 text-[oklch(0.78_0.16_75)]" />
         <div className="flex-1">
           <p className="text-sm font-medium">Como foi sua experiência com "{title}"?</p>
-          <p className="text-xs text-muted-foreground">De 0 a 10, quanto você recomendaria a agência?</p>
+          <p className="text-xs text-muted-foreground">De 0 a 10, quanto você recomendaria o trabalho?</p>
           <div className="mt-3 flex flex-wrap gap-1">
             {Array.from({ length: 11 }).map((_, n) => (
               <button

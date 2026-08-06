@@ -21,7 +21,7 @@ import { DeleteAction } from "@/components/delete-action";
 
 export const Route = createFileRoute("/_authenticated/marketing")({
   component: MarketingPage,
-  head: () => ({ meta: [{ title: "Marketing — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Marketing — AlvasharFlow" }] }),
 });
 
 type Channel = "instagram" | "tiktok" | "youtube" | "linkedin" | "outro";

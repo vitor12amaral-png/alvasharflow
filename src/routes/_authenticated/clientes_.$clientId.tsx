@@ -26,7 +26,7 @@ import { ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
   component: ClientDetail,
-  head: () => ({ meta: [{ title: "Cliente — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Cliente — AlvasharFlow" }] }),
 });
 
 const LINK_CATEGORIES = [

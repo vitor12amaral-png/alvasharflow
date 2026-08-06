@@ -11,7 +11,7 @@ import { initials } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: ConfigPage,
-  head: () => ({ meta: [{ title: "Configurações — alves.edt" }] }),
+  head: () => ({ meta: [{ title: "Configurações — AlvasharFlow" }] }),
 });
 
 function ConfigPage() {
