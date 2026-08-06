@@ -26,7 +26,7 @@ import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
 import { StartTimerButton } from "@/components/timer";
 import { useVideoTime, fmt as fmtTime } from "@/hooks/use-timer";
 import { ColorPicker, colorValue } from "@/components/color-tag";
-import { DueDatePopover, DueBadge, isoDay } from "@/components/due-date-popover";
+import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
