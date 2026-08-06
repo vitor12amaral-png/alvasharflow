@@ -10,7 +10,6 @@ import { ColorPicker } from "@/components/color-tag";
 import { DeleteAction } from "@/components/delete-action";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
-import { formatDate } from "@/lib/format";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
@@ -148,7 +147,6 @@ function FilaPage() {
           </div>
         ) : (
           list.map((v, i) => {
-            const isLate = !!v.due_date && v.due_date < today;
             return (
               <div
                 key={v.id}
