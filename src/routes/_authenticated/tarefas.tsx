@@ -20,7 +20,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { formatDate, daysUntil } from "@/lib/format";
+import { daysUntil } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
   component: TarefasPage,
