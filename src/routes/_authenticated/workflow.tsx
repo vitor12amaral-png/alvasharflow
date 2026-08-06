@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
@@ -385,6 +385,8 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                               count={arr.length}
                               expanded={isExpanded}
                               onToggle={() => toggleGroup(key)}
+                              ids={arr.map((v) => v.id)}
+                              onSetStatus={(s) => patch.mutate({ ids: arr.map((v) => v.id), changes: { status: s } })}
                             >
                               {arr.map((v) => (
                                 <VideoCard key={v.id} video={v}
@@ -538,7 +540,7 @@ function Column({ id, label, dot, count, children }: { id: GroupId; label: strin
   );
 }
 
-function ClientStack({ stackId, name, parentName, count, expanded, onToggle, children }: {
+function ClientStack({ stackId, name, parentName, count, expanded, onToggle, children, ids, onSetStatus }: {
   stackId: string;
   name: string;
   parentName?: string | null;
@@ -546,6 +548,8 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
   expanded: boolean;
   onToggle: () => void;
   children: React.ReactNode;
+  ids: string[];
+  onSetStatus: (s: VideoStatus) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: stackId });
   const parentBadge = parentName ? (
@@ -598,12 +602,46 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
       <div
         {...listeners}
         {...attributes}
-        className="cursor-grab rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground active:cursor-grabbing"
+        className="cursor-grab rounded p-1 text-muted-foreground/40 hover:bg-muted hover:text-foreground active:cursor-grabbing"
         aria-label="Arrastar"
         title="Arrastar para mover todos"
       >
-        <span className="block h-3 w-3 rounded-sm border border-current" />
+        <GripVertical className="h-3.5 w-3.5" />
       </div>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            title="Alterar situação e prazo de todos"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-muted-foreground/40 text-muted-foreground transition hover:border-primary hover:text-primary"
+          >
+            <span className="sr-only">Ações</span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-56 p-1">
+          <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {count} vídeo{count > 1 ? "s" : ""} de {name}
+          </p>
+          <DueDatePopover
+            table="videos"
+            ids={ids}
+            align="end"
+            invalidate={[["videos-workflow"], ["fila-videos"], ["dashboard"]]}
+          >
+            <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-muted">
+              <CalendarClock className="h-3.5 w-3.5" />Definir prazo
+            </button>
+          </DueDatePopover>
+          <div className="my-1 h-px bg-border" />
+          {ALL_STATUSES.map((s) => (
+            <button key={s} onClick={() => onSetStatus(s)}
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-muted">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: STAGE_ACCENT[s] }} />
+              {STAGE_LABEL[s]}
+            </button>
+          ))}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
