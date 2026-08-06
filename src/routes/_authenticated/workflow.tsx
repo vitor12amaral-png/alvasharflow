@@ -26,6 +26,7 @@ import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
 import { StartTimerButton } from "@/components/timer";
 import { useVideoTime, fmt as fmtTime } from "@/hooks/use-timer";
 import { ColorPicker, colorValue } from "@/components/color-tag";
+import { DueDatePopover, DueBadge, isoDay } from "@/components/due-date-popover";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -58,6 +59,7 @@ type VideoRow = {
   status: VideoStatus;
   priority: VideoPriority;
   due_date: string | null;
+  due_time: string | null;
   created_at: string;
   client_id: string;
   color: string | null;
@@ -215,7 +217,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   const { data: allVideos, isLoading } = useQuery({
     queryKey: ["videos-workflow", clientId, scopeIds.join(",")],
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, created_at, client_id, color, clients(name)").order("position");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, client_id, color, clients(name)").order("position");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -234,7 +236,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
 
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
-  type VideoPatch = { status?: VideoStatus; due_date?: string | null; priority?: VideoPriority };
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
@@ -431,6 +433,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
           onSetStatus={(s) => { patch.mutate({ ids: Array.from(selected), changes: { status: s } }); clearSel(); }}
           onSetPriority={(p) => { patch.mutate({ ids: Array.from(selected), changes: { priority: p } }); clearSel(); }}
           ids={Array.from(selected)}
+          onDueDone={clearSel}
           onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
       )}
@@ -438,14 +441,14 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   );
 }
 
-function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted }: {
+function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone }: {
   count: number;
   onClear: () => void;
   onSetStatus: (s: VideoStatus) => void;
   onSetPriority: (p: VideoPriority) => void;
   ids: string[];
   onDeleted: () => void;
-
+  onDueDone: () => void;
 }) {
   return (
     <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
@@ -466,6 +469,15 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted }:
             ))}
           </PopoverContent>
         </Popover>
+        <DueDatePopover
+          table="videos"
+          ids={ids}
+          invalidate={[["videos-workflow"], ["fila-videos"], ["dashboard"]]}
+          align="center"
+          onDone={onDueDone}
+        >
+          <Button size="sm" variant="outline" className="h-7 text-xs">Prazo</Button>
+        </DueDatePopover>
         <Popover>
           <PopoverTrigger asChild>
             <Button size="sm" variant="outline" className="h-7 text-xs">Prioridade</Button>
@@ -624,7 +636,17 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
         <div {...listeners} {...attributes} className="min-w-0 flex-1 cursor-grab active:cursor-grabbing">
           <p className="truncate text-xs font-medium">{video.title}</p>
           <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-            {video.due_date && <span>{formatDate(video.due_date)}</span>}
+            <DueDatePopover
+              table="videos"
+              ids={[video.id]}
+              due={video.due_date}
+              time={video.due_time}
+              invalidate={[["videos-workflow"], ["fila-videos"], ["dashboard"]]}
+            >
+              <button onClick={(e) => e.stopPropagation()} aria-label="Prazo">
+                <DueBadge due={video.due_date} time={video.due_time} />
+              </button>
+            </DueDatePopover>
             <span className={cn("font-medium", PRIORITY_COLOR[video.priority])}>{PRIORITY_LABEL[video.priority]}</span>
             {selected && anySelected && selectedCount > 1 && (
               <span className="text-primary">· move {selectedCount}</span>
@@ -676,8 +698,15 @@ function ListView({ videos, selected, onToggle, onToggleAll, onStatusChange, onD
                 <Checkbox checked={selected.has(v.id)} onCheckedChange={() => onToggle(v.id)} />
               </td>
               <td className="px-4 py-1.5">
-                <input type="date" value={v.due_date ?? ""} onChange={(e) => onDueChange(v.id, e.target.value || null)}
-                  className="bg-transparent text-xs text-muted-foreground outline-none hover:text-foreground focus:text-foreground" />
+                <DueDatePopover
+                  table="videos"
+                  ids={[v.id]}
+                  due={v.due_date}
+                  time={v.due_time}
+                  invalidate={[["videos-workflow"], ["fila-videos"], ["dashboard"]]}
+                >
+                  <button aria-label="Prazo"><DueBadge due={v.due_date} time={v.due_time} /></button>
+                </DueDatePopover>
               </td>
               <td className="px-4 py-2 font-medium">
                 <span className="flex items-center gap-2">
