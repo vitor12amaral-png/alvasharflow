@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div>
             <p className="font-display text-sm leading-tight font-semibold">AlvasharFlow</p>
-            <p className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">Alta gestão</p>
+            <p className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">Creators & editores</p>
           </div>
         </div>
 

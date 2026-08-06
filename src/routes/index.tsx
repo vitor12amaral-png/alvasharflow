@@ -86,7 +86,7 @@ function Landing() {
       </main>
 
       <footer className="border-t border-border/60 py-6 text-center text-xs tracking-widest text-muted-foreground uppercase">
-        AlvasharFlow · Alta gestão para editores
+        AlvasharFlow · Para creators, filmmakers e editores
       </footer>
     </div>
   );
