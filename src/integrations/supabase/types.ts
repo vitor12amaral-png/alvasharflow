@@ -1147,6 +1147,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_workspace_invite: { Args: { _token: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1169,6 +1170,17 @@ export type Database = {
           _workspace_id: string
         }
         Returns: boolean
+      }
+      invite_info: {
+        Args: { _token: string }
+        Returns: {
+          accepted: boolean
+          email: string
+          expires_at: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          workspace_id: string
+          workspace_name: string
+        }[]
       }
       is_workspace_active: { Args: { _workspace_id: string }; Returns: boolean }
       is_workspace_member: {
