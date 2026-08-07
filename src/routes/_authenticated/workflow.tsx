@@ -285,11 +285,11 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) { next.delete(id); sfx.deselect(); } else { next.add(id); sfx.select(); }
       return next;
     });
   }
-  function clearSel() { setSelected(new Set()); }
+  function clearSel() { if (selected.size) sfx.close(); setSelected(new Set()); }
 
   function onDragEnd(e: DragEndEvent) {
     const dragId = String(e.active.id);
@@ -304,6 +304,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       const vids = (videos ?? []).filter((v) => v.client_id === cid && STATUS_TO_GROUP[v.status] === fromGroup);
       if (vids.length === 0) return;
       patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
+      sfx.drop();
       return;
     }
 
@@ -312,8 +313,10 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     const vids = (videos ?? []).filter((v) => ids.includes(v.id) && STATUS_TO_GROUP[v.status] !== toGroup);
     if (vids.length === 0) return;
     patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
-    if (selected.has(dragId)) clearSel();
+    sfx.drop();
+    if (selected.has(dragId)) setSelected(new Set());
   }
+
 
   return (
     <div className="flex min-h-[calc(100vh-3rem)] flex-col md:min-h-screen">
