@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { toast } from "sonner";
+import { sfx } from "@/lib/sfx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const STORAGE_KEY = "alvesedt-active-timer";
