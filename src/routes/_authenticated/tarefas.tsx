@@ -14,7 +14,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2 } from "lucide-react";
 import { DueDatePopover, formatDue } from "@/components/due-date-popover";
-import { StartTimerButton } from "@/components/timer";
 import { DeleteAction } from "@/components/delete-action";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -221,7 +220,6 @@ function TaskCard({ task, onStatus, onDelete }: { task: Task; onStatus: (s: Task
             </DueDatePopover>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <StartTimerButton taskId={task.id} label={task.title} />
             <div className="ml-auto">
               <DeleteAction
                 table="tasks"
