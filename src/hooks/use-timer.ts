@@ -54,9 +54,10 @@ export function useTimer() {
       duration_seconds: duration,
       notes: cur.notes ?? null,
     }).eq("id", cur.entryId);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error.message); sfx.error(); return; }
     write(null); setActive(null);
     qc.invalidateQueries({ queryKey: ["time_entries"] });
+    sfx.stop();
     toast.success(`Sessão registrada: ${fmt(duration)}`);
   }, [qc]);
 
@@ -80,6 +81,7 @@ export function useTimer() {
       videoId: opts.videoId, taskId: opts.taskId, notes: opts.notes ?? null,
     };
     write(t); setActive(t);
+    sfx.start();
     toast.success("Cronômetro iniciado");
   }, [me, stop]);
 
