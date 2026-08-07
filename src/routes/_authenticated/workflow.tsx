@@ -261,13 +261,14 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     },
   });
 
-  const marquee = useMarquee((ids, additive) =>
+  const marquee = useMarquee((ids, additive) => {
+    if (ids.length) sfx.select();
     setSelected((prev) => {
       const next = additive ? new Set(prev) : new Set<string>();
       ids.forEach((id) => next.add(id));
       return next;
-    }),
-  );
+    });
+  });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -596,6 +597,8 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
   onSetStatus: (s: VideoStatus) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: stackId });
+  const { data: pace } = useVideoPace();
+  const estimate = (pace?.avgPerVideo ?? 0) > 0 ? fmtEstimate((pace!.avgPerVideo) * count) : null;
   const parentBadge = parentName ? (
     <span
       title={`Marca de ${parentName}`}
@@ -639,7 +642,10 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
         </div>
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 truncate text-xs font-medium">{parentBadge}{name}</p>
-          <p className="text-[10px] text-muted-foreground">{count} vídeo{count > 1 ? "s" : ""}{parentName ? ` · ${parentName}` : ""}</p>
+          <p className="text-[10px] text-muted-foreground">
+            {count} vídeo{count > 1 ? "s" : ""}{parentName ? ` · ${parentName}` : ""}
+            {estimate && <span className="ml-1 text-primary/80">≈ {estimate}</span>}
+          </p>
         </div>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
       </button>
@@ -664,7 +670,7 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
         </PopoverTrigger>
         <PopoverContent align="end" className="w-56 p-1">
           <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {count} vídeo{count > 1 ? "s" : ""} de {name}
+            {count} vídeo{count > 1 ? "s" : ""} de {name}{estimate ? ` · ≈ ${estimate}` : ""}
           </p>
           <DueDatePopover
             table="videos"
