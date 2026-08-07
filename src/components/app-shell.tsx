@@ -32,6 +32,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [sound, setSound] = useState(true);
+
+  useEffect(() => {
+    setSound(isSfxEnabled());
+    return installGlobalSfx();
+  }, []);
+
 
   async function signOut() {
     await queryClient.cancelQueries();
