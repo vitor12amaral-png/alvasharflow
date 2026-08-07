@@ -20,7 +20,6 @@ import { initials, formatBRL, formatDate, relativeTime } from "@/lib/format";
 import { STAGE_LABEL, STAGE_ACCENT, DELIVERY_LABEL, LIBRARY_LABEL, PACKAGE_LABEL, PRIORITY_LABEL } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority, PackageSize, DeliveryMethod, LibraryCategory } from "@/lib/video-workflow";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { StartTimerButton } from "@/components/timer";
 import { AddSubClientButton } from "@/routes/_authenticated/clientes";
 import { ChevronRight } from "lucide-react";
 
@@ -231,7 +230,6 @@ function ClientDetail() {
                     <p className="text-[11px] text-muted-foreground">{STAGE_LABEL[v.status as VideoStatus]} · {PRIORITY_LABEL[v.priority as VideoPriority]}</p>
                   </div>
                   <span className="text-xs text-muted-foreground">{formatDate(v.due_date)}</span>
-                  <StartTimerButton videoId={v.id} label={v.title} />
                   <DeleteAction
                     table="videos"
                     id={v.id}

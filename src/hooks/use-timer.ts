@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { toast } from "sonner";
+import { sfx } from "@/lib/sfx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const STORAGE_KEY = "alvesedt-active-timer";
@@ -53,9 +54,10 @@ export function useTimer() {
       duration_seconds: duration,
       notes: cur.notes ?? null,
     }).eq("id", cur.entryId);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error.message); sfx.error(); return; }
     write(null); setActive(null);
     qc.invalidateQueries({ queryKey: ["time_entries"] });
+    sfx.stop();
     toast.success(`Sessão registrada: ${fmt(duration)}`);
   }, [qc]);
 
@@ -79,6 +81,7 @@ export function useTimer() {
       videoId: opts.videoId, taskId: opts.taskId, notes: opts.notes ?? null,
     };
     write(t); setActive(t);
+    sfx.start();
     toast.success("Cronômetro iniciado");
   }, [me, stop]);
 
@@ -159,4 +162,43 @@ export function fmt(seconds: number) {
   const s = seconds % 60;
   if (h > 0) return `${h}h${String(m).padStart(2, "0")}`;
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/**
+ * Ritmo de produção do workspace: quanto tempo, em média, leva um vídeo.
+ * Calculado sobre sessões finalizadas agrupadas por vídeo.
+ */
+export function useVideoPace(videoIds?: string[]) {
+  const key = (videoIds ?? []).slice().sort().join(",");
+  return useQuery({
+    queryKey: ["time_entries", "pace", key],
+    queryFn: async () => {
+      let q = supabase
+        .from("time_entries")
+        .select("video_id, duration_seconds")
+        .not("video_id", "is", null)
+        .not("duration_seconds", "is", null);
+      if (videoIds && videoIds.length > 0 && videoIds.length <= 200) q = q.in("video_id", videoIds);
+      const { data, error } = await q;
+      if (error) throw error;
+      const perVideo = new Map<string, number>();
+      (data ?? []).forEach((e) => {
+        if (!e.video_id) return;
+        perVideo.set(e.video_id, (perVideo.get(e.video_id) ?? 0) + (e.duration_seconds ?? 0));
+      });
+      const totals = Array.from(perVideo.values());
+      const tracked = totals.reduce((s, v) => s + v, 0);
+      const avg = totals.length ? Math.round(tracked / totals.length) : 0;
+      return { avgPerVideo: avg, trackedVideos: totals.length, trackedSeconds: tracked };
+    },
+  });
+}
+
+/** Formata uma estimativa em horas/minutos ("≈ 4h20"). */
+export function fmtEstimate(seconds: number) {
+  if (seconds <= 0) return "—";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  if (h === 0) return `${m}min`;
+  return `${h}h${String(m).padStart(2, "0")}`;
 }

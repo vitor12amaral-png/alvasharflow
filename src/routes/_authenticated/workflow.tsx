@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, Timer as TimerIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
@@ -23,8 +23,9 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
-import { StartTimerButton } from "@/components/timer";
-import { useVideoTime, fmt as fmtTime } from "@/hooks/use-timer";
+import { StartTimerButton, TimerBadge } from "@/components/timer";
+import { useVideoTime, useVideoPace, fmtEstimate, fmt as fmtTime } from "@/hooks/use-timer";
+import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 
@@ -260,13 +261,14 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     },
   });
 
-  const marquee = useMarquee((ids, additive) =>
+  const marquee = useMarquee((ids, additive) => {
+    if (ids.length) sfx.select();
     setSelected((prev) => {
       const next = additive ? new Set(prev) : new Set<string>();
       ids.forEach((id) => next.add(id));
       return next;
-    }),
-  );
+    });
+  });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -284,11 +286,11 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) { next.delete(id); sfx.deselect(); } else { next.add(id); sfx.select(); }
       return next;
     });
   }
-  function clearSel() { setSelected(new Set()); }
+  function clearSel() { if (selected.size) sfx.close(); setSelected(new Set()); }
 
   function onDragEnd(e: DragEndEvent) {
     const dragId = String(e.active.id);
@@ -303,6 +305,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       const vids = (videos ?? []).filter((v) => v.client_id === cid && STATUS_TO_GROUP[v.status] === fromGroup);
       if (vids.length === 0) return;
       patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
+      sfx.drop();
       return;
     }
 
@@ -311,8 +314,10 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     const vids = (videos ?? []).filter((v) => ids.includes(v.id) && STATUS_TO_GROUP[v.status] !== toGroup);
     if (vids.length === 0) return;
     patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
-    if (selected.has(dragId)) clearSel();
+    sfx.drop();
+    if (selected.has(dragId)) setSelected(new Set());
   }
+
 
   return (
     <div className="flex min-h-[calc(100vh-3rem)] flex-col md:min-h-screen">
@@ -344,7 +349,9 @@ function WorkflowBoard({ clientId, clients, onBack }: {
             </div>
           }
         />
+        <PacePanel videos={videos} />
       </div>
+
 
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
@@ -427,6 +434,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       )}
 
       <VideoDetailSheet videoId={detailId} onClose={() => setDetailId(null)} />
+      <TimerBadge />
 
       {selected.size > 0 && (
         <BulkBar
@@ -438,6 +446,43 @@ function WorkflowBoard({ clientId, clients, onBack }: {
           onDueDone={clearSel}
           onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Painel de ritmo: usa as sessões de cronômetro para estimar quanto tempo
+ * ainda falta para terminar as demandas abertas desta visão.
+ */
+function PacePanel({ videos }: { videos: VideoRow[] }) {
+  const { data: pace } = useVideoPace();
+  const avg = pace?.avgPerVideo ?? 0;
+  const pending = videos.filter((v) => v.status !== "entregue" && v.status !== "aprovado");
+  if (videos.length === 0) return null;
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-border bg-card/40 px-4 py-2.5 text-xs">
+      <span className="flex items-center gap-1.5 font-medium">
+        <TimerIcon className="h-3.5 w-3.5 text-primary" />
+        Ritmo de produção
+      </span>
+      {avg > 0 ? (
+        <>
+          <span className="text-muted-foreground">
+            Média por vídeo: <b className="font-mono text-foreground">{fmtEstimate(avg)}</b>
+          </span>
+          <span className="text-muted-foreground">
+            {pending.length} em aberto ≈ <b className="font-mono text-foreground">{fmtEstimate(avg * pending.length)}</b> restantes
+          </span>
+          <span className="text-muted-foreground">
+            Já cronometrado: <b className="font-mono text-foreground">{fmtTime(pace?.trackedSeconds ?? 0)}</b> em {pace?.trackedVideos} vídeo(s)
+          </span>
+        </>
+      ) : (
+        <span className="text-muted-foreground">
+          Use o cronômetro nos vídeos para o sistema aprender quanto tempo leva cada demanda.
+        </span>
       )}
     </div>
   );
@@ -552,6 +597,8 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
   onSetStatus: (s: VideoStatus) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: stackId });
+  const { data: pace } = useVideoPace();
+  const estimate = (pace?.avgPerVideo ?? 0) > 0 ? fmtEstimate((pace!.avgPerVideo) * count) : null;
   const parentBadge = parentName ? (
     <span
       title={`Marca de ${parentName}`}
@@ -595,7 +642,10 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
         </div>
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 truncate text-xs font-medium">{parentBadge}{name}</p>
-          <p className="text-[10px] text-muted-foreground">{count} vídeo{count > 1 ? "s" : ""}{parentName ? ` · ${parentName}` : ""}</p>
+          <p className="text-[10px] text-muted-foreground">
+            {count} vídeo{count > 1 ? "s" : ""}{parentName ? ` · ${parentName}` : ""}
+            {estimate && <span className="ml-1 text-primary/80">≈ {estimate}</span>}
+          </p>
         </div>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
       </button>
@@ -620,7 +670,7 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
         </PopoverTrigger>
         <PopoverContent align="end" className="w-56 p-1">
           <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {count} vídeo{count > 1 ? "s" : ""} de {name}
+            {count} vídeo{count > 1 ? "s" : ""} de {name}{estimate ? ` · ≈ ${estimate}` : ""}
           </p>
           <DueDatePopover
             table="videos"

@@ -2,16 +2,16 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Kanban, Calendar, FolderOpen,
   Wallet, Settings, UsersRound, LogOut, Loader2,
-  CheckSquare, Megaphone, ListOrdered,
+  CheckSquare, Megaphone, ListOrdered, Volume2, VolumeX,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CopilotButton } from "@/components/copilot";
-import { TimerBadge } from "@/components/timer";
+import { installGlobalSfx, isSfxEnabled, setSfxEnabled } from "@/lib/sfx";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -32,6 +32,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [sound, setSound] = useState(true);
+
+  useEffect(() => {
+    setSound(isSfxEnabled());
+    return installGlobalSfx();
+  }, []);
+
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -92,12 +99,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="truncate text-[10px] text-muted-foreground uppercase tracking-wider">{user.role}</p>
             </div>
             <button
+              onClick={() => { const next = !sound; setSound(next); setSfxEnabled(next); }}
+              data-sfx="off"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+              title={sound ? "Desativar sons" : "Ativar sons"}
+            >
+              {sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            </button>
+            <button
               onClick={signOut}
               className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
               title="Sair"
             >
               <LogOut className="h-3.5 w-3.5" />
             </button>
+
           </div>
         </div>
       </aside>
@@ -134,7 +150,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
       </div>
-      <TimerBadge />
+      
       <CopilotButton />
     </div>
   );
