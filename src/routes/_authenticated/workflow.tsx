@@ -450,6 +450,43 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   );
 }
 
+/**
+ * Painel de ritmo: usa as sessões de cronômetro para estimar quanto tempo
+ * ainda falta para terminar as demandas abertas desta visão.
+ */
+function PacePanel({ videos }: { videos: VideoRow[] }) {
+  const { data: pace } = useVideoPace();
+  const avg = pace?.avgPerVideo ?? 0;
+  const pending = videos.filter((v) => v.status !== "entregue" && v.status !== "aprovado");
+  if (videos.length === 0) return null;
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-border bg-card/40 px-4 py-2.5 text-xs">
+      <span className="flex items-center gap-1.5 font-medium">
+        <TimerIcon className="h-3.5 w-3.5 text-primary" />
+        Ritmo de produção
+      </span>
+      {avg > 0 ? (
+        <>
+          <span className="text-muted-foreground">
+            Média por vídeo: <b className="font-mono text-foreground">{fmtEstimate(avg)}</b>
+          </span>
+          <span className="text-muted-foreground">
+            {pending.length} em aberto ≈ <b className="font-mono text-foreground">{fmtEstimate(avg * pending.length)}</b> restantes
+          </span>
+          <span className="text-muted-foreground">
+            Já cronometrado: <b className="font-mono text-foreground">{fmtTime(pace?.trackedSeconds ?? 0)}</b> em {pace?.trackedVideos} vídeo(s)
+          </span>
+        </>
+      ) : (
+        <span className="text-muted-foreground">
+          Use o cronômetro nos vídeos para o sistema aprender quanto tempo leva cada demanda.
+        </span>
+      )}
+    </div>
+  );
+}
+
 function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone }: {
   count: number;
   onClear: () => void;
