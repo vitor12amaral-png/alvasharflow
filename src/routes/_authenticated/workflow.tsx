@@ -23,8 +23,9 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
-import { StartTimerButton } from "@/components/timer";
-import { useVideoTime, fmt as fmtTime } from "@/hooks/use-timer";
+import { StartTimerButton, TimerBadge } from "@/components/timer";
+import { useVideoTime, useVideoPace, fmtEstimate, fmt as fmtTime } from "@/hooks/use-timer";
+import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 
