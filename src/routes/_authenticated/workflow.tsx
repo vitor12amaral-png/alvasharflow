@@ -433,6 +433,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       )}
 
       <VideoDetailSheet videoId={detailId} onClose={() => setDetailId(null)} />
+      <TimerBadge />
 
       {selected.size > 0 && (
         <BulkBar
