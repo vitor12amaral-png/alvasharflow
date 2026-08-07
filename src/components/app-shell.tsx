@@ -99,12 +99,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="truncate text-[10px] text-muted-foreground uppercase tracking-wider">{user.role}</p>
             </div>
             <button
+              onClick={() => { const next = !sound; setSound(next); setSfxEnabled(next); }}
+              data-sfx="off"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+              title={sound ? "Desativar sons" : "Ativar sons"}
+            >
+              {sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            </button>
+            <button
               onClick={signOut}
               className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
               title="Sair"
             >
               <LogOut className="h-3.5 w-3.5" />
             </button>
+
           </div>
         </div>
       </aside>
