@@ -348,7 +348,9 @@ function WorkflowBoard({ clientId, clients, onBack }: {
             </div>
           }
         />
+        <PacePanel videos={videos} />
       </div>
+
 
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
