@@ -4,14 +4,18 @@ import {
   Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone, ListOrdered, Volume2, VolumeX,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CopilotButton } from "@/components/copilot";
-import { installGlobalSfx, isSfxEnabled, setSfxEnabled } from "@/lib/sfx";
+import { installGlobalSfx } from "@/lib/sfx";
+import { usePreferences } from "@/hooks/use-preferences";
+import { useBranding, DEFAULT_BRANDING } from "@/hooks/use-branding";
+import { PackageAlertsBell } from "@/components/package-alerts";
+
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
