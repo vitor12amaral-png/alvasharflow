@@ -6,24 +6,45 @@ import { sfx } from "@/lib/sfx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const STORAGE_KEY = "alvesedt-active-timer";
+const EVT = "alvashar-timer";
 
 export type ActiveTimer = {
   entryId: string;
-  startedAt: string; // ISO
+  /** Início do segmento atual (ISO). */
+  startedAt: string;
+  /** Segundos já acumulados em segmentos anteriores (antes das pausas). */
+  accumulated: number;
+  /** Quando pausado, guarda o instante da pausa. */
+  pausedAt: string | null;
   label: string;
   videoId?: string | null;
   taskId?: string | null;
+  /** Vários vídeos (leva em conjunto) sendo cronometrados juntos. */
+  batchIds?: string[] | null;
   notes?: string | null;
 };
 
 function read(): ActiveTimer | null {
   if (typeof window === "undefined") return null;
-  try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : null; } catch { return null; }
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if (!s) return null;
+    const parsed = JSON.parse(s) as ActiveTimer;
+    return { accumulated: 0, pausedAt: null, ...parsed };
+  } catch {
+    return null;
+  }
 }
 function write(v: ActiveTimer | null) {
   if (typeof window === "undefined") return;
   if (v) localStorage.setItem(STORAGE_KEY, JSON.stringify(v));
   else localStorage.removeItem(STORAGE_KEY);
+  window.dispatchEvent(new CustomEvent(EVT));
+}
+
+function computeElapsed(t: ActiveTimer, now: number) {
+  if (t.pausedAt) return Math.max(0, Math.round(t.accumulated));
+  return Math.max(0, Math.round(t.accumulated + (now - new Date(t.startedAt).getTime()) / 1000));
 }
 
 export function useTimer() {
@@ -33,24 +54,29 @@ export function useTimer() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || active.pausedAt) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [active]);
 
+  // Sincroniza entre abas e entre componentes da mesma aba.
   useEffect(() => {
-    const onStorage = (e: StorageEvent) => { if (e.key === STORAGE_KEY) setActive(read()); };
+    const sync = () => setActive(read());
+    const onStorage = (e: StorageEvent) => { if (e.key === STORAGE_KEY) sync(); };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener(EVT, sync);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(EVT, sync);
+    };
   }, []);
 
   const stop = useCallback(async () => {
     const cur = read();
     if (!cur) return;
-    const ended = new Date();
-    const duration = Math.max(1, Math.floor((ended.getTime() - new Date(cur.startedAt).getTime()) / 1000));
+    const duration = Math.max(1, computeElapsed(cur, Date.now()));
     const { error } = await supabase.from("time_entries").update({
-      ended_at: ended.toISOString(),
+      ended_at: new Date().toISOString(),
       duration_seconds: duration,
       notes: cur.notes ?? null,
     }).eq("id", cur.entryId);
@@ -61,7 +87,9 @@ export function useTimer() {
     toast.success(`Sessão registrada: ${fmt(duration)}`);
   }, [qc]);
 
-  const start = useCallback(async (opts: { videoId?: string; taskId?: string; label: string; notes?: string }) => {
+  const start = useCallback(async (opts: {
+    videoId?: string; taskId?: string; label: string; notes?: string; batchIds?: string[];
+  }) => {
     if (!me?.workspaceId) { toast.error("Sem workspace"); return; }
     const cur = read();
     if (cur) {
@@ -77,13 +105,43 @@ export function useTimer() {
     }).select("id, started_at").single();
     if (error) { toast.error(error.message); return; }
     const t: ActiveTimer = {
-      entryId: data.id, startedAt: data.started_at, label: opts.label,
-      videoId: opts.videoId, taskId: opts.taskId, notes: opts.notes ?? null,
+      entryId: data.id, startedAt: data.started_at, accumulated: 0, pausedAt: null,
+      label: opts.label, videoId: opts.videoId, taskId: opts.taskId,
+      batchIds: opts.batchIds ?? null, notes: opts.notes ?? null,
     };
     write(t); setActive(t);
     sfx.start();
     toast.success("Cronômetro iniciado");
   }, [me, stop]);
+
+  /** Pausa: banca o tempo do segmento atual. */
+  const pause = useCallback(() => {
+    const cur = read();
+    if (!cur || cur.pausedAt) return;
+    const next: ActiveTimer = {
+      ...cur,
+      accumulated: computeElapsed(cur, Date.now()),
+      pausedAt: new Date().toISOString(),
+    };
+    write(next); setActive(next);
+    sfx.pause();
+  }, []);
+
+  /** Retoma a contagem a partir de agora. */
+  const resume = useCallback(() => {
+    const cur = read();
+    if (!cur || !cur.pausedAt) return;
+    const next: ActiveTimer = { ...cur, startedAt: new Date().toISOString(), pausedAt: null };
+    write(next); setActive(next);
+    setNow(Date.now());
+    sfx.start();
+  }, []);
+
+  const toggle = useCallback(() => {
+    const cur = read();
+    if (!cur) return;
+    if (cur.pausedAt) resume(); else pause();
+  }, [pause, resume]);
 
   /** Descarta a sessão em andamento sem registrar tempo. */
   const discard = useCallback(async () => {
@@ -98,17 +156,17 @@ export function useTimer() {
 
   /** Atualiza a anotação da sessão em andamento (salva ao finalizar). */
   const setNotes = useCallback((notes: string) => {
-    setActive((prev) => {
-      if (!prev) return prev;
-      const next = { ...prev, notes };
-      write(next);
-      return next;
-    });
+    const cur = read();
+    if (!cur) return;
+    const next = { ...cur, notes };
+    write(next);
+    setActive(next);
   }, []);
 
-  const elapsed = active ? Math.max(0, Math.floor((now - new Date(active.startedAt).getTime()) / 1000)) : 0;
+  const elapsed = active ? computeElapsed(active, now) : 0;
+  const paused = !!active?.pausedAt;
 
-  return { active, elapsed, start, stop, discard, setNotes };
+  return { active, elapsed, paused, start, stop, pause, resume, toggle, discard, setNotes };
 }
 
 /** Total de tempo registrado hoje (e na semana) pelo usuário atual. */
@@ -162,6 +220,14 @@ export function fmt(seconds: number) {
   const s = seconds % 60;
   if (h > 0) return `${h}h${String(m).padStart(2, "0")}`;
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/** Relógio completo hh:mm:ss — usado no cronômetro grande. */
+export function fmtClock(seconds: number) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 /**
