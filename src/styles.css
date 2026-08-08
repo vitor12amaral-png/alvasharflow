@@ -108,3 +108,74 @@
   border: 1px solid oklch(1 0 0 / 0.08);
   backdrop-filter: blur(6px);
 }
+
+/* ---------- Tema claro (personalização em Configurações) ---------- */
+:root.theme-light {
+  --background: oklch(0.98 0.004 260);
+  --foreground: oklch(0.22 0.02 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.02 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.02 260);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.006 260);
+  --secondary-foreground: oklch(0.25 0.02 260);
+  --muted: oklch(0.955 0.005 260);
+  --muted-foreground: oklch(0.50 0.02 260);
+  --accent: oklch(0.94 0.012 250);
+  --accent-foreground: oklch(0.25 0.02 260);
+  --border: oklch(0.22 0.02 260 / 12%);
+  --input: oklch(0.22 0.02 260 / 16%);
+  --sidebar: oklch(0.96 0.005 260);
+  --sidebar-foreground: oklch(0.30 0.02 260);
+  --sidebar-accent: oklch(0.92 0.008 260);
+  --sidebar-accent-foreground: oklch(0.22 0.02 260);
+  --sidebar-border: oklch(0.22 0.02 260 / 10%);
+}
+:root.theme-light body {
+  background-image:
+    radial-gradient(1100px 560px at 15% -10%, oklch(0.72 0.19 235 / 0.10), transparent 60%),
+    radial-gradient(800px 460px at 100% 100%, oklch(0.66 0.22 300 / 0.05), transparent 60%);
+}
+:root.theme-light .glass-card {
+  background: linear-gradient(180deg, oklch(1 0 0 / 0.9), oklch(1 0 0 / 0.6));
+  border-color: oklch(0.22 0.02 260 / 10%);
+}
+
+/* ---------- Acessibilidade ---------- */
+:root.reduce-motion *,
+:root.reduce-motion *::before,
+:root.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+:root.high-contrast {
+  --border: oklch(1 0 0 / 26%);
+  --muted-foreground: oklch(0.82 0.015 260);
+}
+:root.high-contrast.theme-light {
+  --border: oklch(0.22 0.02 260 / 32%);
+  --muted-foreground: oklch(0.34 0.02 260);
+}
+:root.compact-ui {
+  --radius: 0.55rem;
+}
+:root.compact-ui .app-density > * { --density-gap: 0.5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------- Micro-interações fluidas ---------- */
+@utility lift {
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, border-color 180ms ease;
+}
+@utility lift-hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -12px oklch(0 0 0 / 0.5);
+}
