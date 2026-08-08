@@ -4,14 +4,18 @@ import {
   Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone, ListOrdered, Volume2, VolumeX,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CopilotButton } from "@/components/copilot";
-import { installGlobalSfx, isSfxEnabled, setSfxEnabled } from "@/lib/sfx";
+import { installGlobalSfx } from "@/lib/sfx";
+import { usePreferences } from "@/hooks/use-preferences";
+import { useBranding, DEFAULT_BRANDING } from "@/hooks/use-branding";
+import { PackageAlertsBell } from "@/components/package-alerts";
+
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -32,12 +36,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [sound, setSound] = useState(true);
+  const { prefs, update } = usePreferences();
+  const { data: branding } = useBranding();
+  const brand = branding ?? DEFAULT_BRANDING;
 
-  useEffect(() => {
-    setSound(isSfxEnabled());
-    return installGlobalSfx();
-  }, []);
+  useEffect(() => installGlobalSfx(), []);
+
 
 
   async function signOut() {
@@ -59,14 +63,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen w-full">
       <aside className="hidden w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/85 backdrop-blur md:flex">
         <div className="flex items-center gap-2.5 px-4 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)] shadow-[0_0_24px_-6px_oklch(0.72_0.19_235_/_0.7)]">
-            <span className="font-display text-sm font-bold text-primary-foreground">A</span>
-          </div>
-          <div>
-            <p className="font-display text-sm leading-tight font-semibold">AlvasharFlow</p>
-            <p className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">Creators & editores</p>
+          {brand.logo_url ? (
+            <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-8 w-8 rounded-md object-cover" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)] shadow-[0_0_24px_-6px_var(--primary)]">
+              <span className="font-display text-sm font-bold text-primary-foreground">{brand.logo_letter || brand.brand_name.charAt(0)}</span>
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="truncate font-display text-sm leading-tight font-semibold">{brand.brand_name}</p>
+            <p className="truncate text-[9px] tracking-[0.18em] text-muted-foreground uppercase">{brand.brand_tagline ?? ""}</p>
           </div>
         </div>
+
 
         <nav className="flex-1 space-y-0.5 px-2">
           {NAV.map((item) => {
@@ -98,14 +107,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="truncate text-xs font-medium">{user.fullName ?? "Sem nome"}</p>
               <p className="truncate text-[10px] text-muted-foreground uppercase tracking-wider">{user.role}</p>
             </div>
+            <PackageAlertsBell threshold={brand.package_alert_threshold} />
             <button
-              onClick={() => { const next = !sound; setSound(next); setSfxEnabled(next); }}
+              onClick={() => update({ sound: !prefs.sound })}
               data-sfx="off"
               className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-              title={sound ? "Desativar sons" : "Ativar sons"}
+              title={prefs.sound ? "Desativar sons" : "Ativar sons"}
             >
-              {sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+              {prefs.sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
             </button>
+
             <button
               onClick={signOut}
               className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
