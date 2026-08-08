@@ -692,6 +692,104 @@ export type Database = {
           },
         ]
       }
+      onboarding_submissions: {
+        Row: {
+          client_id: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          instagram: string | null
+          name: string
+          payload: Json
+          phone: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          name: string
+          payload?: Json
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          name?: string
+          payload?: Json
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_submissions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_submissions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string | null
+          revoked_at: string | null
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          revoked_at?: string | null
+          token: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          revoked_at?: string | null
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_tokens_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -724,6 +822,68 @@ export type Database = {
           {
             foreignKeyName: "profiles_current_workspace_id_fkey"
             columns: ["current_workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_templates: {
+        Row: {
+          checklist: Json
+          color: string | null
+          created_at: string
+          created_by: string | null
+          default_priority: Database["public"]["Enums"]["video_priority"]
+          default_status: Database["public"]["Enums"]["video_status"]
+          description: string | null
+          due_in_days: number | null
+          estimated_hours: number | null
+          icon: string | null
+          id: string
+          name: string
+          titles: Json
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          checklist?: Json
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_priority?: Database["public"]["Enums"]["video_priority"]
+          default_status?: Database["public"]["Enums"]["video_status"]
+          description?: string | null
+          due_in_days?: number | null
+          estimated_hours?: number | null
+          icon?: string | null
+          id?: string
+          name: string
+          titles?: Json
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          checklist?: Json
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_priority?: Database["public"]["Enums"]["video_priority"]
+          default_status?: Database["public"]["Enums"]["video_status"]
+          description?: string | null
+          due_in_days?: number | null
+          estimated_hours?: number | null
+          icon?: string | null
+          id?: string
+          name?: string
+          titles?: Json
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
             referencedColumns: ["id"]
@@ -889,6 +1049,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      video_comments: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          body: string
+          created_at: string
+          id: string
+          resolved: boolean
+          source: string
+          timestamp_seconds: number | null
+          updated_at: string
+          video_id: string
+          workspace_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          resolved?: boolean
+          source?: string
+          timestamp_seconds?: number | null
+          updated_at?: string
+          video_id: string
+          workspace_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          resolved?: boolean
+          source?: string
+          timestamp_seconds?: number | null
+          updated_at?: string
+          video_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_comments_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_comments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       video_files: {
         Row: {
@@ -1112,6 +1329,71 @@ export type Database = {
           },
         ]
       }
+      workspace_settings: {
+        Row: {
+          accent_color: string | null
+          brand_name: string
+          brand_tagline: string | null
+          created_at: string
+          drive_folder_url: string | null
+          logo_letter: string | null
+          logo_url: string | null
+          nps_enabled: boolean
+          package_alert_threshold: number
+          portal_welcome: string | null
+          primary_color: string
+          radius: string
+          theme: string
+          updated_at: string
+          whatsapp_number: string | null
+          workspace_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          brand_name?: string
+          brand_tagline?: string | null
+          created_at?: string
+          drive_folder_url?: string | null
+          logo_letter?: string | null
+          logo_url?: string | null
+          nps_enabled?: boolean
+          package_alert_threshold?: number
+          portal_welcome?: string | null
+          primary_color?: string
+          radius?: string
+          theme?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+          workspace_id: string
+        }
+        Update: {
+          accent_color?: string | null
+          brand_name?: string
+          brand_tagline?: string | null
+          created_at?: string
+          drive_folder_url?: string | null
+          logo_letter?: string | null
+          logo_url?: string | null
+          nps_enabled?: boolean
+          package_alert_threshold?: number
+          portal_welcome?: string | null
+          primary_color?: string
+          radius?: string
+          theme?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspaces: {
         Row: {
           created_at: string
@@ -1187,15 +1469,71 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
+      onboarding_info: {
+        Args: { _token: string }
+        Returns: {
+          brand_name: string
+          brand_tagline: string
+          logo_url: string
+          primary_color: string
+          workspace_id: string
+        }[]
+      }
+      onboarding_submit: {
+        Args: {
+          _company: string
+          _email: string
+          _instagram: string
+          _name: string
+          _payload: Json
+          _phone: string
+          _token: string
+        }
+        Returns: string
+      }
+      portal_add_comment: {
+        Args: {
+          _author: string
+          _body: string
+          _seconds: number
+          _token: string
+          _video_id: string
+        }
+        Returns: string
+      }
       portal_approve_video: {
         Args: { _comment: string; _token: string; _video_id: string }
         Returns: undefined
+      }
+      portal_branding: {
+        Args: { _token: string }
+        Returns: {
+          brand_name: string
+          brand_tagline: string
+          logo_url: string
+          portal_welcome: string
+          primary_color: string
+          theme: string
+        }[]
+      }
+      portal_list_comments: {
+        Args: { _token: string; _video_id: string }
+        Returns: {
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+          resolved: boolean
+          source: string
+          timestamp_seconds: number
+        }[]
       }
       portal_list_videos: {
         Args: { _token: string }
         Returns: {
           description: string
           due_date: string
+          final_file_link: string
           id: string
           status: Database["public"]["Enums"]["video_status"]
           title: string
