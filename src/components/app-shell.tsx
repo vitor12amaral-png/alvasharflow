@@ -36,12 +36,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [sound, setSound] = useState(true);
+  const { prefs, update } = usePreferences();
+  const { data: branding } = useBranding();
+  const brand = branding ?? DEFAULT_BRANDING;
 
-  useEffect(() => {
-    setSound(isSfxEnabled());
-    return installGlobalSfx();
-  }, []);
+  useEffect(() => installGlobalSfx(), []);
+
 
 
   async function signOut() {
