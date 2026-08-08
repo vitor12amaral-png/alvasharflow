@@ -561,7 +561,7 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, o
 
 function ViewBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
   return (
-    <button onClick={onClick} className={cn(
+    <button type="button" onClick={onClick} className={cn(
       "flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs transition",
       active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
     )}>{icon}{label}</button>
