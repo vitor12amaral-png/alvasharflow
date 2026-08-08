@@ -18,7 +18,7 @@ export type VideoComment = {
   author_name: string;
   body: string;
   timestamp_seconds: number | null;
-  is_client: boolean;
+  source: string;
   resolved: boolean;
   created_at: string;
 };
@@ -53,7 +53,7 @@ export function useVideoComments(videoId?: string | null) {
         .eq("video_id", videoId!)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as VideoComment[];
+      return (data ?? []) as unknown as VideoComment[];
     },
   });
 }
@@ -86,8 +86,8 @@ export function VideoCommentsPanel({ videoId, workspaceId, authorName, asClient 
           _token: clientToken!,
           _video_id: videoId,
           _body: text,
-          _timestamp: useTs ? parseTimestamp(ts) : null,
-          _author_name: authorName || "Cliente",
+          _seconds: (useTs ? parseTimestamp(ts) : null) ?? -1,
+          _author: authorName || "Cliente",
         });
         if (error) throw error;
         return;
@@ -99,7 +99,7 @@ export function VideoCommentsPanel({ videoId, workspaceId, authorName, asClient 
         author_name: authorName,
         body: text,
         timestamp_seconds: useTs ? parseTimestamp(ts) : null,
-        is_client: false,
+        source: "equipe",
       });
       if (error) throw error;
     },
@@ -190,7 +190,7 @@ export function VideoCommentsPanel({ videoId, workspaceId, authorName, asClient 
                   </span>
                 )}
                 <span className="font-medium">{c.author_name}</span>
-                {c.is_client && <span className="rounded bg-muted px-1 text-[9px] uppercase tracking-wider text-muted-foreground">cliente</span>}
+                {c.source === "cliente" && <span className="rounded bg-muted px-1 text-[9px] uppercase tracking-wider text-muted-foreground">cliente</span>}
                 <span className="ml-auto text-[10px] text-muted-foreground">
                   {new Date(c.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
                 </span>
