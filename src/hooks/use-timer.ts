@@ -30,7 +30,7 @@ function read(): ActiveTimer | null {
     const s = localStorage.getItem(STORAGE_KEY);
     if (!s) return null;
     const parsed = JSON.parse(s) as ActiveTimer;
-    return { accumulated: 0, pausedAt: null, ...parsed };
+    return { ...parsed, accumulated: parsed.accumulated ?? 0, pausedAt: parsed.pausedAt ?? null };
   } catch {
     return null;
   }
