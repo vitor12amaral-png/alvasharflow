@@ -37,7 +37,7 @@ function Landing() {
               Para creators, filmmakers e editores
             </div>
             <h1 className="mt-5 font-display text-5xl leading-[1.02] font-semibold tracking-tight md:text-6xl">
-              Um sistema que<br />
+              Sua operação de vídeo<br />
               <span className="bg-gradient-to-r from-primary to-[oklch(0.66_0.22_300)] bg-clip-text text-transparent">
                 rodando no ritmo certo.
               </span>

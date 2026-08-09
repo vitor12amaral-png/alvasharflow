@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
+import { Route as OnboardingTokenRouteImport } from './routes/onboarding.$token'
 import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
 import { Route as ApiCopilotRouteImport } from './routes/api/copilot'
 import { Route as AuthenticatedWorkflowRouteImport } from './routes/_authenticated/workflow'
@@ -52,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
 const PortalTokenRoute = PortalTokenRouteImport.update({
   id: '/portal/$token',
   path: '/portal/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingTokenRoute = OnboardingTokenRouteImport.update({
+  id: '/onboarding/$token',
+  path: '/onboarding/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConviteTokenRoute = ConviteTokenRouteImport.update({
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
   '/convite/$token': typeof ConviteTokenRoute
+  '/onboarding/$token': typeof OnboardingTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/clientes/$clientId': typeof AuthenticatedClientesClientIdRoute
 }
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
   '/convite/$token': typeof ConviteTokenRoute
+  '/onboarding/$token': typeof OnboardingTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/clientes/$clientId': typeof AuthenticatedClientesClientIdRoute
 }
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/_authenticated/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
   '/convite/$token': typeof ConviteTokenRoute
+  '/onboarding/$token': typeof OnboardingTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/_authenticated/clientes_/$clientId': typeof AuthenticatedClientesClientIdRoute
 }
@@ -217,6 +226,7 @@ export interface FileRouteTypes {
     | '/workflow'
     | '/api/copilot'
     | '/convite/$token'
+    | '/onboarding/$token'
     | '/portal/$token'
     | '/clientes/$clientId'
   fileRoutesByTo: FileRoutesByTo
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/workflow'
     | '/api/copilot'
     | '/convite/$token'
+    | '/onboarding/$token'
     | '/portal/$token'
     | '/clientes/$clientId'
   id:
@@ -260,6 +271,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workflow'
     | '/api/copilot'
     | '/convite/$token'
+    | '/onboarding/$token'
     | '/portal/$token'
     | '/_authenticated/clientes_/$clientId'
   fileRoutesById: FileRoutesById
@@ -271,6 +283,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiCopilotRoute: typeof ApiCopilotRoute
   ConviteTokenRoute: typeof ConviteTokenRoute
+  OnboardingTokenRoute: typeof OnboardingTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
 }
 
@@ -309,6 +322,13 @@ declare module '@tanstack/react-router' {
       path: '/portal/$token'
       fullPath: '/portal/$token'
       preLoaderRoute: typeof PortalTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/$token': {
+      id: '/onboarding/$token'
+      path: '/onboarding/$token'
+      fullPath: '/onboarding/$token'
+      preLoaderRoute: typeof OnboardingTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/convite/$token': {
@@ -461,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ApiCopilotRoute: ApiCopilotRoute,
   ConviteTokenRoute: ConviteTokenRoute,
+  OnboardingTokenRoute: OnboardingTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
 }
 export const routeTree = rootRouteImport
