@@ -273,7 +273,7 @@ function PortalComments({ token, videoId, author }: { token: string; videoId: st
     const { error } = await supabase.rpc("portal_add_comment", {
       _token: token,
       _video_id: videoId,
-      _seconds: parseStamp(stamp),
+      _seconds: parseStamp(stamp) as unknown as number,
       _body: body,
       _author: author,
     });
