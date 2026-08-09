@@ -140,7 +140,7 @@ function statusLabelForClient(s: VideoStatus): string {
   return STAGE_LABEL[s] ?? s;
 }
 
-function VideoCard({ token, video, onChange }: { token: string; video: any; onChange: () => void }) {
+function VideoCard({ token, video, onChange, clientName }: { token: string; video: any; onChange: () => void; clientName: string }) {
   const [approveOpen, setApproveOpen] = useState(false);
   const [changesOpen, setChangesOpen] = useState(false);
   const [comment, setComment] = useState("");
