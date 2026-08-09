@@ -192,6 +192,8 @@ function EquipePage() {
         </Card>
       )}
 
+      <EditorMetricsPanel />
+
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {members.map((m) => (
           <Card
