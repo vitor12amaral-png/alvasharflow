@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, MessageSquare, Star } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { applyBranding } from "@/hooks/use-branding";
 import { toast } from "sonner";
 import { STAGE_LABEL, STAGE_ACCENT } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
