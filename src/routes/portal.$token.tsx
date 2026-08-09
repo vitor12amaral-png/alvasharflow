@@ -82,15 +82,33 @@ function PortalPage() {
   const list = vids.data ?? [];
   const deliveredWithoutFeedback = list.find((v) => v.status === "entregue");
 
+  const brand = branding.data as any;
+  const npsEnabled = true;
+
   return (
     <div className="mx-auto min-h-screen max-w-3xl px-4 py-6 md:py-10">
-      <header className="mb-6">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Portal do cliente</p>
-        <h1 className="mt-1 font-display text-2xl font-semibold">{client.client_name}</h1>
-        {client.client_company && <p className="text-sm text-muted-foreground">{client.client_company}</p>}
+      <header className="mb-6 flex items-center gap-3">
+        {brand?.logo_url ? (
+          <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-11 w-11 rounded-xl object-cover" />
+        ) : (
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 font-display font-bold text-primary">
+            {(brand?.brand_name ?? "A").slice(0, 1)}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            Portal do cliente {brand?.brand_name ? `· ${brand.brand_name}` : ""}
+          </p>
+          <h1 className="mt-0.5 font-display text-2xl font-semibold">{client.client_name}</h1>
+          {client.client_company && <p className="text-sm text-muted-foreground">{client.client_company}</p>}
+        </div>
       </header>
 
-      {deliveredWithoutFeedback && (
+      {brand?.portal_welcome && (
+        <Card className="mb-4 p-4 text-sm text-muted-foreground">{brand.portal_welcome}</Card>
+      )}
+
+      {npsEnabled && deliveredWithoutFeedback && (
         <NpsPrompt token={token} videoId={deliveredWithoutFeedback.id} title={deliveredWithoutFeedback.title} />
       )}
 
@@ -101,13 +119,13 @@ function PortalPage() {
       ) : (
         <div className="space-y-3">
           {list.map((v) => (
-            <VideoCard key={v.id} token={token} video={v} onChange={invalidate} />
+            <VideoCard key={v.id} token={token} video={v} onChange={invalidate} clientName={client.client_name} />
           ))}
         </div>
       )}
 
       <footer className="mt-10 text-center text-[10px] text-muted-foreground">
-        Feito com AlvasharFlow
+        Feito com {brand?.brand_name ?? "AlvasharFlow"}
       </footer>
     </div>
   );
