@@ -25,7 +25,17 @@ function ResetPassword() {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
     });
-    supabase.auth.getSession().then(({ data }) => { if (data.session) setReady(true); });
+    (async () => {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) toast.error("Link de recuperação inválido ou expirado");
+        else setReady(true);
+      }
+      const { data } = await supabase.auth.getSession();
+      if (data.session) setReady(true);
+    })();
     return () => sub.subscription.unsubscribe();
   }, []);
 
