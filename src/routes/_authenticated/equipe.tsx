@@ -17,6 +17,7 @@ import { useVideoPace, fmtEstimate } from "@/hooks/use-timer";
 import { STAGE_LABEL, STAGE_ACCENT } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
+import { EditorMetricsPanel } from "@/components/editor-metrics";
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
