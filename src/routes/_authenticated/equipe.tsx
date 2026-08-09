@@ -17,6 +17,7 @@ import { useVideoPace, fmtEstimate } from "@/hooks/use-timer";
 import { STAGE_LABEL, STAGE_ACCENT } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
+import { EditorMetricsPanel } from "@/components/editor-metrics";
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -191,6 +192,8 @@ function EquipePage() {
           </div>
         </Card>
       )}
+
+      <EditorMetricsPanel />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {members.map((m) => (

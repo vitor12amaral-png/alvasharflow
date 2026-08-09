@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, MessageSquare, Star } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { applyBranding } from "@/hooks/use-branding";
 import { toast } from "sonner";
 import { STAGE_LABEL, STAGE_ACCENT } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
@@ -37,6 +38,19 @@ function PortalPage() {
       return data?.[0] ?? null;
     },
   });
+
+  const branding = useQuery({
+    queryKey: ["portal-branding", token],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("portal_branding", { _token: token });
+      if (error) throw error;
+      return data?.[0] ?? null;
+    },
+  });
+
+  useEffect(() => {
+    if (branding.data) applyBranding(branding.data as any);
+  }, [branding.data]);
 
   const vids = useQuery({
     queryKey: ["portal-videos", token],
@@ -68,15 +82,33 @@ function PortalPage() {
   const list = vids.data ?? [];
   const deliveredWithoutFeedback = list.find((v) => v.status === "entregue");
 
+  const brand = branding.data as any;
+  const npsEnabled = true;
+
   return (
     <div className="mx-auto min-h-screen max-w-3xl px-4 py-6 md:py-10">
-      <header className="mb-6">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Portal do cliente</p>
-        <h1 className="mt-1 font-display text-2xl font-semibold">{client.client_name}</h1>
-        {client.client_company && <p className="text-sm text-muted-foreground">{client.client_company}</p>}
+      <header className="mb-6 flex items-center gap-3">
+        {brand?.logo_url ? (
+          <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-11 w-11 rounded-xl object-cover" />
+        ) : (
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 font-display font-bold text-primary">
+            {(brand?.brand_name ?? "A").slice(0, 1)}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            Portal do cliente {brand?.brand_name ? `· ${brand.brand_name}` : ""}
+          </p>
+          <h1 className="mt-0.5 font-display text-2xl font-semibold">{client.client_name}</h1>
+          {client.client_company && <p className="text-sm text-muted-foreground">{client.client_company}</p>}
+        </div>
       </header>
 
-      {deliveredWithoutFeedback && (
+      {brand?.portal_welcome && (
+        <Card className="mb-4 p-4 text-sm text-muted-foreground">{brand.portal_welcome}</Card>
+      )}
+
+      {npsEnabled && deliveredWithoutFeedback && (
         <NpsPrompt token={token} videoId={deliveredWithoutFeedback.id} title={deliveredWithoutFeedback.title} />
       )}
 
@@ -87,13 +119,13 @@ function PortalPage() {
       ) : (
         <div className="space-y-3">
           {list.map((v) => (
-            <VideoCard key={v.id} token={token} video={v} onChange={invalidate} />
+            <VideoCard key={v.id} token={token} video={v} onChange={invalidate} clientName={client.client_name} />
           ))}
         </div>
       )}
 
       <footer className="mt-10 text-center text-[10px] text-muted-foreground">
-        Feito com AlvasharFlow
+        Feito com {brand?.brand_name ?? "AlvasharFlow"}
       </footer>
     </div>
   );
@@ -108,7 +140,7 @@ function statusLabelForClient(s: VideoStatus): string {
   return STAGE_LABEL[s] ?? s;
 }
 
-function VideoCard({ token, video, onChange }: { token: string; video: any; onChange: () => void }) {
+function VideoCard({ token, video, onChange, clientName }: { token: string; video: any; onChange: () => void; clientName: string }) {
   const [approveOpen, setApproveOpen] = useState(false);
   const [changesOpen, setChangesOpen] = useState(false);
   const [comment, setComment] = useState("");
@@ -182,7 +214,133 @@ function VideoCard({ token, video, onChange }: { token: string; video: any; onCh
           </div>
         )}
       </div>
+
+      {video.final_file_link && (
+        <a
+          href={video.final_file_link}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 inline-flex text-xs text-primary hover:underline"
+        >
+          Abrir arquivo final
+        </a>
+      )}
+
+      <PortalComments token={token} videoId={video.id} author={clientName} />
     </Card>
+  );
+}
+
+/** Comentários com marcação de tempo (estilo Frame.io), lado do cliente. */
+function PortalComments({ token, videoId, author }: { token: string; videoId: string; author: string }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [stamp, setStamp] = useState("");
+  const [body, setBody] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const list = useQuery({
+    queryKey: ["portal-comments", token, videoId],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("portal_list_comments", { _token: token, _video_id: videoId });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  function parseStamp(input: string): number | null {
+    const t = input.trim();
+    if (!t) return null;
+    const parts = t.split(":").map((n) => Number(n));
+    if (parts.some((n) => Number.isNaN(n))) return null;
+    if (parts.length === 1) return parts[0]!;
+    if (parts.length === 2) return parts[0]! * 60 + parts[1]!;
+    if (parts.length === 3) return parts[0]! * 3600 + parts[1]! * 60 + parts[2]!;
+    return null;
+  }
+
+  function fmt(sec: number | null) {
+    if (sec === null || sec === undefined) return null;
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  async function send() {
+    if (!body.trim()) return toast.error("Escreva um comentário");
+    setSaving(true);
+    const { error } = await supabase.rpc("portal_add_comment", {
+      _token: token,
+      _video_id: videoId,
+      _seconds: parseStamp(stamp) as unknown as number,
+      _body: body,
+      _author: author,
+    });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    setBody(""); setStamp("");
+    toast.success("Comentário enviado");
+    qc.invalidateQueries({ queryKey: ["portal-comments", token, videoId] });
+  }
+
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary"
+      >
+        <MessageSquare className="h-3.5 w-3.5" />
+        {open ? "Ocultar comentários" : "Comentários e marcações"}
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-3">
+          {list.isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : (list.data ?? []).length === 0 ? (
+            <p className="text-xs text-muted-foreground">Nenhum comentário ainda.</p>
+          ) : (
+            <ul className="space-y-2">
+              {(list.data ?? []).map((c: any) => (
+                <li key={c.id} className="rounded-md border border-border px-3 py-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    {c.timestamp_seconds !== null && (
+                      <span className="rounded bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary">
+                        {fmt(Number(c.timestamp_seconds))}
+                      </span>
+                    )}
+                    <span className="font-medium">{c.author_name}</span>
+                    {c.resolved && <Badge variant="outline" className="text-[9px]">resolvido</Badge>}
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{c.body}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={stamp}
+              onChange={(e) => setStamp(e.target.value)}
+              placeholder="00:12"
+              aria-label="Marcação de tempo"
+              className="w-20 rounded-md border border-border bg-transparent px-2 py-1 text-xs"
+            />
+            <Textarea
+              rows={2}
+              className="min-w-[200px] flex-1 text-xs"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Ex: ajustar corte aqui"
+            />
+            <Button size="sm" onClick={send} disabled={saving}>
+              {saving && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}Enviar
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
