@@ -38,6 +38,19 @@ function PortalPage() {
     },
   });
 
+  const branding = useQuery({
+    queryKey: ["portal-branding", token],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("portal_branding", { _token: token });
+      if (error) throw error;
+      return data?.[0] ?? null;
+    },
+  });
+
+  useEffect(() => {
+    if (branding.data) applyBranding(branding.data as any);
+  }, [branding.data]);
+
   const vids = useQuery({
     queryKey: ["portal-videos", token],
     enabled: !!ctx.data,
