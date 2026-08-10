@@ -120,8 +120,9 @@ export function useTimer(hiRes = false) {
     const t: ActiveTimer = {
       entryId: data.id, startedAt: data.started_at, accumulated: 0, pausedAt: null,
       label: opts.label, videoId: opts.videoId, taskId: opts.taskId,
-      batchIds: opts.batchIds ?? null, notes: opts.notes ?? null,
+      batchIds: opts.batchIds ?? null, laps: [], notes: opts.notes ?? null,
     };
+
     write(t); setActive(t);
     sfx.start();
     toast.success("Cronômetro iniciado");
