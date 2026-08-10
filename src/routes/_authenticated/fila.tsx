@@ -58,8 +58,8 @@ function todayIso() {
 
 function FilaPage() {
   const [tab, setTab] = useState<"hoje" | "geral">("hoje");
-  const [grouped, setGrouped] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
   const [q, setQ] = useState("");
   const qc = useQueryClient();
   const today = todayIso();
