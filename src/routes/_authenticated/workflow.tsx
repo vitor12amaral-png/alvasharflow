@@ -670,10 +670,14 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
             <span className="sr-only">Ações</span>
           </button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-56 p-1">
+        <PopoverContent align="end" className="w-64 p-1">
           <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {count} vídeo{count > 1 ? "s" : ""} de {name}{estimate ? ` · ≈ ${estimate}` : ""}
           </p>
+          <div className="px-1 pb-1">
+            <BatchTimer label={`${name} · ${count} vídeo(s)`} videoIds={ids} remaining={count} compact />
+          </div>
+
           <DueDatePopover
             table="videos"
             ids={ids}
