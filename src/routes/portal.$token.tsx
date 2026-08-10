@@ -262,7 +262,7 @@ function VideoCard({ token, video, onChange, clientName, clientId }: {
       const up = await uploadPortalFile(file, clientId, video.id);
       const { error } = await supabase.rpc("portal_add_file", {
         _token: token, _video_id: video.id, _name: up.name, _url: up.url,
-        _file_type: up.type, _size: up.size,
+        _file_type: up.type ?? "", _size: up.size,
       });
       if (error) throw error;
       toast.success("Arquivo enviado");
