@@ -190,7 +190,7 @@ function FilaPage() {
             <CheckCircle2 className="h-5 w-5 text-[oklch(0.68_0.17_155)]" />
             {tab === "hoje" ? "Nada na fila de hoje. Tudo em dia." : "Nenhuma demanda pendente."}
           </div>
-        ) : grouped ? (
+        ) : (
           clientGroups.map(([cid, group], gi) => {
             const ids = group.items.map((v) => v.id);
             const isOpen = !collapsed.has(cid);
@@ -208,6 +208,13 @@ function FilaPage() {
                     </span>
                   )}
                   <div className="ml-auto flex items-center gap-1.5">
+                    <BatchTimer
+                      label={`${group.name} · ${group.items.length} vídeo(s)`}
+                      videoIds={ids}
+                      remaining={group.items.length}
+                      compact
+                      className="hidden sm:block"
+                    />
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button size="sm" variant="outline" className="h-7 text-[11px]">Situação do grupo</Button>
@@ -241,11 +248,8 @@ function FilaPage() {
               </div>
             );
           })
-        ) : (
-          list.map((v, i) => (
-            <QueueRow key={v.id} v={v} index={i + 1} today={today} border={i > 0} onPatch={(changes) => patch.mutate({ ids: [v.id], changes })} />
-          ))
         )}
+
       </div>
     </div>
   );
