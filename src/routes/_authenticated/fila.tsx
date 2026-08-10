@@ -11,6 +11,8 @@ import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { useVideoPace, fmtEstimate } from "@/hooks/use-timer";
+import { BatchTimer } from "@/components/timer";
+
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
@@ -58,8 +60,8 @@ function todayIso() {
 
 function FilaPage() {
   const [tab, setTab] = useState<"hoje" | "geral">("hoje");
-  const [grouped, setGrouped] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
   const [q, setQ] = useState("");
   const qc = useQueryClient();
   const today = todayIso();
@@ -153,10 +155,10 @@ function FilaPage() {
               <TabBtn active={tab === "hoje"} onClick={() => setTab("hoje")} icon={<Sun className="h-3.5 w-3.5" />} label={`Hoje (${hoje.length})`} />
               <TabBtn active={tab === "geral"} onClick={() => setTab("geral")} icon={<ListOrdered className="h-3.5 w-3.5" />} label={`Fila geral (${pending.length})`} />
             </div>
-            <div className="flex items-center rounded-md border border-border p-0.5">
-              <TabBtn active={!grouped} onClick={() => setGrouped(false)} icon={<ListOrdered className="h-3.5 w-3.5" />} label="Lista" />
-              <TabBtn active={grouped} onClick={() => setGrouped(true)} icon={<Layers className="h-3.5 w-3.5" />} label="Em conjunto" />
-            </div>
+            <span className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground">
+              <Layers className="h-3.5 w-3.5" />Em conjunto por cliente
+            </span>
+
           </div>
         }
       />
@@ -190,7 +192,7 @@ function FilaPage() {
             <CheckCircle2 className="h-5 w-5 text-[oklch(0.68_0.17_155)]" />
             {tab === "hoje" ? "Nada na fila de hoje. Tudo em dia." : "Nenhuma demanda pendente."}
           </div>
-        ) : grouped ? (
+        ) : (
           clientGroups.map(([cid, group], gi) => {
             const ids = group.items.map((v) => v.id);
             const isOpen = !collapsed.has(cid);
@@ -208,6 +210,13 @@ function FilaPage() {
                     </span>
                   )}
                   <div className="ml-auto flex items-center gap-1.5">
+                    <BatchTimer
+                      label={`${group.name} · ${group.items.length} vídeo(s)`}
+                      videoIds={ids}
+                      remaining={group.items.length}
+                      compact
+                      className="hidden sm:block"
+                    />
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button size="sm" variant="outline" className="h-7 text-[11px]">Situação do grupo</Button>
@@ -241,11 +250,8 @@ function FilaPage() {
               </div>
             );
           })
-        ) : (
-          list.map((v, i) => (
-            <QueueRow key={v.id} v={v} index={i + 1} today={today} border={i > 0} onPatch={(changes) => patch.mutate({ ids: [v.id], changes })} />
-          ))
         )}
+
       </div>
     </div>
   );

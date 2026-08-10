@@ -21,8 +21,11 @@ export type ActiveTimer = {
   taskId?: string | null;
   /** Vários vídeos (leva em conjunto) sendo cronometrados juntos. */
   batchIds?: string[] | null;
+  /** Marcações de volta (segundos acumulados no momento de cada "vídeo pronto"). */
+  laps?: number[] | null;
   notes?: string | null;
 };
+
 
 function read(): ActiveTimer | null {
   if (typeof window === "undefined") return null;
@@ -47,7 +50,16 @@ function computeElapsed(t: ActiveTimer, now: number) {
   return Math.max(0, Math.round(t.accumulated + (now - new Date(t.startedAt).getTime()) / 1000));
 }
 
-export function useTimer() {
+function computeElapsedFloat(t: ActiveTimer, now: number) {
+  if (t.pausedAt) return Math.max(0, t.accumulated);
+  return Math.max(0, t.accumulated + (now - new Date(t.startedAt).getTime()) / 1000);
+}
+
+/**
+ * Cronômetro global.
+ * @param hiRes quando true, atualiza 10x por segundo (para mostrar centésimos).
+ */
+export function useTimer(hiRes = false) {
   const [active, setActive] = useState<ActiveTimer | null>(() => read());
   const [now, setNow] = useState(() => Date.now());
   const { data: me } = useCurrentUser();
@@ -55,9 +67,10 @@ export function useTimer() {
 
   useEffect(() => {
     if (!active || active.pausedAt) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => setNow(Date.now()), hiRes ? 100 : 1000);
     return () => clearInterval(id);
-  }, [active]);
+  }, [active, hiRes]);
+
 
   // Sincroniza entre abas e entre componentes da mesma aba.
   useEffect(() => {
@@ -107,8 +120,9 @@ export function useTimer() {
     const t: ActiveTimer = {
       entryId: data.id, startedAt: data.started_at, accumulated: 0, pausedAt: null,
       label: opts.label, videoId: opts.videoId, taskId: opts.taskId,
-      batchIds: opts.batchIds ?? null, notes: opts.notes ?? null,
+      batchIds: opts.batchIds ?? null, laps: [], notes: opts.notes ?? null,
     };
+
     write(t); setActive(t);
     sfx.start();
     toast.success("Cronômetro iniciado");
@@ -163,10 +177,25 @@ export function useTimer() {
     setActive(next);
   }, []);
 
-  const elapsed = active ? computeElapsed(active, now) : 0;
-  const paused = !!active?.pausedAt;
+  /** Marca uma volta ("vídeo pronto") sem parar o cronômetro. */
+  const lap = useCallback(() => {
+    const cur = read();
+    if (!cur) return;
+    const next: ActiveTimer = {
+      ...cur,
+      laps: [...(cur.laps ?? []), Math.round(computeElapsedFloat(cur, Date.now()))],
+    };
+    write(next); setActive(next);
+    sfx.success();
+  }, []);
 
-  return { active, elapsed, paused, start, stop, pause, resume, toggle, discard, setNotes };
+  const elapsedMs = active ? computeElapsedFloat(active, now) : 0;
+  const elapsed = Math.floor(elapsedMs);
+  const paused = !!active?.pausedAt;
+  const laps = active?.laps ?? [];
+
+  return { active, elapsed, elapsedMs, laps, paused, start, stop, pause, resume, toggle, discard, setNotes, lap };
+
 }
 
 /** Total de tempo registrado hoje (e na semana) pelo usuário atual. */

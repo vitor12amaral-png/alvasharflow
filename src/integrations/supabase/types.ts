@@ -1501,6 +1501,17 @@ export type Database = {
         }
         Returns: string
       }
+      portal_add_file: {
+        Args: {
+          _file_type: string
+          _name: string
+          _size: number
+          _token: string
+          _url: string
+          _video_id: string
+        }
+        Returns: string
+      }
       portal_approve_video: {
         Args: { _comment: string; _token: string; _video_id: string }
         Returns: undefined
@@ -1528,6 +1539,17 @@ export type Database = {
           timestamp_seconds: number
         }[]
       }
+      portal_list_files: {
+        Args: { _token: string; _video_id: string }
+        Returns: {
+          created_at: string
+          file_type: string
+          id: string
+          name: string
+          size_bytes: number
+          url: string
+        }[]
+      }
       portal_list_videos: {
         Args: { _token: string }
         Returns: {
@@ -1552,6 +1574,10 @@ export type Database = {
           client_name: string
           workspace_id: string
         }[]
+      }
+      portal_set_due_date: {
+        Args: { _due: string; _token: string; _video_id: string }
+        Returns: undefined
       }
       portal_submit_feedback: {
         Args: {
