@@ -11,6 +11,8 @@ import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { useVideoPace, fmtEstimate } from "@/hooks/use-timer";
+import { BatchTimer } from "@/components/timer";
+
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
