@@ -50,7 +50,16 @@ function computeElapsed(t: ActiveTimer, now: number) {
   return Math.max(0, Math.round(t.accumulated + (now - new Date(t.startedAt).getTime()) / 1000));
 }
 
-export function useTimer() {
+function computeElapsedFloat(t: ActiveTimer, now: number) {
+  if (t.pausedAt) return Math.max(0, t.accumulated);
+  return Math.max(0, t.accumulated + (now - new Date(t.startedAt).getTime()) / 1000);
+}
+
+/**
+ * Cronômetro global.
+ * @param hiRes quando true, atualiza 10x por segundo (para mostrar centésimos).
+ */
+export function useTimer(hiRes = false) {
   const [active, setActive] = useState<ActiveTimer | null>(() => read());
   const [now, setNow] = useState(() => Date.now());
   const { data: me } = useCurrentUser();
@@ -58,9 +67,10 @@ export function useTimer() {
 
   useEffect(() => {
     if (!active || active.pausedAt) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => setNow(Date.now()), hiRes ? 100 : 1000);
     return () => clearInterval(id);
-  }, [active]);
+  }, [active, hiRes]);
+
 
   // Sincroniza entre abas e entre componentes da mesma aba.
   useEffect(() => {
