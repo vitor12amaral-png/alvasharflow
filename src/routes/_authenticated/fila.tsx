@@ -153,10 +153,10 @@ function FilaPage() {
               <TabBtn active={tab === "hoje"} onClick={() => setTab("hoje")} icon={<Sun className="h-3.5 w-3.5" />} label={`Hoje (${hoje.length})`} />
               <TabBtn active={tab === "geral"} onClick={() => setTab("geral")} icon={<ListOrdered className="h-3.5 w-3.5" />} label={`Fila geral (${pending.length})`} />
             </div>
-            <div className="flex items-center rounded-md border border-border p-0.5">
-              <TabBtn active={!grouped} onClick={() => setGrouped(false)} icon={<ListOrdered className="h-3.5 w-3.5" />} label="Lista" />
-              <TabBtn active={grouped} onClick={() => setGrouped(true)} icon={<Layers className="h-3.5 w-3.5" />} label="Em conjunto" />
-            </div>
+            <span className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground">
+              <Layers className="h-3.5 w-3.5" />Em conjunto por cliente
+            </span>
+
           </div>
         }
       />
