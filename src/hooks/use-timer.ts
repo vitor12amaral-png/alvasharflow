@@ -177,10 +177,25 @@ export function useTimer(hiRes = false) {
     setActive(next);
   }, []);
 
-  const elapsed = active ? computeElapsed(active, now) : 0;
-  const paused = !!active?.pausedAt;
+  /** Marca uma volta ("vídeo pronto") sem parar o cronômetro. */
+  const lap = useCallback(() => {
+    const cur = read();
+    if (!cur) return;
+    const next: ActiveTimer = {
+      ...cur,
+      laps: [...(cur.laps ?? []), Math.round(computeElapsedFloat(cur, Date.now()))],
+    };
+    write(next); setActive(next);
+    sfx.success();
+  }, []);
 
-  return { active, elapsed, paused, start, stop, pause, resume, toggle, discard, setNotes };
+  const elapsedMs = active ? computeElapsedFloat(active, now) : 0;
+  const elapsed = Math.floor(elapsedMs);
+  const paused = !!active?.pausedAt;
+  const laps = active?.laps ?? [];
+
+  return { active, elapsed, elapsedMs, laps, paused, start, stop, pause, resume, toggle, discard, setNotes, lap };
+
 }
 
 /** Total de tempo registrado hoje (e na semana) pelo usuário atual. */
