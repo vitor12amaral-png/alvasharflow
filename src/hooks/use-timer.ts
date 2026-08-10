@@ -21,8 +21,11 @@ export type ActiveTimer = {
   taskId?: string | null;
   /** Vários vídeos (leva em conjunto) sendo cronometrados juntos. */
   batchIds?: string[] | null;
+  /** Marcações de volta (segundos acumulados no momento de cada "vídeo pronto"). */
+  laps?: number[] | null;
   notes?: string | null;
 };
+
 
 function read(): ActiveTimer | null {
   if (typeof window === "undefined") return null;
