@@ -23,7 +23,7 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
-import { StartTimerButton, TimerBadge } from "@/components/timer";
+import { StartTimerButton, TimerBadge, BatchTimer } from "@/components/timer";
 import { useVideoTime, useVideoPace, fmtEstimate, fmt as fmtTime } from "@/hooks/use-timer";
 import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
@@ -619,10 +619,12 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{name}</span>
           <span className="ml-auto text-[10px] text-muted-foreground/60">{count}</span>
         </button>
+        <BatchTimer label={`${name} · ${count} vídeo(s)`} videoIds={ids} remaining={count} />
         <div className="space-y-1.5">{children}</div>
       </div>
     );
   }
+
   return (
     <div
       ref={setNodeRef}
