@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Loader2, CheckCircle2, MessageSquare, Star, CalendarClock, Upload, Paperclip,
-  Clock, PlayCircle, ExternalLink,
+  Clock, PlayCircle, ExternalLink, LayoutGrid, List,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { applyBranding } from "@/hooks/use-branding";
@@ -18,6 +18,8 @@ import { STAGE_LABEL, STAGE_ACCENT } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
 import { formatDate } from "@/lib/format";
 import { resolveFileUrl, uploadPortalFile, isVideoFile, fmtBytes } from "@/lib/portal-files";
+import { PortalBoard } from "@/components/portal-board";
+
 
 export const Route = createFileRoute("/portal/$token")({
   component: PortalPage,
