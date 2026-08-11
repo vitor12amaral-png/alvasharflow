@@ -23,7 +23,8 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
-import { StartTimerButton, TimerBadge, BatchTimer } from "@/components/timer";
+import { StartTimerButton } from "@/components/timer";
+import { StopwatchConsole, type TimerBatch } from "@/components/stopwatch-console";
 import { useVideoTime, useVideoPace, fmtEstimate, fmt as fmtTime } from "@/hooks/use-timer";
 import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
@@ -283,6 +284,22 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     return out;
   }, [videos]);
 
+  // Levas disponíveis no cronômetro: um grupo por cliente/etapa do período.
+  const timerBatches = useMemo<TimerBatch[]>(() => {
+    const map = new Map<string, TimerBatch>();
+    (videos ?? []).forEach((v) => {
+      const g = STATUS_TO_GROUP[v.status];
+      if (!g) return;
+      const key = `${v.client_id}::${g}`;
+      const label = `${v.clients?.name ?? "—"} · ${GROUPS.find((x) => x.id === g)?.label ?? ""}`;
+      const cur = map.get(key) ?? { id: key, label, videoIds: [], remaining: 0 };
+      cur.videoIds.push(v.id);
+      cur.remaining = cur.videoIds.length;
+      map.set(key, cur);
+    });
+    return Array.from(map.values()).sort((a, b) => b.remaining - a.remaining);
+  }, [videos]);
+
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -434,7 +451,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       )}
 
       <VideoDetailSheet videoId={detailId} onClose={() => setDetailId(null)} />
-      <TimerBadge />
+      <StopwatchConsole batches={timerBatches} />
 
       {selected.size > 0 && (
         <BulkBar
@@ -619,7 +636,6 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{name}</span>
           <span className="ml-auto text-[10px] text-muted-foreground/60">{count}</span>
         </button>
-        <BatchTimer label={`${name} · ${count} vídeo(s)`} videoIds={ids} remaining={count} />
         <div className="space-y-1.5">{children}</div>
       </div>
     );
@@ -674,10 +690,6 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
           <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {count} vídeo{count > 1 ? "s" : ""} de {name}{estimate ? ` · ≈ ${estimate}` : ""}
           </p>
-          <div className="px-1 pb-1">
-            <BatchTimer label={`${name} · ${count} vídeo(s)`} videoIds={ids} remaining={count} compact />
-          </div>
-
           <DueDatePopover
             table="videos"
             ids={ids}
