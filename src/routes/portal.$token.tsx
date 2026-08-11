@@ -35,6 +35,17 @@ export const Route = createFileRoute("/portal/$token")({
 function PortalPage() {
   const { token } = Route.useParams();
   const qc = useQueryClient();
+  const [view, setView] = useState<"board" | "list">("board");
+  const [focus, setFocus] = useState<string | null>(null);
+  const focusRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (view === "list" && focus && focusRef.current) {
+      focusRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [view, focus]);
+
+
 
   const ctx = useQuery({
     queryKey: ["portal-ctx", token],
