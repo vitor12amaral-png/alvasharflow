@@ -131,19 +131,47 @@ function PortalPage() {
       ) : list.length === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">Nenhum vídeo em andamento.</Card>
       ) : (
-        <div className="space-y-3">
-          {list.map((v) => (
-            <VideoCard
-              key={v.id}
+        <>
+          <div className="mb-3 flex items-center gap-1 rounded-lg border border-border p-1 w-fit">
+            {(["board", "list"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setView(m)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] transition ${
+                  view === m ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {m === "board" ? <LayoutGrid className="h-3.5 w-3.5" /> : <List className="h-3.5 w-3.5" />}
+                {m === "board" ? "Quadro" : "Lista"}
+              </button>
+            ))}
+          </div>
+
+          {view === "board" ? (
+            <PortalBoard
               token={token}
-              video={v}
+              videos={list}
               onChange={invalidate}
-              clientName={client.client_name}
-              clientId={client.client_id}
+              onOpen={(id) => { setFocus(id); setView("list"); }}
             />
-          ))}
-        </div>
+          ) : (
+            <div className="space-y-3">
+              {list.map((v) => (
+                <div key={v.id} ref={v.id === focus ? focusRef : undefined}>
+                  <VideoCard
+                    token={token}
+                    video={v}
+                    onChange={invalidate}
+                    clientName={client.client_name}
+                    clientId={client.client_id}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
+
 
       <footer className="mt-10 text-center text-[10px] text-muted-foreground">
         Feito com {brand?.brand_name ?? "AlvasharFlow"}
