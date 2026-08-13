@@ -1430,6 +1430,14 @@ export type Database = {
     }
     Functions: {
       accept_workspace_invite: { Args: { _token: string }; Returns: string }
+      can_team_access_client: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
+      client_has_active_portal: {
+        Args: { _client_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1588,6 +1596,7 @@ export type Database = {
         }
         Returns: string
       }
+      safe_uuid: { Args: { _txt: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "client" | "editor"
