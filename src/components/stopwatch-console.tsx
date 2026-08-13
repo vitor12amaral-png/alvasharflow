@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useTimer, useVideoPace, fmtClock, fmtEstimate } from "@/hooks/use-timer";
 import { Button } from "@/components/ui/button";
 import {
-  Play, Pause, Square, Flag, ChevronDown, ChevronUp, Cpu, Layers, Check, Trash2,
+  Play, Pause, Square, Flag, ChevronDown, Layers, Check, Trash2, Timer, X,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useDock } from "@/lib/dock";
 
 export type TimerBatch = {
   id: string;
@@ -52,7 +53,8 @@ function Readout({ ms, paused }: { ms: number; paused: boolean }) {
  */
 export function StopwatchConsole({ batches }: { batches: TimerBatch[] }) {
   const { active, elapsedMs, laps, paused, start, stop, toggle, lap, discard } = useTimer(true);
-  const [min, setMin] = useState(false);
+  const { isOpen, showLauncher, toggleDock, closeDock } = useDock();
+  const min = !isOpen("timer");
   const [pickId, setPickId] = useState<string>("");
 
   const running = !!active;
@@ -81,28 +83,31 @@ export function StopwatchConsole({ batches }: { batches: TimerBatch[] }) {
   const eta = avg > 0 ? avg * left : 0;
 
   if (min) {
+    if (!showLauncher) return null;
     return (
-      <div className="fixed bottom-6 right-6 z-40">
-        <button
-          onClick={() => setMin(false)}
-          className={cn(
-            "flex items-center gap-2 rounded-full border bg-card/90 px-3 py-1.5 shadow-lg backdrop-blur transition hover:border-primary/60",
-            running && !paused ? "border-primary/50" : "border-border",
-          )}
-        >
-          <Cpu className={cn("h-3.5 w-3.5 text-primary", running && !paused && "animate-pulse")} />
-          <span className="font-mono text-xs tabular-nums">{fmtClock(Math.floor(elapsedMs))}</span>
-          <ChevronUp className="h-3 w-3 text-muted-foreground" />
-        </button>
-      </div>
+      <button
+        onClick={() => toggleDock("timer")}
+        aria-label="Cronômetro"
+        className={cn(
+          "fixed bottom-6 right-[4.75rem] z-40 flex h-11 w-11 items-center justify-center rounded-2xl border bg-card/80 backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 active:scale-95",
+          running && !paused
+            ? "border-primary/50 text-primary shadow-[0_12px_36px_-12px_color-mix(in_oklab,var(--primary)_85%,transparent)]"
+            : "border-white/10 text-muted-foreground shadow-[0_10px_30px_-14px_oklch(0_0_0)] hover:text-foreground",
+        )}
+      >
+        <Timer className={cn("h-5 w-5", running && !paused && "animate-pulse")} />
+        {running && (
+          <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_10px_var(--primary)]" />
+        )}
+      </button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 w-[19.5rem]">
+    <div className="fixed bottom-6 right-6 z-40 w-[19.5rem] duration-300 animate-in fade-in slide-in-from-bottom-3">
       <div
         className={cn(
-          "relative overflow-hidden rounded-2xl border bg-card/90 p-3.5 shadow-2xl backdrop-blur-xl transition",
+          "relative overflow-hidden rounded-[1.35rem] border bg-card/70 p-3.5 shadow-[0_30px_80px_-30px_oklch(0_0_0)] backdrop-blur-2xl transition",
           running && !paused ? "border-primary/45 ring-1 ring-primary/15" : "border-border",
         )}
       >
@@ -118,11 +123,11 @@ export function StopwatchConsole({ batches }: { batches: TimerBatch[] }) {
             {running ? (paused ? "Pausado" : "Rodando") : "Cronômetro"}
           </p>
           <button
-            onClick={() => setMin(true)}
+            onClick={closeDock}
             className="ml-auto rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            title="Minimizar"
+            title="Fechar"
           >
-            <ChevronDown className="h-3.5 w-3.5" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 

@@ -9,11 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { useDock } from "@/lib/dock";
 
 const STORAGE_KEY = "alvesedt-copilot-messages";
 
 export function CopilotButton() {
-  const [open, setOpen] = useState(false);
+  const { isOpen, showLauncher, toggleDock, closeDock } = useDock();
+  const open = isOpen("copilot");
   const [initial, setInitial] = useState<any[]>(() => {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }
@@ -70,16 +72,17 @@ export function CopilotButton() {
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button
-          size="icon"
-          className="fixed bottom-6 right-6 z-40 h-12 w-12 rounded-full shadow-[0_10px_40px_-8px_oklch(0.72_0.19_235_/_0.7)] bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)]"
-          aria-label="Copiloto"
-        >
-          <Sparkles className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={(v) => (v ? toggleDock("copilot") : closeDock())}>
+      {showLauncher && (
+        <SheetTrigger asChild>
+          <button
+            className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)] text-primary-foreground shadow-[0_12px_36px_-10px_color-mix(in_oklab,var(--primary)_80%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_44px_-10px_color-mix(in_oklab,var(--primary)_90%,transparent)] active:scale-95"
+            aria-label="Copiloto"
+          >
+            <Sparkles className="h-5 w-5" />
+          </button>
+        </SheetTrigger>
+      )}
       <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border p-4">
           <div className="flex items-center justify-between">
