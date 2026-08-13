@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full">
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/85 backdrop-blur md:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/60 backdrop-blur-2xl md:flex">
         <div className="flex items-center gap-2.5 px-4 py-4">
           {brand.logo_url ? (
             <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-8 w-8 rounded-md object-cover" />
@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
 
-        <nav className="flex-1 space-y-0.5 px-2">
+        <nav className="flex-1 space-y-[3px] px-2.5">
           {NAV.map((item) => {
             const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
             return (
@@ -85,21 +85,27 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition",
+                  "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-[7px] text-[13px] transition-all duration-200",
                   active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0_/_0.06)]"
-                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+                    ? "bg-[linear-gradient(180deg,oklch(1_0_0_/_0.09),oklch(1_0_0_/_0.03))] text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0_/_0.08),0_6px_18px_-12px_oklch(0_0_0)]"
+                    : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground",
                 )}
               >
-                <item.icon className="h-3.5 w-3.5" />
-                {item.label}
+                <span
+                  className={cn(
+                    "absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-primary transition-opacity duration-200",
+                    active ? "opacity-100 shadow-[0_0_10px_var(--primary)]" : "opacity-0",
+                  )}
+                />
+                <item.icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-primary" : "group-hover:text-foreground")} />
+                <span className="font-medium">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
         <div className="border-t border-sidebar-border p-2.5">
-          <div className="flex items-center gap-2.5 rounded-md px-1.5 py-1.5">
+          <div className="flex items-center gap-2.5 rounded-xl bg-sidebar-accent/25 px-2 py-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
               {initials(user.fullName ?? user.email)}
             </div>
@@ -140,7 +146,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button onClick={signOut} className="text-xs text-muted-foreground">Sair</button>
         </header>
 
-        <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around overflow-x-auto border-t border-border bg-sidebar/95 px-1 py-1.5 backdrop-blur md:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around overflow-x-auto border-t border-border bg-sidebar/80 px-1 py-1.5 backdrop-blur-2xl md:hidden">
           {NAV.slice(0, 5).map((item) => {
             const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
             return (
