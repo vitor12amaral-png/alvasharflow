@@ -38,7 +38,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/auth" });
 
-  const target = (search.redirect as "/dashboard") ?? "/dashboard";
+  const target = safeRedirect(search.redirect);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,7 +49,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}${target}`,
             data: { full_name: name },
           },
         });
@@ -59,7 +59,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      navigate({ to: target });
+      window.location.assign(target);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha no login");
     } finally {
@@ -70,15 +70,18 @@ function AuthPage() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}${target}`,
+      });
       if (result.error) throw result.error;
       if (result.redirected) return;
-      navigate({ to: target });
+      window.location.assign(target);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha no login com Google");
       setGoogleLoading(false);
     }
   }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
