@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, redirect, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +35,6 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const navigate = useNavigate();
   const search = useSearch({ from: "/auth" });
 
   const target = safeRedirect(search.redirect);
