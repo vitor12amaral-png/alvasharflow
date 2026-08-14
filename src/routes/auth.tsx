@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, redirect, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,12 +11,18 @@ import { Loader2 } from "lucide-react";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
+/** Only allow same-origin relative paths (keeps OAuth consent redirects working). */
+function safeRedirect(value?: string) {
+  if (value && value.startsWith("/") && !value.startsWith("//")) return value;
+  return "/dashboard";
+}
+
 export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
   ssr: false,
   beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: (search.redirect as "/dashboard") ?? "/dashboard" });
+    if (data.user) throw redirect({ href: safeRedirect(search.redirect) });
   },
   component: AuthPage,
   head: () => ({ meta: [{ title: "Entrar — AlvasharFlow" }] }),
@@ -29,10 +35,9 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const navigate = useNavigate();
   const search = useSearch({ from: "/auth" });
 
-  const target = (search.redirect as "/dashboard") ?? "/dashboard";
+  const target = safeRedirect(search.redirect);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +48,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}${target}`,
             data: { full_name: name },
           },
         });
@@ -53,7 +58,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      navigate({ to: target });
+      window.location.assign(target);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha no login");
     } finally {
@@ -64,15 +69,18 @@ function AuthPage() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}${target}`,
+      });
       if (result.error) throw result.error;
       if (result.redirected) return;
-      navigate({ to: target });
+      window.location.assign(target);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha no login com Google");
       setGoogleLoading(false);
     }
   }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
