@@ -11,6 +11,12 @@ import { Loader2 } from "lucide-react";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
+/** Only allow same-origin relative paths (keeps OAuth consent redirects working). */
+function safeRedirect(value?: string) {
+  if (value && value.startsWith("/") && !value.startsWith("//")) return value;
+  return "/dashboard";
+}
+
 export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
   ssr: false,
