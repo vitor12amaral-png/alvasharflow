@@ -61,8 +61,13 @@
               "type": "string",
               "enum": [
                 "recebido",
-                "em_edicao",
-                "aguardando_aprovacao",
+                "briefing",
+                "organizacao",
+                "fila",
+                "editando",
+                "revisao",
+                "aguardando_cliente",
+                "alteracoes",
                 "aprovado",
                 "entregue"
               ]
@@ -155,8 +160,13 @@
               "type": "string",
               "enum": [
                 "recebido",
-                "em_edicao",
-                "aguardando_aprovacao",
+                "briefing",
+                "organizacao",
+                "fila",
+                "editando",
+                "revisao",
+                "aguardando_cliente",
+                "alteracoes",
                 "aprovado",
                 "entregue"
               ]

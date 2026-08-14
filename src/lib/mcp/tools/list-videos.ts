@@ -7,8 +7,7 @@ export default defineTool({
   title: "Listar vídeos",
   description: "Lista vídeos do workspace, com filtros por status, cliente e prazo.",
   inputSchema: {
-    status: z
-      .enum(["recebido", "em_edicao", "aguardando_aprovacao", "aprovado", "entregue"])
+    status: z.enum(["recebido", "briefing", "organizacao", "fila", "editando", "revisao", "aguardando_cliente", "alteracoes", "aprovado", "entregue"])
       .optional()
       .describe("Filtra por etapa do workflow."),
     client_name: z.string().optional().describe("Filtro parcial pelo nome do cliente."),

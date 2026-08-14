@@ -8,7 +8,7 @@ export default defineTool({
   description: "Atualiza status, prioridade ou prazo de um vídeo existente (pelo id).",
   inputSchema: {
     video_id: z.string().uuid().describe("Id do vídeo (use list_videos para descobrir)."),
-    status: z.enum(["recebido", "em_edicao", "aguardando_aprovacao", "aprovado", "entregue"]).optional(),
+    status: z.enum(["recebido", "briefing", "organizacao", "fila", "editando", "revisao", "aguardando_cliente", "alteracoes", "aprovado", "entregue"]).optional(),
     priority: z.enum(["baixa", "media", "alta", "urgente"]).optional(),
     due_date: z.string().nullable().optional().describe("Novo prazo YYYY-MM-DD, ou null para remover."),
   },
@@ -17,7 +17,7 @@ export default defineTool({
     if (!ctx.isAuthenticated()) return fail("Não autenticado.");
     const { supabase, workspaceId } = await requireWorkspace(ctx);
 
-    const patch: Record<string, unknown> = {};
+    const patch: { status?: string; priority?: string; due_date?: string | null } = {};
     if (status) patch.status = status;
     if (priority) patch.priority = priority;
     if (due_date !== undefined) patch.due_date = due_date;
