@@ -17,7 +17,7 @@ export default defineTool({
     if (!ctx.isAuthenticated()) return fail("Não autenticado.");
     const { supabase, workspaceId } = await requireWorkspace(ctx);
 
-    const patch: { status?: string; priority?: string; due_date?: string | null } = {};
+    const patch: { status?: typeof status; priority?: typeof priority; due_date?: string | null } = {};
     if (status) patch.status = status;
     if (priority) patch.priority = priority;
     if (due_date !== undefined) patch.due_date = due_date;
