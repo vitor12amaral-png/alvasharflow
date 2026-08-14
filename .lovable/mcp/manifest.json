@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://ldpmjhhbsqrzcjuwmldk.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "alvasharflow",
+      "version": "0.1.0",
+      "title": "AlvasharFlow"
+    },
+    "tools": [
+      {
+        "name": "list_clients",
+        "title": "Listar clientes",
+        "description": "Lista os clientes do workspace ativo, opcionalmente filtrando por nome.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Filtro parcial pelo nome do cliente.",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Máximo de clientes (padrão 25).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_videos",
+        "title": "Listar vídeos",
+        "description": "Lista vídeos do workspace, com filtros por status, cliente e prazo.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filtra por etapa do workflow.",
+              "type": "string",
+              "enum": [
+                "recebido",
+                "em_edicao",
+                "aguardando_aprovacao",
+                "aprovado",
+                "entregue"
+              ]
+            },
+            "client_name": {
+              "description": "Filtro parcial pelo nome do cliente.",
+              "type": "string"
+            },
+            "due_before": {
+              "description": "Somente vídeos com prazo até esta data (YYYY-MM-DD).",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Máximo de vídeos (padrão 25).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_video",
+        "title": "Criar vídeo",
+        "description": "Cria uma demanda de vídeo para um cliente do workspace.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "client_name": {
+              "type": "string",
+              "description": "Nome (ou parte) do cliente."
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Título do vídeo."
+            },
+            "description": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "baixa",
+                "media",
+                "alta",
+                "urgente"
+              ]
+            },
+            "due_date": {
+              "description": "Prazo no formato YYYY-MM-DD.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "client_name",
+            "title"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_video",
+        "title": "Atualizar vídeo",
+        "description": "Atualiza status, prioridade ou prazo de um vídeo existente (pelo id).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "video_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Id do vídeo (use list_videos para descobrir)."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "recebido",
+                "em_edicao",
+                "aguardando_aprovacao",
+                "aprovado",
+                "entregue"
+              ]
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "baixa",
+                "media",
+                "alta",
+                "urgente"
+              ]
+            },
+            "due_date": {
+              "description": "Novo prazo YYYY-MM-DD, ou null para remover.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "video_id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_task",
+        "title": "Criar tarefa",
+        "description": "Cria uma tarefa do dia a dia no workspace ativo, opcionalmente ligada a um cliente.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "baixa",
+                "media",
+                "alta",
+                "urgente"
+              ]
+            },
+            "due_date": {
+              "description": "Prazo YYYY-MM-DD.",
+              "type": "string"
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "financeiro",
+                "atendimento",
+                "marketing",
+                "edicao",
+                "administrativo",
+                "geral"
+              ]
+            },
+            "client_name": {
+              "description": "Cliente relacionado (opcional).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "workspace_stats",
+        "title": "Resumo do workspace",
+        "description": "Retorna clientes ativos, vídeos por status e tarefas em aberto do workspace ativo.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
