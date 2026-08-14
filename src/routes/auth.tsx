@@ -16,7 +16,7 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: (search.redirect as "/dashboard") ?? "/dashboard" });
+    if (data.user) throw redirect({ href: safeRedirect(search.redirect) });
   },
   component: AuthPage,
   head: () => ({ meta: [{ title: "Entrar — AlvasharFlow" }] }),
