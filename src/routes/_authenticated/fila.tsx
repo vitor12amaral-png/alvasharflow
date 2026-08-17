@@ -10,8 +10,8 @@ import { DeleteAction } from "@/components/delete-action";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
-import { useVideoPace, fmtEstimate } from "@/hooks/use-timer";
-import { BatchTimer } from "@/components/timer";
+import { Segmented } from "@/components/segmented";
+import { naturalCompare } from "@/lib/format";
 
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
@@ -19,8 +19,9 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   CalendarClock, ListOrdered, Loader2, Sun, CheckCircle2, AlarmClock, Inbox,
-  Layers, ChevronDown, ChevronRight, Timer as TimerIcon,
+  Layers, ChevronDown, ChevronRight,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/fila")({
   component: FilaPage,
@@ -78,7 +79,7 @@ function FilaPage() {
     },
   });
 
-  const { data: pace } = useVideoPace();
+  
 
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: { status?: VideoStatus; due_date?: string | null } }) => {
@@ -204,19 +205,8 @@ function FilaPage() {
                     <span className="truncate text-sm font-medium">{group.name}</span>
                     <span className="rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">{group.items.length}</span>
                   </button>
-                  {avg > 0 && (
-                    <span className="text-[11px] text-muted-foreground">
-                      ≈ {fmtEstimate(avg * group.items.length)} para terminar
-                    </span>
-                  )}
                   <div className="ml-auto flex items-center gap-1.5">
-                    <BatchTimer
-                      label={`${group.name} · ${group.items.length} vídeo(s)`}
-                      videoIds={ids}
-                      remaining={group.items.length}
-                      compact
-                      className="hidden sm:block"
-                    />
+
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button size="sm" variant="outline" className="h-7 text-[11px]">Situação do grupo</Button>
