@@ -10,7 +10,7 @@ import { Search, Loader2, Calendar, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR, VIDEO_STAGES } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
-import { formatDate, daysUntil } from "@/lib/format";
+import { formatDate, daysUntil, naturalCompare } from "@/lib/format";
 import { DeleteAction } from "@/components/delete-action";
 
 export const Route = createFileRoute("/_authenticated/videos")({
