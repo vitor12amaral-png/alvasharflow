@@ -388,7 +388,7 @@ function VideoCard({ token, video, onChange, clientName, clientId }: {
         </a>
       )}
 
-      <PortalFiles files={files.data ?? []} loading={files.isLoading} onUpload={onUpload} busy={saving} />
+      <PortalFiles token={token} files={files.data ?? []} loading={files.isLoading} onUpload={onUpload} busy={saving} />
 
       <PortalComments
         token={token}
