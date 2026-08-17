@@ -166,7 +166,7 @@ function ClientDetail() {
 
 
       <Tabs defaultValue={isParent ? "subs" : "overview"} className="mt-6">
-        <TabsList className="flex-wrap h-auto">
+        <TabsList className="flex-wrap h-auto gap-1 rounded-full border border-border/60 bg-muted/25 p-1 backdrop-blur-xl [&>button]:rounded-full [&>button]:px-3.5 [&>button]:text-[13px] [&>button]:transition-all [&>button[data-state=active]]:shadow-sm">
           {isParent && <TabsTrigger value="subs">Marcas ({client.subs.length})</TabsTrigger>}
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
           <TabsTrigger value="demands">Vídeos ({client.videos.length})</TabsTrigger>
