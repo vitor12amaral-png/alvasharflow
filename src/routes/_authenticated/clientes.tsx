@@ -64,8 +64,11 @@ function ClientesPage() {
         parents.push(c);
       }
     }
+    parents.sort((a, b) => naturalCompare(a.name, b.name));
+    children.forEach((arr) => arr.sort((a, b) => naturalCompare(a.name, b.name)));
     return { parents, childrenByParent: children };
   }, [clients]);
+
 
   const matches = (c: ClientRow) =>
     !q ||
