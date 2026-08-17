@@ -171,17 +171,7 @@ function FilaPage() {
         <Kpi label="Na fila" value={rest.length} icon={<Inbox className="h-4 w-4" />} tone="text-muted-foreground" />
       </div>
 
-      {avg > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-card/40 px-4 py-2.5 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5 text-foreground">
-            <TimerIcon className="h-3.5 w-3.5 text-primary" />
-            Ritmo médio: <b className="font-mono">{fmtEstimate(avg)}</b> por vídeo
-          </span>
-          <span>
-            {list.length} vídeo(s) nesta visão ≈ <b className="font-mono text-foreground">{fmtEstimate(avg * list.length)}</b> de trabalho
-          </span>
-        </div>
-      )}
+
 
       <div className="mt-6 overflow-hidden rounded-lg border border-border">
         {isLoading ? (
