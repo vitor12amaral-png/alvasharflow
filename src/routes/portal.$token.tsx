@@ -300,7 +300,7 @@ function VideoCard({ token, video, onChange, clientName, clientId }: {
     if (file.size > 500 * 1024 * 1024) return toast.error("Arquivo muito grande (máx. 500 MB)");
     setSaving(true);
     try {
-      const up = await uploadPortalFile(file, clientId, video.id);
+      const up = await uploadPortalFile(file, token, video.id);
       const { error } = await supabase.rpc("portal_add_file", {
         _token: token, _video_id: video.id, _name: up.name, _url: up.url,
         _file_type: up.type ?? "", _size: up.size,
