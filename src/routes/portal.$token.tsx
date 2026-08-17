@@ -251,11 +251,11 @@ function VideoCard({ token, video, onChange, clientName, clientId }: {
       const fromFiles = (files.data ?? []).find((f: any) => isVideoFile(f.name, f.file_type));
       const raw = fromFiles?.url ?? (video.final_file_link && /\.(mp4|mov|webm|m4v)(\?|$)/i.test(video.final_file_link) ? video.final_file_link : null);
       if (!raw) { if (!cancelled) setSrc(null); return; }
-      const url = await resolveFileUrl(raw);
+      const url = await resolveFileUrl(raw, token);
       if (!cancelled) setSrc(url);
     })();
     return () => { cancelled = true; };
-  }, [files.data, video.final_file_link]);
+  }, [files.data, video.final_file_link, token]);
 
   const seek = useCallback((sec: number) => {
     const el = playerRef.current;
@@ -300,7 +300,7 @@ function VideoCard({ token, video, onChange, clientName, clientId }: {
     if (file.size > 500 * 1024 * 1024) return toast.error("Arquivo muito grande (máx. 500 MB)");
     setSaving(true);
     try {
-      const up = await uploadPortalFile(file, clientId, video.id);
+      const up = await uploadPortalFile(file, token, video.id);
       const { error } = await supabase.rpc("portal_add_file", {
         _token: token, _video_id: video.id, _name: up.name, _url: up.url,
         _file_type: up.type ?? "", _size: up.size,
@@ -388,7 +388,7 @@ function VideoCard({ token, video, onChange, clientName, clientId }: {
         </a>
       )}
 
-      <PortalFiles files={files.data ?? []} loading={files.isLoading} onUpload={onUpload} busy={saving} />
+      <PortalFiles token={token} files={files.data ?? []} loading={files.isLoading} onUpload={onUpload} busy={saving} />
 
       <PortalComments
         token={token}
@@ -401,8 +401,8 @@ function VideoCard({ token, video, onChange, clientName, clientId }: {
   );
 }
 
-function PortalFiles({ files, loading, onUpload, busy }: {
-  files: any[]; loading: boolean; onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; busy: boolean;
+function PortalFiles({ token, files, loading, onUpload, busy }: {
+  token: string; files: any[]; loading: boolean; onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; busy: boolean;
 }) {
   return (
     <div className="mt-3 rounded-lg border border-border p-3">
@@ -422,7 +422,7 @@ function PortalFiles({ files, loading, onUpload, busy }: {
       ) : (
         <ul className="mt-2 space-y-1">
           {files.map((f) => (
-            <FileRow key={f.id} file={f} />
+            <FileRow key={f.id} file={f} token={token} />
           ))}
         </ul>
       )}
@@ -430,11 +430,11 @@ function PortalFiles({ files, loading, onUpload, busy }: {
   );
 }
 
-function FileRow({ file }: { file: any }) {
+function FileRow({ file, token }: { file: any; token: string }) {
   const [busy, setBusy] = useState(false);
   async function open() {
     setBusy(true);
-    const url = await resolveFileUrl(file.url);
+    const url = await resolveFileUrl(file.url, token);
     setBusy(false);
     if (!url) return toast.error("Não foi possível abrir o arquivo");
     window.open(url, "_blank", "noopener");
