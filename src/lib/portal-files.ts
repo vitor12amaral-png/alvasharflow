@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { portalSignedUrl, portalUploadUrl } from "@/lib/portal-files.functions";
 
 export const PORTAL_BUCKET = "portal-uploads";
 
@@ -7,16 +8,18 @@ export function isStorageRef(url: string) {
   return url.startsWith("storage:");
 }
 
-function pathOf(url: string) {
-  return url.replace(`storage:${PORTAL_BUCKET}/`, "").replace("storage:", "");
-}
-
-/** Gera um link temporário para abrir/tocar um arquivo do storage. */
-export async function resolveFileUrl(url: string, expiresIn = 60 * 60): Promise<string | null> {
+/**
+ * Gera um link temporário para abrir/tocar um arquivo do storage.
+ * O token do portal é validado no servidor antes de assinar a URL.
+ */
+export async function resolveFileUrl(url: string, portalToken: string): Promise<string | null> {
   if (!isStorageRef(url)) return url;
-  const { data, error } = await supabase.storage.from(PORTAL_BUCKET).createSignedUrl(pathOf(url), expiresIn);
-  if (error) return null;
-  return data.signedUrl;
+  try {
+    const res = await portalSignedUrl({ data: { token: portalToken, url } });
+    return res.url;
+  } catch {
+    return null;
+  }
 }
 
 export function isVideoFile(name: string, type?: string | null) {
@@ -25,17 +28,16 @@ export function isVideoFile(name: string, type?: string | null) {
 }
 
 /** Envia um arquivo do cliente e devolve a referência para gravar no banco. */
-export async function uploadPortalFile(file: File, clientId: string, videoId: string) {
-  const safe = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_").slice(-120);
-  const path = `${clientId}/${videoId}/${Date.now()}-${safe}`;
-  const { error } = await supabase.storage.from(PORTAL_BUCKET).upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: file.type || undefined,
+export async function uploadPortalFile(file: File, portalToken: string, videoId: string) {
+  const { path, token, storageRef } = await portalUploadUrl({
+    data: { token: portalToken, videoId, fileName: file.name },
   });
+  const { error } = await supabase.storage
+    .from(PORTAL_BUCKET)
+    .uploadToSignedUrl(path, token, file, { contentType: file.type || undefined });
   if (error) throw error;
   return {
-    url: `storage:${PORTAL_BUCKET}/${path}`,
+    url: storageRef,
     name: file.name,
     type: file.type || null,
     size: file.size,
