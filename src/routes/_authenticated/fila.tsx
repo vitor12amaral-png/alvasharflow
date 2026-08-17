@@ -106,7 +106,8 @@ function FilaPage() {
           if (pw !== 0) return pw;
           const ad = a.due_date ?? "9999-12-31";
           const bd = b.due_date ?? "9999-12-31";
-          return ad.localeCompare(bd);
+          if (ad !== bd) return ad.localeCompare(bd);
+          return naturalCompare(a.title, b.title);
         }),
     [data, term],
   );
@@ -126,10 +127,12 @@ function FilaPage() {
       g.items.push(v);
       map.set(v.client_id, g);
     });
-    return Array.from(map.entries()).sort((a, b) => b[1].items.length - a[1].items.length);
+    // Numeração sempre organizada dentro de cada cliente.
+    map.forEach((g) => g.items.sort((a, b) => naturalCompare(a.title, b.title)));
+    return Array.from(map.entries()).sort((a, b) => naturalCompare(a[1].name, b[1].name));
   }, [list]);
 
-  const avg = pace?.avgPerVideo ?? 0;
+
 
   function toggleCollapsed(id: string) {
     setCollapsed((prev) => {
