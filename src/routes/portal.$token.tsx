@@ -401,8 +401,8 @@ function VideoCard({ token, video, onChange, clientName, clientId }: {
   );
 }
 
-function PortalFiles({ files, loading, onUpload, busy }: {
-  files: any[]; loading: boolean; onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; busy: boolean;
+function PortalFiles({ token, files, loading, onUpload, busy }: {
+  token: string; files: any[]; loading: boolean; onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; busy: boolean;
 }) {
   return (
     <div className="mt-3 rounded-lg border border-border p-3">
