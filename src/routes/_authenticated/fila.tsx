@@ -153,15 +153,20 @@ function FilaPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Buscar vídeo ou cliente…"
-              className="h-9 w-52"
+              className="h-9 w-52 rounded-full"
             />
-            <div className="flex items-center rounded-md border border-border p-0.5">
-              <TabBtn active={tab === "hoje"} onClick={() => setTab("hoje")} icon={<Sun className="h-3.5 w-3.5" />} label={`Hoje (${hoje.length})`} />
-              <TabBtn active={tab === "geral"} onClick={() => setTab("geral")} icon={<ListOrdered className="h-3.5 w-3.5" />} label={`Fila geral (${pending.length})`} />
-            </div>
-            <span className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground">
+            <Segmented
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: "hoje", label: "Hoje", icon: <Sun className="h-3.5 w-3.5" />, count: hoje.length },
+                { value: "geral", label: "Fila geral", icon: <ListOrdered className="h-3.5 w-3.5" />, count: pending.length },
+              ]}
+            />
+            <span className="hidden items-center gap-1.5 rounded-full border border-border/70 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground sm:flex">
               <Layers className="h-3.5 w-3.5" />Em conjunto por cliente
             </span>
+
 
           </div>
         }
