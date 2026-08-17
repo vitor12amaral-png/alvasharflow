@@ -13,19 +13,19 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, Timer as TimerIcon } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
-import { formatDate } from "@/lib/format";
+import { formatDate, naturalCompare } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
-import { StartTimerButton } from "@/components/timer";
 import { StopwatchConsole, type TimerBatch } from "@/components/stopwatch-console";
-import { useVideoTime, useVideoPace, fmtEstimate, fmt as fmtTime } from "@/hooks/use-timer";
+import { Segmented } from "@/components/segmented";
+
 import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
@@ -230,9 +230,13 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   // Filtro por mês: usa o prazo do vídeo quando existe, senão a data de criação.
   const { ym } = useMonthFromSearch();
   const videos = useMemo(
-    () => (allVideos ?? []).filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym),
+    () =>
+      (allVideos ?? [])
+        .filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym)
+        .sort((a, b) => naturalCompare(a.title, b.title)),
     [allVideos, ym],
   );
+
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
 
 
@@ -348,11 +352,17 @@ function WorkflowBoard({ clientId, clients, onBack }: {
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <MonthPicker />
-              <div className="hidden items-center rounded-md border border-border p-0.5 md:flex">
-                <ViewBtn active={view === "split"} onClick={() => setView("split")} icon={<SplitSquareVertical className="h-3.5 w-3.5" />} label="Ambos" />
-                <ViewBtn active={view === "kanban"} onClick={() => setView("kanban")} icon={<LayoutGrid className="h-3.5 w-3.5" />} label="Kanban" />
-                <ViewBtn active={view === "list"} onClick={() => setView("list")} icon={<Rows3 className="h-3.5 w-3.5" />} label="Lista" />
-              </div>
+              <Segmented
+                className="hidden md:inline-flex"
+                value={view}
+                onChange={setView}
+                options={[
+                  { value: "split", label: "Ambos", icon: <SplitSquareVertical className="h-3.5 w-3.5" /> },
+                  { value: "kanban", label: "Kanban", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+                  { value: "list", label: "Lista", icon: <Rows3 className="h-3.5 w-3.5" /> },
+                ]}
+              />
+
               <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline"><Layers3 className="mr-1 h-4 w-4" />Nova leva</Button>
@@ -576,8 +586,7 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
   onSetStatus: (s: VideoStatus) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: stackId });
-  const { data: pace } = useVideoPace();
-  const estimate = (pace?.avgPerVideo ?? 0) > 0 ? fmtEstimate((pace!.avgPerVideo) * count) : null;
+
   const parentBadge = parentName ? (
     <span
       title={`Marca de ${parentName}`}
@@ -624,7 +633,6 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
           <p className="flex items-center gap-1 truncate text-xs font-medium">{parentBadge}{name}</p>
           <p className="text-[10px] text-muted-foreground">
             {count} vídeo{count > 1 ? "s" : ""}{parentName ? ` · ${parentName}` : ""}
-            {estimate && <span className="ml-1 text-primary/80">≈ {estimate}</span>}
           </p>
         </div>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />
@@ -650,7 +658,7 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
         </PopoverTrigger>
         <PopoverContent align="end" className="w-64 p-1">
           <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {count} vídeo{count > 1 ? "s" : ""} de {name}{estimate ? ` · ≈ ${estimate}` : ""}
+            {count} vídeo{count > 1 ? "s" : ""} de {name}
           </p>
           <DueDatePopover
             table="videos"
@@ -789,7 +797,7 @@ function ListView({ videos, selected, onToggle, onToggleAll, onStatusChange, onD
               <td className={cn("px-4 py-2 text-xs font-medium", PRIORITY_COLOR[v.priority])}>{PRIORITY_LABEL[v.priority]}</td>
               <td className="px-2">
                 <div className="flex items-center justify-end gap-1">
-                  <StartTimerButton videoId={v.id} label={v.title} compact variant="ghost" className="h-7 px-2" />
+
                   <button onClick={() => onOpen(v.id)} className="text-muted-foreground hover:text-foreground" aria-label="Abrir">
                     <ExternalLink className="h-3.5 w-3.5" />
                   </button>
@@ -931,12 +939,8 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
         </SheetHeader>
 
 
-        {videoId && (
-          <div className="mt-4 flex items-center gap-3 rounded-md border border-border bg-card/40 px-3 py-2">
-            <StartTimerButton videoId={videoId} label={video?.title ?? "Vídeo"} />
-            <TotalTime videoId={videoId} />
-          </div>
-        )}
+
+
 
         {!video ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
@@ -1092,14 +1096,8 @@ function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => 
   );
 }
 
-function TotalTime({ videoId }: { videoId: string }) {
-  const { data } = useVideoTime(videoId);
-  return (
-    <p className="text-xs text-muted-foreground">
-      Tempo registrado: <span className="font-mono tabular-nums text-foreground">{fmtTime(data ?? 0)}</span>
-    </p>
-  );
-}
+
+
 
 function BatchVideosDialog({ onClose, clients, defaultClientId }: {
   onClose: () => void;

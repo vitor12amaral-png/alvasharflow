@@ -1,4 +1,17 @@
+const collator = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
+
+/** Comparação natural: "Reels 2" vem antes de "Reels 10". */
+export function naturalCompare(a: string | null | undefined, b: string | null | undefined): number {
+  return collator.compare(a ?? "", b ?? "");
+}
+
+/** Ordena qualquer lista por um campo textual, respeitando numeração. */
+export function sortNatural<T>(items: T[], key: (item: T) => string | null | undefined): T[] {
+  return [...items].sort((a, b) => naturalCompare(key(a), key(b)));
+}
+
 export function formatBRL(value: number | string | null | undefined): string {
+
   const n = typeof value === "string" ? parseFloat(value) : (value ?? 0);
   if (isNaN(n as number)) return "R$ 0,00";
   return (n as number).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

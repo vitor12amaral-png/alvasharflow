@@ -10,8 +10,8 @@ import { DeleteAction } from "@/components/delete-action";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
-import { useVideoPace, fmtEstimate } from "@/hooks/use-timer";
-import { BatchTimer } from "@/components/timer";
+import { Segmented } from "@/components/segmented";
+import { naturalCompare } from "@/lib/format";
 
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
@@ -19,8 +19,9 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   CalendarClock, ListOrdered, Loader2, Sun, CheckCircle2, AlarmClock, Inbox,
-  Layers, ChevronDown, ChevronRight, Timer as TimerIcon,
+  Layers, ChevronDown, ChevronRight,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/fila")({
   component: FilaPage,
@@ -78,7 +79,7 @@ function FilaPage() {
     },
   });
 
-  const { data: pace } = useVideoPace();
+  
 
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: { status?: VideoStatus; due_date?: string | null } }) => {
@@ -105,7 +106,8 @@ function FilaPage() {
           if (pw !== 0) return pw;
           const ad = a.due_date ?? "9999-12-31";
           const bd = b.due_date ?? "9999-12-31";
-          return ad.localeCompare(bd);
+          if (ad !== bd) return ad.localeCompare(bd);
+          return naturalCompare(a.title, b.title);
         }),
     [data, term],
   );
@@ -125,10 +127,12 @@ function FilaPage() {
       g.items.push(v);
       map.set(v.client_id, g);
     });
-    return Array.from(map.entries()).sort((a, b) => b[1].items.length - a[1].items.length);
+    // Numeração sempre organizada dentro de cada cliente.
+    map.forEach((g) => g.items.sort((a, b) => naturalCompare(a.title, b.title)));
+    return Array.from(map.entries()).sort((a, b) => naturalCompare(a[1].name, b[1].name));
   }, [list]);
 
-  const avg = pace?.avgPerVideo ?? 0;
+
 
   function toggleCollapsed(id: string) {
     setCollapsed((prev) => {
@@ -149,15 +153,20 @@ function FilaPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Buscar vídeo ou cliente…"
-              className="h-9 w-52"
+              className="h-9 w-52 rounded-full"
             />
-            <div className="flex items-center rounded-md border border-border p-0.5">
-              <TabBtn active={tab === "hoje"} onClick={() => setTab("hoje")} icon={<Sun className="h-3.5 w-3.5" />} label={`Hoje (${hoje.length})`} />
-              <TabBtn active={tab === "geral"} onClick={() => setTab("geral")} icon={<ListOrdered className="h-3.5 w-3.5" />} label={`Fila geral (${pending.length})`} />
-            </div>
-            <span className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground">
+            <Segmented
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: "hoje", label: "Hoje", icon: <Sun className="h-3.5 w-3.5" />, count: hoje.length },
+                { value: "geral", label: "Fila geral", icon: <ListOrdered className="h-3.5 w-3.5" />, count: pending.length },
+              ]}
+            />
+            <span className="hidden items-center gap-1.5 rounded-full border border-border/70 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground sm:flex">
               <Layers className="h-3.5 w-3.5" />Em conjunto por cliente
             </span>
+
 
           </div>
         }
@@ -170,17 +179,7 @@ function FilaPage() {
         <Kpi label="Na fila" value={rest.length} icon={<Inbox className="h-4 w-4" />} tone="text-muted-foreground" />
       </div>
 
-      {avg > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-card/40 px-4 py-2.5 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5 text-foreground">
-            <TimerIcon className="h-3.5 w-3.5 text-primary" />
-            Ritmo médio: <b className="font-mono">{fmtEstimate(avg)}</b> por vídeo
-          </span>
-          <span>
-            {list.length} vídeo(s) nesta visão ≈ <b className="font-mono text-foreground">{fmtEstimate(avg * list.length)}</b> de trabalho
-          </span>
-        </div>
-      )}
+
 
       <div className="mt-6 overflow-hidden rounded-lg border border-border">
         {isLoading ? (
@@ -204,19 +203,8 @@ function FilaPage() {
                     <span className="truncate text-sm font-medium">{group.name}</span>
                     <span className="rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">{group.items.length}</span>
                   </button>
-                  {avg > 0 && (
-                    <span className="text-[11px] text-muted-foreground">
-                      ≈ {fmtEstimate(avg * group.items.length)} para terminar
-                    </span>
-                  )}
                   <div className="ml-auto flex items-center gap-1.5">
-                    <BatchTimer
-                      label={`${group.name} · ${group.items.length} vídeo(s)`}
-                      videoIds={ids}
-                      remaining={group.items.length}
-                      compact
-                      className="hidden sm:block"
-                    />
+
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button size="sm" variant="outline" className="h-7 text-[11px]">Situação do grupo</Button>
@@ -339,20 +327,6 @@ function QueueRow({ v, index, today, border = true, onPatch }: {
   );
 }
 
-function TabBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-xs transition",
-        active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
 
 function Kpi({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: string }) {
   return (

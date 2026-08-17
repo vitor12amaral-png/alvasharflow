@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { naturalCompare } from "@/lib/format";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -77,7 +78,7 @@ function ClientDetail() {
         parent,
         subs: (subs.data ?? []) as { id: string; name: string; company: string | null; status: string; videos: { id: string; status: string }[] | null }[],
         packages: packs.data ?? [],
-        videos: vids.data ?? [],
+        videos: [...(vids.data ?? [])].sort((a, b) => naturalCompare(a.title, b.title)),
         library: lib.data ?? [],
         activity: acts.data ?? [],
         interactions: ints.data ?? [],
@@ -165,7 +166,7 @@ function ClientDetail() {
 
 
       <Tabs defaultValue={isParent ? "subs" : "overview"} className="mt-6">
-        <TabsList className="flex-wrap h-auto">
+        <TabsList className="flex-wrap h-auto gap-1 rounded-full border border-border/60 bg-muted/25 p-1 backdrop-blur-xl [&>button]:rounded-full [&>button]:px-3.5 [&>button]:text-[13px] [&>button]:transition-all [&>button[data-state=active]]:shadow-sm">
           {isParent && <TabsTrigger value="subs">Marcas ({client.subs.length})</TabsTrigger>}
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
           <TabsTrigger value="demands">Vídeos ({client.videos.length})</TabsTrigger>
