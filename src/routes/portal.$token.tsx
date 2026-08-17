@@ -251,11 +251,11 @@ function VideoCard({ token, video, onChange, clientName, clientId }: {
       const fromFiles = (files.data ?? []).find((f: any) => isVideoFile(f.name, f.file_type));
       const raw = fromFiles?.url ?? (video.final_file_link && /\.(mp4|mov|webm|m4v)(\?|$)/i.test(video.final_file_link) ? video.final_file_link : null);
       if (!raw) { if (!cancelled) setSrc(null); return; }
-      const url = await resolveFileUrl(raw);
+      const url = await resolveFileUrl(raw, token);
       if (!cancelled) setSrc(url);
     })();
     return () => { cancelled = true; };
-  }, [files.data, video.final_file_link]);
+  }, [files.data, video.final_file_link, token]);
 
   const seek = useCallback((sec: number) => {
     const el = playerRef.current;
@@ -422,7 +422,7 @@ function PortalFiles({ token, files, loading, onUpload, busy }: {
       ) : (
         <ul className="mt-2 space-y-1">
           {files.map((f) => (
-            <FileRow key={f.id} file={f} />
+            <FileRow key={f.id} file={f} token={token} />
           ))}
         </ul>
       )}
@@ -430,11 +430,11 @@ function PortalFiles({ token, files, loading, onUpload, busy }: {
   );
 }
 
-function FileRow({ file }: { file: any }) {
+function FileRow({ file, token }: { file: any; token: string }) {
   const [busy, setBusy] = useState(false);
   async function open() {
     setBusy(true);
-    const url = await resolveFileUrl(file.url);
+    const url = await resolveFileUrl(file.url, token);
     setBusy(false);
     if (!url) return toast.error("Não foi possível abrir o arquivo");
     window.open(url, "_blank", "noopener");
