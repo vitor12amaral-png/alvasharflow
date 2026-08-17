@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { naturalCompare } from "@/lib/format";
 import { CalendarClock, GripVertical, Loader2 } from "lucide-react";
 import { STAGE_ACCENT } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
@@ -135,7 +136,9 @@ export function PortalBoard({
 
       <div className="grid gap-3 md:grid-cols-4">
         {COLUMNS.map((col) => {
-          const items = videos.filter((v) => colOf(v.status as VideoStatus) === col.id);
+          const items = videos
+            .filter((v) => colOf(v.status as VideoStatus) === col.id)
+            .sort((a, b) => naturalCompare(a.title, b.title));
           const active = over === col.id && col.droppable;
           return (
             <div
