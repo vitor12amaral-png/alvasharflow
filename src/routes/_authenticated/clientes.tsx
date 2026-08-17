@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Search, Instagram, Phone, Loader2, ChevronRight, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { initials, formatBRL } from "@/lib/format";
+import { initials, formatBRL, naturalCompare } from "@/lib/format";
 import { ClientWizard } from "@/components/client-wizard";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { DeleteAction } from "@/components/delete-action";
