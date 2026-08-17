@@ -40,12 +40,18 @@ function VideosPage() {
     },
   });
 
-  const filtered = (videos ?? []).filter((v) => {
-    if (q && !v.title.toLowerCase().includes(q.toLowerCase())) return false;
-    if (status !== "all" && v.status !== status) return false;
-    if (client !== "all" && v.client_id !== client) return false;
-    return true;
-  });
+  const filtered = (videos ?? [])
+    .filter((v) => {
+      if (q && !v.title.toLowerCase().includes(q.toLowerCase())) return false;
+      if (status !== "all" && v.status !== status) return false;
+      if (client !== "all" && v.client_id !== client) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const c = naturalCompare(a.clients?.name, b.clients?.name);
+      return c !== 0 ? c : naturalCompare(a.title, b.title);
+    });
+
 
   return (
     <div className="p-6 md:p-8">
