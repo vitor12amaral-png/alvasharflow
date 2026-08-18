@@ -12,6 +12,7 @@ import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { Segmented } from "@/components/segmented";
 import { naturalCompare } from "@/lib/format";
+import { WeekBoard } from "@/components/week-board";
 
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   CalendarClock, ListOrdered, Loader2, Sun, CheckCircle2, AlarmClock, Inbox,
-  Layers, ChevronDown, ChevronRight,
+  Layers, ChevronDown, ChevronRight, LayoutGrid,
 } from "lucide-react";
 
 
@@ -60,7 +61,7 @@ function todayIso() {
 }
 
 function FilaPage() {
-  const [tab, setTab] = useState<"hoje" | "geral">("hoje");
+  const [tab, setTab] = useState<"hoje" | "geral" | "semana">("hoje");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const [q, setQ] = useState("");
@@ -118,7 +119,15 @@ function FilaPage() {
   const hoje = [...late, ...dueToday, ...inProgress];
   const rest = pending.filter((v) => !hoje.some((h) => h.id === v.id));
 
-  const list = tab === "hoje" ? hoje : pending;
+  const list = tab === "geral" ? pending : hoje;
+
+  const weekItems = useMemo(
+    () =>
+      (data ?? []).filter(
+        (v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term),
+      ),
+    [data, term],
+  );
 
   const clientGroups = useMemo(() => {
     const map = new Map<string, { name: string; items: Row[] }>();
@@ -161,6 +170,7 @@ function FilaPage() {
               options={[
                 { value: "hoje", label: "Hoje", icon: <Sun className="h-3.5 w-3.5" />, count: hoje.length },
                 { value: "geral", label: "Fila geral", icon: <ListOrdered className="h-3.5 w-3.5" />, count: pending.length },
+                { value: "semana", label: "Semana", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
               ]}
             />
             <span className="hidden items-center gap-1.5 rounded-full border border-border/70 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground sm:flex">
@@ -181,6 +191,14 @@ function FilaPage() {
 
 
 
+      {tab === "semana" ? (
+        <div className="mt-6">
+          <WeekBoard
+            items={weekItems}
+            onPatch={(ids, changes) => patch.mutate({ ids, changes })}
+          />
+        </div>
+      ) : (
       <div className="mt-6 overflow-hidden rounded-lg border border-border">
         {isLoading ? (
           <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -241,6 +259,7 @@ function FilaPage() {
         )}
 
       </div>
+      )}
     </div>
   );
 }
