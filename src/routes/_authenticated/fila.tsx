@@ -228,8 +228,11 @@ function FilaPage() {
         <div className="mt-6">
           <WeekBoard
             items={weekItems}
+            clients={clients ?? []}
             onPatch={(ids, changes) => patch.mutate({ ids, changes })}
+            onCreate={(payload) => createVideo.mutate(payload)}
           />
+
         </div>
       ) : (
       <div className="mt-6 overflow-hidden rounded-lg border border-border">
