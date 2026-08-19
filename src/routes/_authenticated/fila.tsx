@@ -80,7 +80,39 @@ function FilaPage() {
     },
   });
 
-  
+  const { data: clients } = useQuery({
+    queryKey: ["fila-clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clients").select("id, name").eq("status", "ativo");
+      if (error) throw error;
+      return (data ?? []).sort((a, b) => naturalCompare(a.name, b.name));
+    },
+  });
+
+  const createVideo = useMutation({
+    mutationFn: async (payload: { title: string; client_id: string; due_date: string | null }) => {
+      const { data: pkg } = await supabase
+        .from("client_packages").select("id, workspace_id")
+        .eq("client_id", payload.client_id).eq("status", "ativo").maybeSingle();
+      const { data: cli } = await supabase.from("clients").select("workspace_id").eq("id", payload.client_id).single();
+      const { error } = await supabase.from("videos").insert({
+        workspace_id: cli!.workspace_id,
+        title: payload.title,
+        client_id: payload.client_id,
+        due_date: payload.due_date,
+        package_id: pkg?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      sfx.success();
+      toast.success("Vídeo criado");
+      qc.invalidateQueries({ queryKey: ["fila-videos"] });
+      qc.invalidateQueries({ queryKey: ["videos-workflow"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (e: Error) => { sfx.error(); toast.error(e.message); },
+  });
 
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: { status?: VideoStatus; due_date?: string | null } }) => {
@@ -95,6 +127,7 @@ function FilaPage() {
     },
     onError: (e: Error) => { sfx.error(); toast.error(e.message); },
   });
+
 
   const term = q.trim().toLowerCase();
   const pending = useMemo(
