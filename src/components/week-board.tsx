@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { naturalCompare } from "@/lib/format";
 import { STAGE_ACCENT, STAGE_LABEL } from "@/lib/video-workflow";
@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Circle, GripVertical, CalendarOff,
-  Plus, X, Maximize2, Minimize2, CheckSquare,
+  Plus, X, Maximize2, Minimize2, CheckSquare, Search, AlertTriangle, CalendarDays,
+  ArrowLeftRight,
 } from "lucide-react";
 import { sfx } from "@/lib/sfx";
 
@@ -22,8 +23,10 @@ export type WeekCard = {
 };
 
 const DAY_LABEL = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const SHORT_LABEL = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const DONE: VideoStatus[] = ["aprovado", "entregue"];
 const ALL_STATUSES = Object.keys(STAGE_LABEL) as VideoStatus[];
+const PREFS_KEY = "weekboard:prefs";
 
 function iso(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -34,6 +37,24 @@ function startOfWeek(offset: number) {
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() - d.getDay() + 1 + offset * 7); // segunda
   return d;
+}
+
+function addDays(key: string, delta: number) {
+  const [y, m, d] = key.split("-").map(Number);
+  const date = new Date(y, m - 1, d + delta);
+  return iso(date);
+}
+
+type Prefs = { wide: boolean; days: 6 | 7; group: boolean };
+const DEFAULT_PREFS: Prefs = { wide: false, days: 6, group: false };
+
+function loadPrefs(): Prefs {
+  if (typeof window === "undefined") return DEFAULT_PREFS;
+  try {
+    return { ...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") };
+  } catch {
+    return DEFAULT_PREFS;
+  }
 }
 
 /**
@@ -57,38 +78,71 @@ export function WeekBoard({
   const [dragId, setDragId] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [wide, setWide] = useState(false);
+  const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [adding, setAdding] = useState<string | null>(null);
   const [draft, setDraft] = useState({ title: "", client_id: "" });
+  const [query, setQuery] = useState("");
+  const [clientFilter, setClientFilter] = useState("");
+  const [hideDone, setHideDone] = useState(false);
+  const lastClicked = useRef<{ col: string; id: string } | null>(null);
   const today = iso(new Date());
+
+  useEffect(() => setPrefs(loadPrefs()), []);
+  const savePrefs = useCallback((patch: Partial<Prefs>) => {
+    setPrefs((p) => {
+      const next = { ...p, ...patch };
+      try { localStorage.setItem(PREFS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   const days = useMemo(() => {
     const s = startOfWeek(week);
-    return Array.from({ length: 6 }, (_, i) => {
+    return Array.from({ length: prefs.days }, (_, i) => {
       const d = new Date(s);
       d.setDate(s.getDate() + i);
-      return { key: iso(d), label: DAY_LABEL[d.getDay()], num: d.getDate(), month: d.getMonth() + 1 };
+      return { key: iso(d), label: DAY_LABEL[d.getDay()], short: SHORT_LABEL[d.getDay()], num: d.getDate(), month: d.getMonth() + 1 };
     });
-  }, [week]);
+  }, [week, prefs.days]);
 
-  const range = `${days[0].num}/${String(days[0].month).padStart(2, "0")} – ${days[5].num}/${String(days[5].month).padStart(2, "0")}`;
+  const last = days[days.length - 1];
+  const range = `${days[0].num}/${String(days[0].month).padStart(2, "0")} – ${last.num}/${String(last.month).padStart(2, "0")}`;
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return items.filter((v) => {
+      if (hideDone && DONE.includes(v.status)) return false;
+      if (clientFilter && (v.clients?.name ?? "") !== clientFilter) return false;
+      if (q && !`${v.title} ${v.clients?.name ?? ""}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [items, query, clientFilter, hideDone]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, WeekCard[]>();
     days.forEach((d) => map.set(d.key, []));
     map.set("none", []);
     const first = days[0].key;
-    const last = days[5].key;
-    items.forEach((v) => {
+    const lastKey = last.key;
+    filtered.forEach((v) => {
       if (!v.due_date) { map.get("none")!.push(v); return; }
       if (v.due_date < first) { map.get(first)!.push(v); return; } // atrasados caem na segunda
-      if (v.due_date > last) return;
+      if (v.due_date > lastKey) return;
       const bucket = map.get(v.due_date);
       if (bucket) bucket.push(v);
     });
-    map.forEach((list) => list.sort((a, b) => naturalCompare(a.title, b.title)));
+    map.forEach((list, key) => {
+      list.sort((a, b) => {
+        if (prefs.group) {
+          const c = naturalCompare(a.clients?.name, b.clients?.name);
+          if (c !== 0) return c;
+        }
+        return naturalCompare(a.title, b.title);
+      });
+      map.set(key, list);
+    });
     return map;
-  }, [items, days]);
+  }, [filtered, days, last.key, prefs.group]);
 
   // Limpa seleção de itens que saíram da visão.
   useEffect(() => {
@@ -100,15 +154,52 @@ export function WeekBoard({
     });
   }, [items]);
 
+  const shift = useCallback((delta: number) => {
+    if (selected.size === 0) return;
+    const ids = [...selected];
+    const targets = new Map<string, string[]>();
+    items.forEach((v) => {
+      if (!ids.includes(v.id) || !v.due_date) return;
+      const t = addDays(v.due_date, delta);
+      const arr = targets.get(t) ?? [];
+      arr.push(v.id);
+      targets.set(t, arr);
+    });
+    if (targets.size === 0) return;
+    sfx.success();
+    targets.forEach((list, date) => onPatch(list, { due_date: date }));
+  }, [selected, items, onPatch]);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      const el = e.target as HTMLElement | null;
+      if (el && /input|textarea|select/i.test(el.tagName)) return;
       if (e.key === "Escape") { setSelected(new Set()); setAdding(null); }
+      if (selected.size > 0 && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+        e.preventDefault();
+        shift(e.key === "ArrowRight" ? 1 : -1);
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [selected, shift]);
 
-  function toggle(id: string) {
+  function clickCard(e: React.MouseEvent, colId: string, id: string, list: WeekCard[]) {
+    if (e.shiftKey && lastClicked.current?.col === colId) {
+      const from = list.findIndex((v) => v.id === lastClicked.current!.id);
+      const to = list.findIndex((v) => v.id === id);
+      if (from >= 0 && to >= 0) {
+        const [a, b] = from < to ? [from, to] : [to, from];
+        setSelected((prev) => {
+          const next = new Set(prev);
+          list.slice(a, b + 1).forEach((v) => next.add(v.id));
+          return next;
+        });
+        sfx.open();
+        return;
+      }
+    }
+    lastClicked.current = { col: colId, id };
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
@@ -130,11 +221,11 @@ export function WeekBoard({
     onPatch(moving, { due_date: target });
   }
 
-  function bulk(changes: { due_date?: string | null; status?: VideoStatus }) {
+  function bulk(changes: { due_date?: string | null; status?: VideoStatus }, keep = false) {
     if (selected.size === 0) return;
     sfx.success();
     onPatch([...selected], changes);
-    setSelected(new Set());
+    if (!keep) setSelected(new Set());
   }
 
   function submitDraft(dayKey: string) {
@@ -144,33 +235,62 @@ export function WeekBoard({
     setDraft((d) => ({ ...d, title: "" }));
   }
 
-  const columns = [...days.map((d) => ({ ...d, id: d.key })), { id: "none", key: "none", label: "Sem prazo", num: 0, month: 0 }];
+  const columns = [...days.map((d) => ({ ...d, id: d.key })), { id: "none", key: "none", label: "Sem prazo", short: "—", num: 0, month: 0 }];
+  const clientNames = useMemo(
+    () => [...new Set(items.map((v) => v.clients?.name).filter(Boolean) as string[])].sort(naturalCompare),
+    [items],
+  );
+  const totalVisible = filtered.length;
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setWeek((w) => w - 1)} aria-label="Semana anterior">
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <span className="min-w-32 text-center text-xs font-medium tabular-nums text-muted-foreground">{range}</span>
-        <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setWeek((w) => w + 1)} aria-label="Próxima semana">
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1 rounded-full border border-border/70 bg-card/50 p-0.5">
+          <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => setWeek((w) => w - 1)} aria-label="Semana anterior">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="min-w-28 text-center text-xs font-medium tabular-nums text-muted-foreground">{range}</span>
+          <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full" onClick={() => setWeek((w) => w + 1)} aria-label="Próxima semana">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
         {week !== 0 && (
           <Button size="sm" variant="ghost" className="h-8 rounded-full text-[11px]" onClick={() => setWeek(0)}>Esta semana</Button>
         )}
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 rounded-full text-[11px]"
-          onClick={() => setWide((w) => !w)}
-          title="Largura das colunas"
+
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar…"
+            className="h-8 w-40 rounded-full pl-8 text-xs"
+          />
+        </div>
+        <select
+          value={clientFilter}
+          onChange={(e) => setClientFilter(e.target.value)}
+          className="h-8 rounded-full border border-border bg-background px-3 text-xs"
         >
-          {wide ? <Minimize2 className="mr-1 h-3.5 w-3.5" /> : <Maximize2 className="mr-1 h-3.5 w-3.5" />}
-          {wide ? "Compacto" : "Amplo"}
+          <option value="">Todos os clientes</option>
+          {clientNames.map((n) => <option key={n} value={n}>{n}</option>)}
+        </select>
+
+        <Button size="sm" variant={hideDone ? "default" : "outline"} className="h-8 rounded-full text-[11px]" onClick={() => setHideDone((v) => !v)}>
+          <CheckCircle2 className="mr-1 h-3.5 w-3.5" />Ocultar prontos
         </Button>
-        <span className="ml-auto hidden text-[11px] text-muted-foreground sm:block">
-          Clique para selecionar · arraste para mudar o prazo
+        <Button size="sm" variant={prefs.group ? "default" : "outline"} className="h-8 rounded-full text-[11px]" onClick={() => savePrefs({ group: !prefs.group })}>
+          Agrupar por cliente
+        </Button>
+        <Button size="sm" variant="outline" className="h-8 rounded-full text-[11px]" onClick={() => savePrefs({ days: prefs.days === 6 ? 7 : 6 })} title="Incluir domingo">
+          <CalendarDays className="mr-1 h-3.5 w-3.5" />{prefs.days === 6 ? "6 dias" : "7 dias"}
+        </Button>
+        <Button size="sm" variant="outline" className="h-8 rounded-full text-[11px]" onClick={() => savePrefs({ wide: !prefs.wide })} title="Largura das colunas">
+          {prefs.wide ? <Minimize2 className="mr-1 h-3.5 w-3.5" /> : <Maximize2 className="mr-1 h-3.5 w-3.5" />}
+          {prefs.wide ? "Compacto" : "Amplo"}
+        </Button>
+        <span className="ml-auto hidden text-[11px] text-muted-foreground lg:block">
+          {totalVisible} vídeo{totalVisible === 1 ? "" : "s"} · clique/shift para selecionar · ← → move o prazo
         </span>
       </div>
 
@@ -211,6 +331,12 @@ export function WeekBoard({
               ))}
             </PopoverContent>
           </Popover>
+          <div className="flex items-center gap-1 rounded-full border border-border/70 bg-background/60 px-1">
+            <ArrowLeftRight className="h-3 w-3 text-muted-foreground" />
+            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => shift(-1)}>-1 dia</Button>
+            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => shift(1)}>+1 dia</Button>
+            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => shift(7)}>+1 sem</Button>
+          </div>
           <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => bulk({ status: "entregue" })}>
             <CheckCircle2 className="mr-1 h-3.5 w-3.5" />Concluir
           </Button>
@@ -225,6 +351,8 @@ export function WeekBoard({
           const list = byDay.get(col.id) ?? [];
           const isToday = col.id === today;
           const active = over === col.id;
+          const doneCount = list.filter((v) => DONE.includes(v.status)).length;
+          const pct = list.length ? Math.round((doneCount / list.length) * 100) : 0;
           const allSelected = list.length > 0 && list.every((v) => selected.has(v.id));
           return (
             <div
@@ -233,46 +361,53 @@ export function WeekBoard({
               onDragLeave={() => setOver((o) => (o === col.id ? null : o))}
               onDrop={(e) => { e.preventDefault(); drop(col.id); }}
               className={cn(
-                "shrink-0 snap-start rounded-2xl border p-2.5 transition",
-                wide ? "w-[320px]" : "w-[240px]",
-                active ? "border-primary bg-primary/5" : "border-border/70 bg-card/40",
-                isToday && !active && "border-primary/40",
+                "flex max-h-[70vh] shrink-0 snap-start flex-col rounded-2xl border p-2.5 transition",
+                prefs.wide ? "w-[320px]" : "w-[248px]",
+                active ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border/70 bg-card/40",
+                isToday && !active && "border-primary/40 bg-primary/[0.03]",
               )}
             >
-              <div className="mb-2 flex items-center justify-between px-1">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  {col.id === "none" && <CalendarOff className="h-3.5 w-3.5 text-muted-foreground" />}
-                  <span className={cn("text-xs font-semibold", isToday && "text-primary")}>{col.label}</span>
-                  {col.id !== "none" && (
-                    <span className="text-[10px] tabular-nums text-muted-foreground">{col.num}/{String(col.month).padStart(2, "0")}</span>
-                  )}
+              <div className="mb-2 px-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    {col.id === "none" && <CalendarOff className="h-3.5 w-3.5 text-muted-foreground" />}
+                    <span className={cn("text-xs font-semibold", isToday && "text-primary")}>{col.label}</span>
+                    {col.id !== "none" && (
+                      <span className="text-[10px] tabular-nums text-muted-foreground">{col.num}/{String(col.month).padStart(2, "0")}</span>
+                    )}
+                    {isToday && <span className="rounded-full bg-primary/15 px-1.5 text-[9px] font-semibold text-primary">hoje</span>}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {list.length > 0 && (
+                      <button
+                        onClick={() => {
+                          setSelected((prev) => {
+                            const next = new Set(prev);
+                            list.forEach((v) => (allSelected ? next.delete(v.id) : next.add(v.id)));
+                            return next;
+                          });
+                          sfx.open();
+                        }}
+                        className={cn("rounded p-0.5 text-muted-foreground transition hover:text-foreground", allSelected && "text-primary")}
+                        aria-label="Selecionar coluna"
+                        title="Selecionar todos do dia"
+                      >
+                        <CheckSquare className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <span className="rounded-full bg-muted/60 px-1.5 text-[10px] font-semibold tabular-nums text-muted-foreground">{list.length}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  {list.length > 0 && (
-                    <button
-                      onClick={() => {
-                        setSelected((prev) => {
-                          const next = new Set(prev);
-                          list.forEach((v) => (allSelected ? next.delete(v.id) : next.add(v.id)));
-                          return next;
-                        });
-                        sfx.open();
-                      }}
-                      className={cn("rounded p-0.5 text-muted-foreground transition hover:text-foreground", allSelected && "text-primary")}
-                      aria-label="Selecionar coluna"
-                      title="Selecionar todos do dia"
-                    >
-                      <CheckSquare className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                  <span className="rounded-full bg-muted/60 px-1.5 text-[10px] font-semibold tabular-nums text-muted-foreground">{list.length}</span>
+                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted/50">
+                  <div className="h-full rounded-full bg-[oklch(0.68_0.17_155)] transition-all" style={{ width: `${pct}%` }} />
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="-mr-1 flex-1 space-y-2 overflow-y-auto pr-1">
                 {list.map((v) => {
                   const done = DONE.includes(v.status);
                   const isSel = selected.has(v.id);
+                  const late = !!v.due_date && v.due_date < today && !done;
                   return (
                     <div
                       key={v.id}
@@ -281,11 +416,11 @@ export function WeekBoard({
                       onDragEnd={() => { setDragId(null); setOver(null); }}
                       onClick={(e) => {
                         if (e.detail > 1) return;
-                        toggle(v.id);
+                        clickCard(e, col.id, v.id, list);
                       }}
                       onDoubleClick={() => onOpen?.(v.id)}
                       className={cn(
-                        "group cursor-grab rounded-xl border bg-card p-2.5 transition active:cursor-grabbing hover:border-primary/40",
+                        "group cursor-grab rounded-xl border bg-card p-2.5 transition active:cursor-grabbing hover:border-primary/40 hover:shadow-sm",
                         isSel ? "border-primary ring-1 ring-primary/40" : "border-border/70",
                         dragId === v.id && "opacity-40",
                       )}
@@ -308,6 +443,11 @@ export function WeekBoard({
                             <span className="truncate text-[10px] text-muted-foreground">
                               {v.clients?.name ?? "—"} · {STAGE_LABEL[v.status]}
                             </span>
+                            {late && (
+                              <span className="ml-auto flex shrink-0 items-center gap-0.5 rounded-full bg-destructive/10 px-1 text-[9px] font-semibold text-destructive">
+                                <AlertTriangle className="h-2.5 w-2.5" />atrasado
+                              </span>
+                            )}
                           </div>
                         </div>
                         <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
