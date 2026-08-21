@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Circle, GripVertical, CalendarOff,
   Plus, X, Maximize2, Minimize2, CheckSquare, Search, AlertTriangle, CalendarDays,
-  ArrowLeftRight, Pencil, Trash2,
+  ArrowLeftRight, Pencil,
 } from "lucide-react";
 import { sfx } from "@/lib/sfx";
 
