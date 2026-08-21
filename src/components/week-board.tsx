@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Circle, GripVertical, CalendarOff,
   Plus, X, Maximize2, Minimize2, CheckSquare, Search, AlertTriangle, CalendarDays,
-  ArrowLeftRight,
+  ArrowLeftRight, Pencil, Trash2,
 } from "lucide-react";
 import { sfx } from "@/lib/sfx";
 
@@ -19,8 +19,17 @@ export type WeekCard = {
   status: VideoStatus;
   due_date: string | null;
   color: string | null;
+  client_id?: string;
   clients: { name: string } | null;
 };
+
+export type WeekPatch = {
+  due_date?: string | null;
+  status?: VideoStatus;
+  client_id?: string;
+  title?: string;
+};
+
 
 const DAY_LABEL = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const SHORT_LABEL = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
