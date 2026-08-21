@@ -459,7 +459,15 @@ export function WeekBoard({
                             )}
                           </div>
                         </div>
-                        <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
+                        <div className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                          <QuickEdit
+                            card={v}
+                            clients={clients}
+                            columns={columns}
+                            onPatch={(changes) => onPatch([v.id], changes)}
+                          />
+                          <GripVertical className="mt-0.5 h-3.5 w-3.5 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
+                        </div>
                       </div>
                     </div>
                   );
