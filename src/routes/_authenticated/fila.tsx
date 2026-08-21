@@ -115,7 +115,7 @@ function FilaPage() {
   });
 
   const patch = useMutation({
-    mutationFn: async ({ ids, changes }: { ids: string[]; changes: { status?: VideoStatus; due_date?: string | null } }) => {
+    mutationFn: async ({ ids, changes }: { ids: string[]; changes: { status?: VideoStatus; due_date?: string | null; client_id?: string; title?: string } }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
       if (error) throw error;
     },
