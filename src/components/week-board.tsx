@@ -79,7 +79,7 @@ export function WeekBoard({
 }: {
   items: WeekCard[];
   clients?: { id: string; name: string }[];
-  onPatch: (ids: string[], changes: { due_date?: string | null; status?: VideoStatus }) => void;
+  onPatch: (ids: string[], changes: WeekPatch) => void;
   onCreate?: (payload: { title: string; client_id: string; due_date: string | null }) => void;
   onOpen?: (id: string) => void;
 }) {
