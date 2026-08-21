@@ -525,3 +525,125 @@ export function WeekBoard({
     </div>
   );
 }
+
+/** Edição rápida do cartão: título, cliente, situação e prazo — tudo no próprio quadro. */
+function QuickEdit({
+  card,
+  clients,
+  columns,
+  onPatch,
+}: {
+  card: WeekCard;
+  clients: { id: string; name: string }[];
+  columns: { id: string; label: string; num: number; month: number }[];
+  onPatch: (changes: WeekPatch) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState(card.title);
+  const [date, setDate] = useState(card.due_date ?? "");
+
+  useEffect(() => {
+    if (open) { setTitle(card.title); setDate(card.due_date ?? ""); }
+  }, [open, card.title, card.due_date]);
+
+  function apply(changes: WeekPatch, close = true) {
+    sfx.success();
+    onPatch(changes);
+    if (close) setOpen(false);
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className="mt-0.5 rounded p-0.5 text-muted-foreground opacity-0 transition hover:text-foreground group-hover:opacity-100"
+          aria-label="Editar cartão"
+          title="Edição rápida"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-2">
+        <p className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Edição rápida</p>
+
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && title.trim() && title !== card.title) apply({ title: title.trim() });
+          }}
+          onBlur={() => { if (title.trim() && title !== card.title) apply({ title: title.trim() }, false); }}
+          className="h-8 text-xs"
+          placeholder="Título"
+        />
+
+        {clients.length > 0 && (
+          <select
+            value={card.client_id ?? ""}
+            onChange={(e) => apply({ client_id: e.target.value }, false)}
+            className="mt-2 h-8 w-full rounded-md border border-border bg-background px-2 text-xs"
+          >
+            <option value="">Cliente…</option>
+            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
+
+        <div className="mt-2 border-t border-border pt-2">
+          <p className="px-1 pb-1 text-[10px] text-muted-foreground">Situação</p>
+          <div className="flex flex-wrap gap-1">
+            {ALL_STATUSES.map((s) => (
+              <button
+                key={s}
+                onClick={() => apply({ status: s }, false)}
+                className={cn(
+                  "flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition hover:bg-muted",
+                  s === card.status ? "border-primary/60 bg-primary/10 text-primary" : "border-border/70 text-muted-foreground",
+                )}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: STAGE_ACCENT[s] }} />
+                {STAGE_LABEL[s]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-2 space-y-1.5 border-t border-border pt-2">
+          <p className="px-1 text-[10px] text-muted-foreground">Prazo</p>
+          <div className="flex flex-wrap gap-1">
+            {columns.filter((c) => c.id !== "none").map((c) => (
+              <button
+                key={c.id}
+                onClick={() => { setDate(c.id); apply({ due_date: c.id }, false); }}
+                className={cn(
+                  "rounded-full border px-2 py-0.5 text-[10px] tabular-nums transition hover:bg-muted",
+                  card.due_date === c.id ? "border-primary/60 bg-primary/10 text-primary" : "border-border/70 text-muted-foreground",
+                )}
+              >
+                {c.label.slice(0, 3)} {c.num}/{String(c.month).padStart(2, "0")}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => { setDate(e.target.value); apply({ due_date: e.target.value || null }, false); }}
+              className="h-8 flex-1 text-xs"
+            />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-muted-foreground"
+              title="Remover prazo"
+              onClick={() => { setDate(""); apply({ due_date: null }, false); }}
+            >
+              <CalendarOff className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        <Button size="sm" className="mt-2 h-7 w-full text-[11px]" onClick={() => setOpen(false)}>Fechar</Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
