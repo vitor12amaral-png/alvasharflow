@@ -200,6 +200,9 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [q, setQ] = useState("");
+  const [hideDone, setHideDone] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
   function toggleGroup(key: string) {
@@ -218,6 +221,8 @@ function WorkflowBoard({ clientId, clients, onBack }: {
 
   const { data: allVideos, isLoading } = useQuery({
     queryKey: ["videos-workflow", clientId, scopeIds.join(",")],
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, client_id, color, clients(name)").order("position");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
@@ -229,12 +234,15 @@ function WorkflowBoard({ clientId, clients, onBack }: {
 
   // Filtro por mês: usa o prazo do vídeo quando existe, senão a data de criação.
   const { ym } = useMonthFromSearch();
+  const term = q.trim().toLowerCase();
   const videos = useMemo(
     () =>
       (allVideos ?? [])
         .filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym)
+        .filter((v) => !hideDone || (v.status !== "aprovado" && v.status !== "entregue"))
+        .filter((v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term))
         .sort((a, b) => naturalCompare(a.title, b.title)),
-    [allVideos, ym],
+    [allVideos, ym, hideDone, term],
   );
 
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
@@ -242,6 +250,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
 
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
+
   type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
