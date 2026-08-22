@@ -374,6 +374,43 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     if (selected.has(dragId)) setSelected(new Set());
   }
 
+  // Atalhos de teclado — operação rápida sem sair do quadro.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      if (e.key === "Escape") { setSelected(new Set()); return; }
+      if (typing) return;
+      if (e.key === "/") { e.preventDefault(); searchRef.current?.focus(); return; }
+      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); setOpen(true); return; }
+      if (e.key.toLowerCase() === "a" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSelected(new Set(videos.map((v) => v.id)));
+        sfx.select();
+        return;
+      }
+      if (!selected.size) return;
+      const ids = Array.from(selected);
+      const idx = Number(e.key);
+      if (idx >= 1 && idx <= GROUPS.length) {
+        e.preventDefault();
+        patch.mutate({ ids, changes: { status: GROUPS[idx - 1].statuses[0] } });
+        sfx.drop();
+        setSelected(new Set());
+        return;
+      }
+      if (e.key.toLowerCase() === "t") {
+        e.preventDefault();
+        const d = new Date();
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        patch.mutate({ ids, changes: { due_date: iso } });
+        setSelected(new Set());
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected, videos, patch]);
+
 
   return (
     <div className="flex min-h-[calc(100vh-3rem)] flex-col md:min-h-screen">
