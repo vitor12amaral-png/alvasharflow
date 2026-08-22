@@ -275,6 +275,32 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     },
   });
 
+  // Criação rápida direto na coluna (estilo Trello).
+  const quickAdd = useMutation({
+    mutationFn: async ({ title, status, client_id }: { title: string; status: VideoStatus; client_id: string }) => {
+      const { data: cli, error: ce } = await supabase.from("clients").select("workspace_id").eq("id", client_id).single();
+      if (ce) throw ce;
+      const { data: pkg } = await supabase
+        .from("client_packages").select("id").eq("client_id", client_id).eq("status", "ativo").maybeSingle();
+      const { error } = await supabase.from("videos").insert({
+        workspace_id: cli!.workspace_id,
+        client_id,
+        title,
+        status,
+        package_id: pkg?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      sfx.success();
+      qc.invalidateQueries({ queryKey: ["videos-workflow"] });
+      qc.invalidateQueries({ queryKey: ["fila-videos"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (e: Error) => { sfx.error(); toast.error(e.message); },
+  });
+
+
   const marquee = useMarquee((ids, additive) => {
     if (ids.length) sfx.select();
     setSelected((prev) => {
