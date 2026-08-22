@@ -484,7 +484,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                 {marquee.overlay}
                 <div className="flex min-w-max gap-3">
 
-                  {GROUPS.map((g) => {
+                  {GROUPS.map((g, gi) => {
                     const vids = grouped[g.id];
                     // group cards by client inside column for visual organization
                     const byClient = new Map<string, VideoRow[]>();
@@ -494,7 +494,20 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                       byClient.set(v.client_id, arr);
                     });
                     return (
-                      <Column key={g.id} id={g.id} label={g.label} dot={g.dot} count={vids.length}>
+                      <Column
+                        key={g.id}
+                        id={g.id}
+                        label={g.label}
+                        dot={g.dot}
+                        count={vids.length}
+                        shortcut={gi + 1}
+                        onQuickAdd={
+                          clientId === "all"
+                            ? undefined
+                            : (title) => quickAdd.mutate({ title, status: g.statuses[0], client_id: clientId })
+                        }
+                      >
+
                         {Array.from(byClient.entries()).map(([cid, arr]) => {
                           const key = `${g.id}::${cid}`;
                           const isExpanded = expandedGroups.has(key);
