@@ -423,7 +423,26 @@ function WorkflowBoard({ clientId, clients, onBack }: {
           subtitle={hiddenCount > 0 ? `${videos.length} vídeo(s) no mês · ${hiddenCount} fora do período` : "Kanban e lista sincronizados"}
           actions={
             <div className="flex flex-wrap items-center gap-2">
+              <Input
+                ref={searchRef}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar vídeo ou cliente…  /"
+                className="h-9 w-52 rounded-full"
+              />
+              <button
+                onClick={() => setHideDone((v) => !v)}
+                className={cn(
+                  "h-9 rounded-full border px-3 text-xs transition",
+                  hideDone
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Ocultar concluídos
+              </button>
               <MonthPicker />
+
               <Segmented
                 className="hidden md:inline-flex"
                 value={view}
