@@ -14,7 +14,7 @@ import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
@@ -200,6 +200,9 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [q, setQ] = useState("");
+  const [hideDone, setHideDone] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
   function toggleGroup(key: string) {
@@ -218,6 +221,8 @@ function WorkflowBoard({ clientId, clients, onBack }: {
 
   const { data: allVideos, isLoading } = useQuery({
     queryKey: ["videos-workflow", clientId, scopeIds.join(",")],
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, client_id, color, clients(name)").order("position");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
@@ -229,12 +234,15 @@ function WorkflowBoard({ clientId, clients, onBack }: {
 
   // Filtro por mês: usa o prazo do vídeo quando existe, senão a data de criação.
   const { ym } = useMonthFromSearch();
+  const term = q.trim().toLowerCase();
   const videos = useMemo(
     () =>
       (allVideos ?? [])
         .filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym)
+        .filter((v) => !hideDone || (v.status !== "aprovado" && v.status !== "entregue"))
+        .filter((v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term))
         .sort((a, b) => naturalCompare(a.title, b.title)),
-    [allVideos, ym],
+    [allVideos, ym, hideDone, term],
   );
 
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
@@ -242,6 +250,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
 
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
+
   type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
@@ -265,6 +274,32 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
+
+  // Criação rápida direto na coluna (estilo Trello).
+  const quickAdd = useMutation({
+    mutationFn: async ({ title, status, client_id }: { title: string; status: VideoStatus; client_id: string }) => {
+      const { data: cli, error: ce } = await supabase.from("clients").select("workspace_id").eq("id", client_id).single();
+      if (ce) throw ce;
+      const { data: pkg } = await supabase
+        .from("client_packages").select("id").eq("client_id", client_id).eq("status", "ativo").maybeSingle();
+      const { error } = await supabase.from("videos").insert({
+        workspace_id: cli!.workspace_id,
+        client_id,
+        title,
+        status,
+        package_id: pkg?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      sfx.success();
+      qc.invalidateQueries({ queryKey: ["videos-workflow"] });
+      qc.invalidateQueries({ queryKey: ["fila-videos"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (e: Error) => { sfx.error(); toast.error(e.message); },
+  });
+
 
   const marquee = useMarquee((ids, additive) => {
     if (ids.length) sfx.select();
@@ -339,6 +374,43 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     if (selected.has(dragId)) setSelected(new Set());
   }
 
+  // Atalhos de teclado — operação rápida sem sair do quadro.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      if (e.key === "Escape") { setSelected(new Set()); return; }
+      if (typing) return;
+      if (e.key === "/") { e.preventDefault(); searchRef.current?.focus(); return; }
+      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); setOpen(true); return; }
+      if (e.key.toLowerCase() === "a" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSelected(new Set(videos.map((v) => v.id)));
+        sfx.select();
+        return;
+      }
+      if (!selected.size) return;
+      const ids = Array.from(selected);
+      const idx = Number(e.key);
+      if (idx >= 1 && idx <= GROUPS.length) {
+        e.preventDefault();
+        patch.mutate({ ids, changes: { status: GROUPS[idx - 1].statuses[0] } });
+        sfx.drop();
+        setSelected(new Set());
+        return;
+      }
+      if (e.key.toLowerCase() === "t") {
+        e.preventDefault();
+        const d = new Date();
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        patch.mutate({ ids, changes: { due_date: iso } });
+        setSelected(new Set());
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected, videos, patch]);
+
 
   return (
     <div className="flex min-h-[calc(100vh-3rem)] flex-col md:min-h-screen">
@@ -351,7 +423,26 @@ function WorkflowBoard({ clientId, clients, onBack }: {
           subtitle={hiddenCount > 0 ? `${videos.length} vídeo(s) no mês · ${hiddenCount} fora do período` : "Kanban e lista sincronizados"}
           actions={
             <div className="flex flex-wrap items-center gap-2">
+              <Input
+                ref={searchRef}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar vídeo ou cliente…  /"
+                className="h-9 w-52 rounded-full"
+              />
+              <button
+                onClick={() => setHideDone((v) => !v)}
+                className={cn(
+                  "h-9 rounded-full border px-3 text-xs transition",
+                  hideDone
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Ocultar concluídos
+              </button>
               <MonthPicker />
+
               <Segmented
                 className="hidden md:inline-flex"
                 value={view}
@@ -376,7 +467,24 @@ function WorkflowBoard({ clientId, clients, onBack }: {
             </div>
           }
         />
+        <div className="mt-3 hidden flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground md:flex">
+          <span className="uppercase tracking-wider">Atalhos</span>
+          {[
+            ["/", "buscar"],
+            ["N", "novo vídeo"],
+            ["1–5", "mover seleção"],
+            ["T", "prazo hoje"],
+            ["⌘A", "selecionar tudo"],
+            ["Esc", "limpar"],
+          ].map(([k, d]) => (
+            <span key={k} className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/25 px-2 py-0.5">
+              <kbd className="font-mono text-[9px] text-foreground">{k}</kbd>
+              {d}
+            </span>
+          ))}
+        </div>
       </div>
+
 
 
       {isLoading ? (
@@ -393,7 +501,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                 {marquee.overlay}
                 <div className="flex min-w-max gap-3">
 
-                  {GROUPS.map((g) => {
+                  {GROUPS.map((g, gi) => {
                     const vids = grouped[g.id];
                     // group cards by client inside column for visual organization
                     const byClient = new Map<string, VideoRow[]>();
@@ -403,7 +511,20 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                       byClient.set(v.client_id, arr);
                     });
                     return (
-                      <Column key={g.id} id={g.id} label={g.label} dot={g.dot} count={vids.length}>
+                      <Column
+                        key={g.id}
+                        id={g.id}
+                        label={g.label}
+                        dot={g.dot}
+                        count={vids.length}
+                        shortcut={gi + 1}
+                        onQuickAdd={
+                          clientId === "all"
+                            ? undefined
+                            : (title) => quickAdd.mutate({ title, status: g.statuses[0], client_id: clientId })
+                        }
+                      >
+
                         {Array.from(byClient.entries()).map(([cid, arr]) => {
                           const key = `${g.id}::${cid}`;
                           const isExpanded = expandedGroups.has(key);
@@ -557,22 +678,69 @@ function ViewBtn({ active, onClick, icon, label }: { active: boolean; onClick: (
   );
 }
 
-function Column({ id, label, dot, count, children }: { id: GroupId; label: string; dot: string; count: number; children: React.ReactNode }) {
+function Column({ id, label, dot, count, shortcut, onQuickAdd, children }: {
+  id: GroupId;
+  label: string;
+  dot: string;
+  count: number;
+  shortcut?: number;
+  onQuickAdd?: (title: string) => void;
+  children: React.ReactNode;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id });
+  const [adding, setAdding] = useState(false);
+  const [title, setTitle] = useState("");
+
+  function submit() {
+    const t = title.trim();
+    if (!t || !onQuickAdd) return;
+    onQuickAdd(t);
+    setTitle("");
+  }
+
   return (
     <div ref={setNodeRef} className={cn(
-      "flex w-72 shrink-0 flex-col rounded-lg border border-border bg-card/40 transition",
-      isOver && "border-primary/60 bg-primary/5",
+      "flex w-72 shrink-0 flex-col rounded-xl border border-border/70 bg-card/40 backdrop-blur-xl transition-all duration-200",
+      isOver && "border-primary/60 bg-primary/5 shadow-[0_0_0_1px_var(--primary),0_12px_32px_-18px_var(--primary)]",
     )}>
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+      <div className="sticky top-0 z-10 flex items-center gap-2 rounded-t-xl border-b border-border/70 bg-card/70 px-3 py-2.5 backdrop-blur-xl">
         <span className={cn("h-2 w-2 rounded-full", dot)} />
         <p className="text-xs font-semibold">{label}</p>
-        <span className="ml-auto text-[10px] text-muted-foreground">{count}</span>
+        {shortcut ? (
+          <kbd className="rounded border border-border/70 bg-muted/40 px-1 text-[9px] text-muted-foreground">{shortcut}</kbd>
+        ) : null}
+        <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">{count}</span>
       </div>
       <div className="min-h-24 space-y-2 p-2">{children}</div>
+      {onQuickAdd && (
+        <div className="p-2 pt-0">
+          {adding ? (
+            <Input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); submit(); }
+                if (e.key === "Escape") { setAdding(false); setTitle(""); }
+              }}
+              onBlur={() => { submit(); setAdding(false); }}
+              placeholder="Título do vídeo… Enter"
+              className="h-8 text-xs"
+            />
+          ) : (
+            <button
+              onClick={() => setAdding(true)}
+              className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground transition hover:bg-muted/50 hover:text-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" />Adicionar vídeo
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
 
 function ClientStack({ stackId, name, parentName, count, expanded, onToggle, children, ids, onSetStatus }: {
   stackId: string;
