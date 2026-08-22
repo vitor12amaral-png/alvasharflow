@@ -413,12 +413,38 @@ export function WeekBoard({
               </div>
 
               <div className="-mr-1 flex-1 space-y-2 overflow-y-auto pr-1">
-                {list.map((v) => {
+                {list.map((v, vi) => {
                   const done = DONE.includes(v.status);
                   const isSel = selected.has(v.id);
                   const late = !!v.due_date && v.due_date < today && !done;
+                  const cname = v.clients?.name ?? "—";
+                  const showGroup = prefs.group && (vi === 0 || (list[vi - 1].clients?.name ?? "—") !== cname);
+                  const groupItems = prefs.group ? list.filter((x) => (x.clients?.name ?? "—") === cname) : [];
+                  const groupAllSel = groupItems.length > 0 && groupItems.every((x) => selected.has(x.id));
                   return (
+                    <div key={v.id} className={cn(showGroup && vi > 0 && "pt-1.5")}>
+                    {showGroup && (
+                      <button
+                        onClick={() => {
+                          setSelected((prev) => {
+                            const next = new Set(prev);
+                            groupItems.forEach((x) => (groupAllSel ? next.delete(x.id) : next.add(x.id)));
+                            return next;
+                          });
+                          sfx.open();
+                        }}
+                        className={cn(
+                          "mb-1 flex w-full items-center gap-1.5 rounded-md px-1 py-0.5 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:bg-muted/50 hover:text-foreground",
+                          groupAllSel && "text-primary",
+                        )}
+                        title="Selecionar todos deste cliente"
+                      >
+                        <span className="truncate">{cname}</span>
+                        <span className="ml-auto rounded-full bg-muted/60 px-1.5 tabular-nums">{groupItems.length}</span>
+                      </button>
+                    )}
                     <div
+
                       key={v.id}
                       draggable
                       onDragStart={(e) => { setDragId(v.id); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", v.id); }}
