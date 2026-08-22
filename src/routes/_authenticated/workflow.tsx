@@ -661,22 +661,69 @@ function ViewBtn({ active, onClick, icon, label }: { active: boolean; onClick: (
   );
 }
 
-function Column({ id, label, dot, count, children }: { id: GroupId; label: string; dot: string; count: number; children: React.ReactNode }) {
+function Column({ id, label, dot, count, shortcut, onQuickAdd, children }: {
+  id: GroupId;
+  label: string;
+  dot: string;
+  count: number;
+  shortcut?: number;
+  onQuickAdd?: (title: string) => void;
+  children: React.ReactNode;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id });
+  const [adding, setAdding] = useState(false);
+  const [title, setTitle] = useState("");
+
+  function submit() {
+    const t = title.trim();
+    if (!t || !onQuickAdd) return;
+    onQuickAdd(t);
+    setTitle("");
+  }
+
   return (
     <div ref={setNodeRef} className={cn(
-      "flex w-72 shrink-0 flex-col rounded-lg border border-border bg-card/40 transition",
-      isOver && "border-primary/60 bg-primary/5",
+      "flex w-72 shrink-0 flex-col rounded-xl border border-border/70 bg-card/40 backdrop-blur-xl transition-all duration-200",
+      isOver && "border-primary/60 bg-primary/5 shadow-[0_0_0_1px_var(--primary),0_12px_32px_-18px_var(--primary)]",
     )}>
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+      <div className="sticky top-0 z-10 flex items-center gap-2 rounded-t-xl border-b border-border/70 bg-card/70 px-3 py-2.5 backdrop-blur-xl">
         <span className={cn("h-2 w-2 rounded-full", dot)} />
         <p className="text-xs font-semibold">{label}</p>
-        <span className="ml-auto text-[10px] text-muted-foreground">{count}</span>
+        {shortcut ? (
+          <kbd className="rounded border border-border/70 bg-muted/40 px-1 text-[9px] text-muted-foreground">{shortcut}</kbd>
+        ) : null}
+        <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">{count}</span>
       </div>
       <div className="min-h-24 space-y-2 p-2">{children}</div>
+      {onQuickAdd && (
+        <div className="p-2 pt-0">
+          {adding ? (
+            <Input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); submit(); }
+                if (e.key === "Escape") { setAdding(false); setTitle(""); }
+              }}
+              onBlur={() => { submit(); setAdding(false); }}
+              placeholder="Título do vídeo… Enter"
+              className="h-8 text-xs"
+            />
+          ) : (
+            <button
+              onClick={() => setAdding(true)}
+              className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground transition hover:bg-muted/50 hover:text-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" />Adicionar vídeo
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
 
 function ClientStack({ stackId, name, parentName, count, expanded, onToggle, children, ids, onSetStatus }: {
   stackId: string;
