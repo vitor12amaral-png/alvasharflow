@@ -496,7 +496,9 @@ export function WeekBoard({
                         </div>
                       </div>
                     </div>
+                    </div>
                   );
+
                 })}
 
                 {list.length === 0 && (
