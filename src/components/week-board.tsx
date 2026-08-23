@@ -444,9 +444,8 @@ export function WeekBoard({
                       </button>
                     )}
                     <div
-
-                      key={v.id}
                       draggable
+
                       onDragStart={(e) => { setDragId(v.id); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", v.id); }}
                       onDragEnd={() => { setDragId(null); setOver(null); }}
                       onClick={(e) => {
