@@ -250,6 +250,7 @@ export type Database = {
           notes: string | null
           payment_day: number | null
           price: number
+          price_per_video: number | null
           size: Database["public"]["Enums"]["package_size"]
           start_date: string
           status: Database["public"]["Enums"]["package_status"]
@@ -266,6 +267,7 @@ export type Database = {
           notes?: string | null
           payment_day?: number | null
           price?: number
+          price_per_video?: number | null
           size?: Database["public"]["Enums"]["package_size"]
           start_date?: string
           status?: Database["public"]["Enums"]["package_status"]
@@ -282,6 +284,7 @@ export type Database = {
           notes?: string | null
           payment_day?: number | null
           price?: number
+          price_per_video?: number | null
           size?: Database["public"]["Enums"]["package_size"]
           start_date?: string
           status?: Database["public"]["Enums"]["package_status"]
@@ -373,6 +376,7 @@ export type Database = {
           notes: string | null
           parent_client_id: string | null
           phone: string | null
+          price_per_video: number | null
           status: string
           updated_at: string
           user_id: string | null
@@ -398,6 +402,7 @@ export type Database = {
           notes?: string | null
           parent_client_id?: string | null
           phone?: string | null
+          price_per_video?: number | null
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -423,6 +428,7 @@ export type Database = {
           notes?: string | null
           parent_client_id?: string | null
           phone?: string | null
+          price_per_video?: number | null
           status?: string
           updated_at?: string
           user_id?: string | null
