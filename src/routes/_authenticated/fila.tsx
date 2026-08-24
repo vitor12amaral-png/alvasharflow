@@ -11,8 +11,11 @@ import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { Segmented } from "@/components/segmented";
-import { naturalCompare } from "@/lib/format";
+import { naturalCompare, formatBRL } from "@/lib/format";
 import { WeekBoard } from "@/components/week-board";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { BatchVideosDialog } from "@/components/batch-videos-dialog";
+import { suggestPerVideo } from "@/lib/pricing";
 
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
@@ -20,7 +23,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   CalendarClock, ListOrdered, Loader2, Sun, CheckCircle2, AlarmClock, Inbox,
-  Layers, ChevronDown, ChevronRight, LayoutGrid,
+  Layers, ChevronDown, ChevronRight, LayoutGrid, Layers3, Wallet,
 } from "lucide-react";
 
 
@@ -88,6 +91,35 @@ function FilaPage() {
       return (data ?? []).sort((a, b) => naturalCompare(a.name, b.name));
     },
   });
+
+  const [batchOpen, setBatchOpen] = useState(false);
+
+  // Valor por vídeo de cada cliente: pacote ativo (ou do cliente-mãe) > valor avulso.
+  const { data: priceByClient } = useQuery({
+    queryKey: ["fila-pricing"],
+    queryFn: async () => {
+      const [{ data: pkgs }, { data: cls }] = await Promise.all([
+        supabase.from("client_packages").select("client_id, price, total_videos, price_per_video").eq("status", "ativo"),
+        supabase.from("clients").select("id, price_per_video, parent_client_id"),
+      ]);
+      const byPackage = new Map<string, number>();
+      (pkgs ?? []).forEach((p) => {
+        const v = suggestPerVideo(p.price_per_video, p.price, p.total_videos);
+        if (v > 0) byPackage.set(p.client_id, v);
+      });
+      const map: Record<string, number> = {};
+      (cls ?? []).forEach((c) => {
+        map[c.id] =
+          byPackage.get(c.id) ??
+          (c.parent_client_id ? byPackage.get(c.parent_client_id) ?? 0 : 0);
+        if (!map[c.id]) map[c.id] = Number(c.price_per_video ?? 0) || 0;
+
+      });
+      return map;
+    },
+  });
+
+
 
   const createVideo = useMutation({
     mutationFn: async (payload: { title: string; client_id: string; due_date: string | null }) => {
@@ -162,6 +194,25 @@ function FilaPage() {
     [data, term],
   );
 
+  // Semana corrente (segunda a domingo) para o valor gerado.
+  const week = useMemo(() => {
+    const d = new Date(today + "T00:00:00");
+    const dow = (d.getDay() + 6) % 7;
+    const start = new Date(d); start.setDate(d.getDate() - dow);
+    const end = new Date(start); end.setDate(start.getDate() + 6);
+    const iso = (x: Date) => x.toISOString().slice(0, 10);
+    return { start: iso(start), end: iso(end) };
+  }, [today]);
+
+  const weekMoney = useMemo(() => {
+    const inWeek = (data ?? []).filter((v) => v.due_date && v.due_date >= week.start && v.due_date <= week.end);
+    const priced = (rows: Row[]) => rows.reduce((s, v) => s + (priceByClient?.[v.client_id] ?? 0), 0);
+    const done = inWeek.filter((v) => DONE.includes(v.status));
+    return { total: priced(inWeek), done: priced(done), count: inWeek.length, doneCount: done.length };
+  }, [data, priceByClient, week]);
+
+
+
   const clientGroups = useMemo(() => {
     const map = new Map<string, { name: string; items: Row[] }>();
     list.forEach((v) => {
@@ -209,8 +260,14 @@ function FilaPage() {
             <span className="hidden items-center gap-1.5 rounded-full border border-border/70 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground sm:flex">
               <Layers className="h-3.5 w-3.5" />Em conjunto por cliente
             </span>
-
-
+            <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-9 rounded-full">
+                  <Layers3 className="mr-1.5 h-3.5 w-3.5" />Nova leva
+                </Button>
+              </DialogTrigger>
+              {batchOpen && <BatchVideosDialog onClose={() => setBatchOpen(false)} />}
+            </Dialog>
           </div>
         }
       />
@@ -222,9 +279,20 @@ function FilaPage() {
         <Kpi label="Na fila" value={rest.length} icon={<Inbox className="h-4 w-4" />} tone="text-muted-foreground" />
       </div>
 
-
+      {tab === "semana" && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+          <span className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Wallet className="h-4 w-4 text-[oklch(0.72_0.17_155)]" />Valor gerado na semana
+          </span>
+          <span className="text-lg font-semibold tracking-tight">{formatBRL(weekMoney.total)}</span>
+          <span className="text-xs text-muted-foreground">
+            {weekMoney.count} vídeo(s) com prazo nesta semana · entregues {formatBRL(weekMoney.done)} ({weekMoney.doneCount})
+          </span>
+        </div>
+      )}
 
       {tab === "semana" ? (
+
         <div className="mt-6">
           <WeekBoard
             items={weekItems}
