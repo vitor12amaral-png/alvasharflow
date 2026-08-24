@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { suggestPerVideo } from "@/lib/pricing";
+import { formatBRL } from "@/lib/format";
 import type { PackageSize } from "@/lib/video-workflow";
 import type { Database } from "@/integrations/supabase/types";
 
