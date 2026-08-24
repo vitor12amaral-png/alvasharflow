@@ -260,8 +260,14 @@ function FilaPage() {
             <span className="hidden items-center gap-1.5 rounded-full border border-border/70 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground sm:flex">
               <Layers className="h-3.5 w-3.5" />Em conjunto por cliente
             </span>
-
-
+            <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-9 rounded-full">
+                  <Layers3 className="mr-1.5 h-3.5 w-3.5" />Nova leva
+                </Button>
+              </DialogTrigger>
+              {batchOpen && <BatchVideosDialog onClose={() => setBatchOpen(false)} />}
+            </Dialog>
           </div>
         }
       />
@@ -273,9 +279,20 @@ function FilaPage() {
         <Kpi label="Na fila" value={rest.length} icon={<Inbox className="h-4 w-4" />} tone="text-muted-foreground" />
       </div>
 
-
+      {tab === "semana" && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+          <span className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Wallet className="h-4 w-4 text-[oklch(0.72_0.17_155)]" />Valor gerado na semana
+          </span>
+          <span className="text-lg font-semibold tracking-tight">{formatBRL(weekMoney.total)}</span>
+          <span className="text-xs text-muted-foreground">
+            {weekMoney.count} vídeo(s) com prazo nesta semana · entregues {formatBRL(weekMoney.done)} ({weekMoney.doneCount})
+          </span>
+        </div>
+      )}
 
       {tab === "semana" ? (
+
         <div className="mt-6">
           <WeekBoard
             items={weekItems}
