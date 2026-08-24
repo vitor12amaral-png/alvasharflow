@@ -109,10 +109,41 @@ export function EditPackageDialog({ pack, onSaved }: { pack: EditablePackage; on
             <F label="Total de vídeos"><Input type="number" min={0} value={form.total_videos} onChange={(e) => set("total_videos", e.target.value)} /></F>
             <F label="Vídeos usados"><Input type="number" min={0} value={form.videos_used} onChange={(e) => set("videos_used", e.target.value)} /></F>
             <F label="Valor (R$)"><Input inputMode="decimal" value={form.price} onChange={(e) => set("price", e.target.value)} /></F>
+            <F label="Valor por vídeo (R$)">
+              <Input
+                inputMode="decimal"
+                placeholder={autoPerVideo ? formatBRL(autoPerVideo) : "auto"}
+                value={form.price_per_video}
+                onChange={(e) => set("price_per_video", e.target.value)}
+              />
+            </F>
             <F label="Dia de pagamento"><Input type="number" min={1} max={31} value={form.payment_day} onChange={(e) => set("payment_day", e.target.value)} /></F>
             <F label="Início"><Input type="date" value={form.start_date} onChange={(e) => set("start_date", e.target.value)} /></F>
             <F label="Fim"><Input type="date" value={form.end_date} onChange={(e) => set("end_date", e.target.value)} /></F>
-            <F label="Status" className="col-span-2">
+            <F label="Prazo rápido" className="col-span-2">
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: "Indeterminado", months: null },
+                  { label: "1 mês", months: 1 },
+                  { label: "3 meses", months: 3 },
+                  { label: "6 meses", months: 6 },
+                  { label: "1 ano", months: 12 },
+                ].map((c) => (
+                  <button key={c.label} type="button" onClick={() => setDuration(c.months)}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-[11px] transition",
+                      (c.months === null ? !form.end_date : false)
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                    )}>{c.label}</button>
+                ))}
+              </div>
+            </F>
+            <div className="col-span-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+              Cada vídeo desta leva vale <span className="font-semibold text-foreground">{formatBRL(autoPerVideo)}</span>
+              {form.price_per_video ? " (definido manualmente)" : " (calculado pelo valor total ÷ vídeos)"}.
+            </div>
+
               <Select value={form.status} onValueChange={(v) => set("status", v as PackageStatus)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
