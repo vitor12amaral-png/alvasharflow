@@ -15,7 +15,7 @@ import { DeleteAction } from "@/components/delete-action";
 import { Plus, Loader2, AlertCircle, UserPlus, MessageSquarePlus, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { formatBRL, formatDate, naturalCompare, daysUntil } from "@/lib/format";
+import { formatBRL, formatDate, naturalCompare } from "@/lib/format";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import {
   LEAD_STAGES, LEAD_SOURCES, LEAD_ACTIVITY_KINDS, FOLLOW_UP_ALERT_DAYS,
@@ -465,4 +465,3 @@ function Field({ label, className, children }: { label: string; className?: stri
   );
 }
 
-export { daysUntil };
