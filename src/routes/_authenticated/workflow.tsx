@@ -30,6 +30,7 @@ import { BatchVideosDialog } from "@/components/batch-videos-dialog";
 import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
+import { VideoChecklist } from "@/components/video-checklist";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -1196,6 +1197,8 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
             <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">
               {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
             </Button>
+
+            <VideoChecklist videoId={videoId!} workspaceId={video.workspace_id ?? null} value={video.checklist} />
 
             <div className="border-t border-border pt-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Arquivos anexos</p>
