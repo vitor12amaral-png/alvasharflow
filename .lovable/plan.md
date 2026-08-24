@@ -1,60 +1,45 @@
-# Clientes-mãe (Filmmakers) com sub-clientes
+# Auditoria do documento de prompts — o que falta
 
-## Objetivo
-Modelar clientes tipo Filmmaker que fecham **um pacote único** (ex: 30 vídeos) mas enviam vídeos de **várias marcas/sub-clientes diferentes**. Precisamos organizar esses sub-clientes de forma clara sem quebrar o fluxo atual (clientes normais continuam funcionando igual).
+Comparei cada parte do documento com o app atual. A maior parte já está no ar; três blocos ainda não existem e dois estão parciais.
 
-## Modelo escolhido
-- Novo campo `parent_client_id` na tabela `clients` (auto-referência, nullable).
-- Cliente-mãe = `parent_client_id IS NULL` e tem filhos.
-- Sub-cliente = tem `parent_client_id` apontando para o pai.
-- **Pacote fica no cliente-mãe** (fonte única de contagem). Sub-clientes não têm pacote próprio — herdam do pai.
-- **Vídeos ficam no sub-cliente** (cada vídeo pertence à marca real), mas contam contra o pacote do pai automaticamente.
-- Cliente sem filhos = comportamento atual, sem mudanças.
+## Já implementado (verificado no código)
 
-## Mudanças
+- Parte 0 — rebranding (hoje AlvasharFlow), Parte 1.1 a 1.11 (troca de mês, briefing editável, feed por permissão, esqueci minha senha + tela de redefinição, exclusão de tarefas, reset do formulário de cliente, chips de prazo do pacote).
+- Parte 2 — abas Tarefas e Marketing (roteiros, calendário de conteúdo, campanhas).
+- Parte 3 — Copiloto de IA com tools (criar cliente, vídeo, tarefa, roteiro, consultas).
+- Parte 4 — cronômetro centralizado no console flutuante do Workflow, com sessões e histórico.
+- Parte 6 — aba "Links" no perfil do cliente (link ou upload, categorias, favoritos, busca).
+- Parte 7 — aba "Relacionamento", portal público por link com aprovação/comentários/upload, histórico de interações e NPS.
+- Parte 8 — subclientes (marcas) com aba própria, vínculo de vídeos e visão consolidada.
+- Parte 12 — valor por vídeo, cálculo automático na "Nova leva" e visão semanal na Fila.
 
-### 1. Banco
-- `clients.parent_client_id uuid references clients(id) on delete set null`
-- Ajustar trigger `tg_log_video_activity`: quando o vídeo é criado em um sub-cliente, incrementar `videos_used` do pacote do **pai** (fallback pro próprio se não tiver pai).
-- View auxiliar ou função `get_effective_package(client_id)` que retorna o pacote do pai quando aplicável — usada pelos KPIs.
-- RLS: sub-cliente herda workspace do pai (validar via trigger no insert).
+## Falta implementar
 
-### 2. Lista de Clientes (`/clientes`)
-- Clientes-mãe aparecem com um **chevron** à esquerda. Clicar expande e mostra os sub-clientes indentados abaixo (linha mais compacta, sem KPIs próprios, mostra só nome + status + contagem de vídeos do mês).
-- Contador do pai = soma de vídeos de todos os filhos + pacote consolidado (ex: "18/30 usados").
-- Botão "+ Sub-cliente" no card do pai (e no menu de ações) que abre um mini-form (nome, empresa, opcional: logo/cor) — sem wizard completo, herda entrega/pacote do pai.
-- Filtro novo: "Só clientes-mãe" / "Incluir sub-clientes" (default: mostra pais + filhos aninhados).
+### 1. Parte 10 — módulo Leads / CRM (não existe)
+Kanban de leads com colunas Novo contato, Em conversa, Proposta enviada, Aguardando follow-up, Fechando, Fechado, Perdido. Campos: nome, empresa, contato, origem, valor estimado, último contato, próximo follow-up, observações. Alertas visuais de follow-up vencido, resumo no Dashboard e botão "Converter em cliente" que pré-preenche o cadastro e mantém o histórico.
 
-### 3. Perfil do cliente-mãe (`/clientes/$id`)
-- Nova aba **"Sub-clientes"** (primeira aba quando o cliente é mãe): grid dos filhos com nome, logo, nº de vídeos do mês, status, botão de abrir.
-- Aba **Vídeos** consolida vídeos de todos os filhos, com coluna extra "Marca" (nome do sub-cliente) e filtro por sub-cliente.
-- Aba **Pacote/Financeiro** mostra consumo total agregado.
-- Briefing/Links/Relacionamento continuam por cliente (pai tem os seus, cada filho os seus).
+### 2. Parte 5 — notificações por WhatsApp (não existe)
+Disparos para prazo vencendo, vídeo aprovado/entregue, pacote perto do limite e tarefa urgente atribuída. Precisa de tela de configuração de números por pessoa e liga/desliga por tipo de aviso. Depende de uma conta em provedor (Meta Cloud API, Twilio ou Z-API) — sem credencial, entrego a estrutura e os avisos ficam inativos até você conectar.
 
-### 4. Perfil de sub-cliente
-- Igual ao atual, mas com um breadcrumb no topo: `← Voltar para [Cliente-mãe]`.
-- Não mostra aba de pacote (pacote é do pai) — mostra "Pertence ao pacote de X (Y vídeos restantes)".
+### 3. Parte 11 — conversas de WhatsApp dentro do app (não existe)
+Caixa de entrada com histórico e envio pelo app, vínculo automático por telefone com cliente ou lead. É a parte mais pesada e só faz sentido depois da Parte 5 estar conectada.
 
-### 5. Workflow (Kanban)
-- Sub-clientes aparecem como stacks próprios, mas com um badge pequeno com a inicial/cor do pai — pra bater o olho e saber que vieram do mesmo cliente-mãe.
-- Filtro do ClientPicker ganha agrupamento visual: cliente-mãe no topo, filhos indentados embaixo. Selecionar o pai = mostra vídeos de todos os filhos.
+## Parcialmente feito
 
-### 6. Onboarding Wizard
-- Nova pergunta no passo 1: **"Este cliente enviará vídeos de outras marcas?"** (toggle).
-  - Se sim → cria como cliente-mãe. Ao final, mostra tela extra "Adicionar primeiras marcas" (rápido: nome + opcional logo, repete).
-  - Se não → fluxo atual.
-- Alternativamente, adicionar sub-cliente a qualquer momento pela aba "Sub-clientes".
+### 4. Parte 1.12 — subclientes dentro da aba Briefing
+Hoje só dá para cadastrar marca pela aba "Marcas". Falta a seção "Subclientes" com botão "+ Novo subcliente" dentro do próprio Briefing.
 
-### 7. Dashboard
-- KPI "Clientes ativos" continua contando só clientes-mãe + clientes sem pai (não infla número).
-- Nova linha na timeline: "Nova marca adicionada em [cliente-mãe]".
-
-## Fora de escopo desta rodada
-- Cobrança separada por sub-cliente (você confirmou que é sempre pacote único do pai).
-- Portal do cliente para o cliente-mãe agregar visão dos filhos — pode vir depois.
-- Múltiplos níveis de hierarquia (só 1 nível: pai → filhos).
+### 5. Parte 9 — status do cliente
+Ativo/inativo/pausado, badge e filtro já existem. Falta o motivo da pausa + data prevista de retorno, e a pergunta de arquivar pacotes ao marcar como inativo.
 
 ## Detalhes técnicos
-- Migração: adicionar coluna + trigger de propagação + trigger de guard (impedir sub-de-sub).
-- Frontend: novo componente `<ClientTreeRow>` para a lista, `<SubClientsTab>` no perfil, ajuste no `ClientPicker` do workflow.
-- Types regen do Supabase após a migração.
+
+- Leads: tabelas `leads` e `lead_activities` com `workspace_id`, RLS por membro do workspace e GRANTs; UI reaproveitando o padrão de Kanban do Workflow.
+- Status do cliente: colunas `pause_reason` e `pause_until` em `clients`; ao inativar, atualizar `client_packages.status` para arquivado.
+- WhatsApp: segredo do provedor via ferramenta de secrets, envio por server function e webhook em `src/routes/api/public/`.
+
+## Ordem sugerida
+
+1. Itens parciais (4 e 5) — rápidos.
+2. Parte 10 (Leads/CRM).
+3. Parte 5 e depois 11 (WhatsApp), quando a conta do provedor estiver pronta.
