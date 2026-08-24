@@ -20,6 +20,8 @@ import { PackageAlertsBell } from "@/components/package-alerts";
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users },
+  { to: "/leads", label: "Leads", icon: Sparkles },
+
   { to: "/workflow", label: "Workflow", icon: Kanban },
   { to: "/fila", label: "Fila", icon: ListOrdered },
   { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
