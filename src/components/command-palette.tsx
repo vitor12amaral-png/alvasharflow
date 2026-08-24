@@ -73,7 +73,7 @@ export function CommandPalette() {
   function go(to: string) {
     setOpen(false);
     setQ("");
-    navigate({ to });
+    navigate({ to } as never);
   }
 
   return (
