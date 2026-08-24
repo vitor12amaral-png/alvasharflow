@@ -117,6 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="truncate text-xs font-medium">{user.fullName ?? "Sem nome"}</p>
               <p className="truncate text-[10px] text-muted-foreground uppercase tracking-wider">{user.role}</p>
             </div>
+            <NotificationCenter />
             <PackageAlertsBell threshold={brand.package_alert_threshold} />
             <button
               onClick={() => update({ sound: !prefs.sound })}
@@ -172,6 +173,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
       </div>
       
+      <CommandPalette />
       <CopilotButton />
     </div>
   );
