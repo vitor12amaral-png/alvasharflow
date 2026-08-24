@@ -25,6 +25,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
 import { StopwatchConsole, type TimerBatch } from "@/components/stopwatch-console";
 import { Segmented } from "@/components/segmented";
+import { BatchVideosDialog } from "@/components/batch-videos-dialog";
 
 import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
