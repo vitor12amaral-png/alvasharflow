@@ -8,6 +8,8 @@ import { formatBRL, formatDate, relativeTime, daysUntil } from "@/lib/format";
 import { STAGE_LABEL, STAGE_ACCENT, VIDEO_STAGES } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
 import { describeActivity } from "./clientes_.$clientId";
+import { isLeadOverdue, type Lead } from "@/lib/leads";
+
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
