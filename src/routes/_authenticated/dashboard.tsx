@@ -141,6 +141,46 @@ function DashboardPage() {
         </Card>
       </div>
 
+      {/* Leads em negociação */}
+      <Card className="mt-4 p-5">
+        <div className="flex items-center justify-between">
+          <p className="font-display text-sm font-semibold">Leads em negociação</p>
+          <Link to="/leads" className="text-xs text-primary hover:underline">Abrir CRM →</Link>
+        </div>
+        {(() => {
+          const open = (data.leads ?? []).filter((l) => l.stage !== "fechado" && l.stage !== "perdido");
+          const late = open.filter(isLeadOverdue);
+          return (
+            <div className="mt-3 space-y-3">
+              <div className="flex flex-wrap gap-6">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Em aberto</p>
+                  <p className="font-display text-xl font-semibold">{open.length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Follow-up atrasado</p>
+                  <p className={`font-display text-xl font-semibold ${late.length ? "text-destructive" : ""}`}>{late.length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Valor potencial</p>
+                  <p className="font-display text-xl font-semibold">
+                    {formatBRL(open.reduce((s, l) => s + (Number(l.estimated_value) || 0), 0))}
+                  </p>
+                </div>
+              </div>
+              {late.slice(0, 3).map((l) => (
+                <Link key={l.id} to="/leads" className="flex items-center justify-between rounded-md border border-destructive/30 px-3 py-2 text-xs transition hover:bg-muted/40">
+                  <span className="truncate">{l.name}{l.company ? ` · ${l.company}` : ""}</span>
+                  <span className="text-destructive">retomar contato</span>
+                </Link>
+              ))}
+              {open.length === 0 && <p className="text-xs text-muted-foreground">Nenhum lead em negociação.</p>}
+            </div>
+          );
+        })()}
+      </Card>
+
+
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Upcoming packages */}
         <Card className="p-5">
