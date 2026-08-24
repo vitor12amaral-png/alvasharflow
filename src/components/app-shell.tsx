@@ -15,6 +15,8 @@ import { installGlobalSfx } from "@/lib/sfx";
 import { usePreferences } from "@/hooks/use-preferences";
 import { useBranding, DEFAULT_BRANDING } from "@/hooks/use-branding";
 import { PackageAlertsBell } from "@/components/package-alerts";
+import { NotificationCenter } from "@/components/notification-center";
+import { CommandPalette } from "@/components/command-palette";
 
 
 const NAV = [
