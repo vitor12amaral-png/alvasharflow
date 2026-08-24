@@ -143,6 +143,7 @@ export function EditPackageDialog({ pack, onSaved }: { pack: EditablePackage; on
               Cada vídeo desta leva vale <span className="font-semibold text-foreground">{formatBRL(autoPerVideo)}</span>
               {form.price_per_video ? " (definido manualmente)" : " (calculado pelo valor total ÷ vídeos)"}.
             </div>
+            <F label="Status" className="col-span-2">
 
               <Select value={form.status} onValueChange={(v) => set("status", v as PackageStatus)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
