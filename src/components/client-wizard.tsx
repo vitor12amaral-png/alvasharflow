@@ -82,6 +82,7 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
         size: form.size,
         total_videos: form.total_videos,
         price: form.price ? parseFloat(form.price.replace(",", ".")) : 0,
+        price_per_video: suggestPerVideo(null, form.price ? parseFloat(form.price.replace(",", ".")) : 0, form.total_videos) || null,
         payment_day: form.payment_day ? parseInt(form.payment_day, 10) : null,
         start_date: form.start_date,
         end_date: form.end_date || null,
