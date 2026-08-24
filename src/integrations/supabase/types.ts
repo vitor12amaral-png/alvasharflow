@@ -375,6 +375,8 @@ export type Database = {
           name: string
           notes: string | null
           parent_client_id: string | null
+          pause_reason: string | null
+          pause_until: string | null
           phone: string | null
           price_per_video: number | null
           status: string
@@ -401,6 +403,8 @@ export type Database = {
           name: string
           notes?: string | null
           parent_client_id?: string | null
+          pause_reason?: string | null
+          pause_until?: string | null
           phone?: string | null
           price_per_video?: number | null
           status?: string
@@ -427,6 +431,8 @@ export type Database = {
           name?: string
           notes?: string | null
           parent_client_id?: string | null
+          pause_reason?: string | null
+          pause_until?: string | null
           phone?: string | null
           price_per_video?: number | null
           status?: string
@@ -445,6 +451,132 @@ export type Database = {
           },
           {
             foreignKeyName: "clients_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_activities: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          happened_at: string
+          id: string
+          kind: string
+          lead_id: string
+          notes: string
+          workspace_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          happened_at?: string
+          id?: string
+          kind?: string
+          lead_id: string
+          notes?: string
+          workspace_id: string
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          happened_at?: string
+          id?: string
+          kind?: string
+          lead_id?: string
+          notes?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_activities_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          color: string | null
+          company: string | null
+          converted_client_id: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          estimated_value: number | null
+          id: string
+          last_contact_at: string | null
+          name: string
+          next_follow_up: string | null
+          notes: string | null
+          phone: string | null
+          position: number
+          source: string | null
+          stage: Database["public"]["Enums"]["lead_stage"]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          color?: string | null
+          company?: string | null
+          converted_client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          estimated_value?: number | null
+          id?: string
+          last_contact_at?: string | null
+          name: string
+          next_follow_up?: string | null
+          notes?: string | null
+          phone?: string | null
+          position?: number
+          source?: string | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          color?: string | null
+          company?: string | null
+          converted_client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          estimated_value?: number | null
+          id?: string
+          last_contact_at?: string | null
+          name?: string
+          next_follow_up?: string | null
+          notes?: string | null
+          phone?: string | null
+          position?: number
+          source?: string | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_converted_client_id_fkey"
+            columns: ["converted_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -1614,6 +1746,14 @@ export type Database = {
         | "cancelada"
       delivery_method: "drive" | "dropbox" | "wetransfer" | "upload_interno"
       invoice_status: "pending" | "paid" | "overdue"
+      lead_stage:
+        | "novo"
+        | "conversa"
+        | "proposta"
+        | "follow_up"
+        | "fechando"
+        | "fechado"
+        | "perdido"
       library_category:
         | "bruto"
         | "exportado"
@@ -1645,6 +1785,7 @@ export type Database = {
         | "renovado"
         | "cancelado"
         | "concluido"
+        | "arquivado"
       task_category:
         | "financeiro"
         | "atendimento"
@@ -1805,6 +1946,15 @@ export const Constants = {
       ],
       delivery_method: ["drive", "dropbox", "wetransfer", "upload_interno"],
       invoice_status: ["pending", "paid", "overdue"],
+      lead_stage: [
+        "novo",
+        "conversa",
+        "proposta",
+        "follow_up",
+        "fechando",
+        "fechado",
+        "perdido",
+      ],
       library_category: [
         "bruto",
         "exportado",
@@ -1839,6 +1989,7 @@ export const Constants = {
         "renovado",
         "cancelado",
         "concluido",
+        "arquivado",
       ],
       task_category: [
         "financeiro",
