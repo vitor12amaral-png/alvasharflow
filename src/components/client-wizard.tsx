@@ -12,6 +12,7 @@ import { Loader2, Check, ArrowLeft, ArrowRight, User, Package, Send, Palette, St
 import { toast } from "sonner";
 import type { PackageSize, DeliveryMethod } from "@/lib/video-workflow";
 import { cn } from "@/lib/utils";
+import { suggestPerVideo } from "@/lib/pricing";
 
 const STEPS = [
   { id: 1, label: "Dados", icon: User },
