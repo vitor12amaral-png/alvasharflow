@@ -203,6 +203,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
   const [hideDone, setHideDone] = useState(false);
+  const [monthOnly, setMonthOnly] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
@@ -421,7 +422,13 @@ function WorkflowBoard({ clientId, clients, onBack }: {
         </button>
         <PageHeader
           title={clientName}
-          subtitle={hiddenCount > 0 ? `${videos.length} vídeo(s) no mês · ${hiddenCount} fora do período` : "Kanban e lista sincronizados"}
+          subtitle={
+            hiddenCount > 0
+              ? `${videos.length} vídeo(s) visíveis · ${hiddenCount} ocultos pelos filtros`
+              : monthOnly
+                ? "Mostrando apenas o mês selecionado"
+                : "Todas as demandas ativas"
+          }
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Input
