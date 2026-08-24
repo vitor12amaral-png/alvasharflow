@@ -449,7 +449,19 @@ function WorkflowBoard({ clientId, clients, onBack }: {
               >
                 Ocultar concluídos
               </button>
-              <MonthPicker />
+              <button
+                onClick={() => setMonthOnly((v) => !v)}
+                className={cn(
+                  "h-9 rounded-full border px-3 text-xs transition",
+                  monthOnly
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
+                )}
+                title="Alternar entre todas as demandas e apenas o mês selecionado"
+              >
+                {monthOnly ? "Filtrando por mês" : "Todas as demandas"}
+              </button>
+              {monthOnly && <MonthPicker />}
 
               <Segmented
                 className="hidden md:inline-flex"
