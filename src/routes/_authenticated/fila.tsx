@@ -194,6 +194,25 @@ function FilaPage() {
     [data, term],
   );
 
+  // Semana corrente (segunda a domingo) para o valor gerado.
+  const week = useMemo(() => {
+    const d = new Date(today + "T00:00:00");
+    const dow = (d.getDay() + 6) % 7;
+    const start = new Date(d); start.setDate(d.getDate() - dow);
+    const end = new Date(start); end.setDate(start.getDate() + 6);
+    const iso = (x: Date) => x.toISOString().slice(0, 10);
+    return { start: iso(start), end: iso(end) };
+  }, [today]);
+
+  const weekMoney = useMemo(() => {
+    const inWeek = (data ?? []).filter((v) => v.due_date && v.due_date >= week.start && v.due_date <= week.end);
+    const priced = (rows: Row[]) => rows.reduce((s, v) => s + (priceByClient?.[v.client_id] ?? 0), 0);
+    const done = inWeek.filter((v) => DONE.includes(v.status));
+    return { total: priced(inWeek), done: priced(done), count: inWeek.length, doneCount: done.length };
+  }, [data, priceByClient, week]);
+
+
+
   const clientGroups = useMemo(() => {
     const map = new Map<string, { name: string; items: Row[] }>();
     list.forEach((v) => {
