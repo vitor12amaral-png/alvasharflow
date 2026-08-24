@@ -92,6 +92,35 @@ function FilaPage() {
     },
   });
 
+  const [batchOpen, setBatchOpen] = useState(false);
+
+  // Valor por vídeo de cada cliente: pacote ativo (ou do cliente-mãe) > valor avulso.
+  const { data: priceByClient } = useQuery({
+    queryKey: ["fila-pricing"],
+    queryFn: async () => {
+      const [{ data: pkgs }, { data: cls }] = await Promise.all([
+        supabase.from("client_packages").select("client_id, price, total_videos, price_per_video").eq("status", "ativo"),
+        supabase.from("clients").select("id, price_per_video, parent_client_id"),
+      ]);
+      const byPackage = new Map<string, number>();
+      (pkgs ?? []).forEach((p) => {
+        const v = suggestPerVideo(p.price_per_video, p.price, p.total_videos);
+        if (v > 0) byPackage.set(p.client_id, v);
+      });
+      const map: Record<string, number> = {};
+      (cls ?? []).forEach((c) => {
+        map[c.id] =
+          byPackage.get(c.id) ??
+          (c.parent_client_id ? byPackage.get(c.parent_client_id) ?? 0 : 0) ??
+          0;
+        if (!map[c.id]) map[c.id] = Number(c.price_per_video ?? 0) || 0;
+      });
+      return map;
+    },
+  });
+
+
+
   const createVideo = useMutation({
     mutationFn: async (payload: { title: string; client_id: string; due_date: string | null }) => {
       const { data: pkg } = await supabase
