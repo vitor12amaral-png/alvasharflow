@@ -19,6 +19,7 @@ export type EditablePackage = {
   total_videos: number;
   videos_used: number;
   price: number | string;
+  price_per_video?: number | string | null;
   payment_day: number | null;
   start_date: string;
   end_date: string | null;
@@ -33,6 +34,7 @@ export function EditPackageDialog({ pack, onSaved }: { pack: EditablePackage; on
     total_videos: String(pack.total_videos ?? 0),
     videos_used: String(pack.videos_used ?? 0),
     price: String(pack.price ?? "").replace(".", ","),
+    price_per_video: String(pack.price_per_video ?? "").replace(".", ","),
     payment_day: pack.payment_day ? String(pack.payment_day) : "",
     start_date: pack.start_date ?? "",
     end_date: pack.end_date ?? "",
@@ -46,6 +48,18 @@ export function EditPackageDialog({ pack, onSaved }: { pack: EditablePackage; on
     setForm((f) => ({ ...f, size, total_videos: totals[size] }));
   }
 
+  const num = (v: string) => parseFloat((v || "").replace(",", ".")) || 0;
+  const autoPerVideo = suggestPerVideo(num(form.price_per_video), num(form.price), parseInt(form.total_videos || "0", 10));
+
+  /** Chips de prazo: sem data final (indeterminado) ou +N meses a partir do início. */
+  function setDuration(months: number | null) {
+    if (months === null) { set("end_date", ""); return; }
+    const base = form.start_date ? new Date(form.start_date + "T00:00:00") : new Date();
+    const end = new Date(base);
+    end.setMonth(end.getMonth() + months);
+    set("end_date", end.toISOString().slice(0, 10));
+  }
+
   async function save() {
     const total = parseInt(form.total_videos || "0", 10);
     if (!Number.isFinite(total) || total < 0) { toast.error("Número de vídeos inválido"); return; }
@@ -54,7 +68,8 @@ export function EditPackageDialog({ pack, onSaved }: { pack: EditablePackage; on
       size: form.size,
       total_videos: total,
       videos_used: Math.max(0, parseInt(form.videos_used || "0", 10) || 0),
-      price: form.price ? parseFloat(form.price.replace(",", ".")) || 0 : 0,
+      price: form.price ? num(form.price) : 0,
+      price_per_video: autoPerVideo || null,
       payment_day: form.payment_day ? parseInt(form.payment_day, 10) : null,
       start_date: form.start_date || new Date().toISOString().slice(0, 10),
       end_date: form.end_date || null,
@@ -66,6 +81,7 @@ export function EditPackageDialog({ pack, onSaved }: { pack: EditablePackage; on
     setOpen(false);
     onSaved?.();
   }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
