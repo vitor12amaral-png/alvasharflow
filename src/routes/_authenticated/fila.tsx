@@ -111,9 +111,9 @@ function FilaPage() {
       (cls ?? []).forEach((c) => {
         map[c.id] =
           byPackage.get(c.id) ??
-          (c.parent_client_id ? byPackage.get(c.parent_client_id) ?? 0 : 0) ??
-          0;
+          (c.parent_client_id ? byPackage.get(c.parent_client_id) ?? 0 : 0);
         if (!map[c.id]) map[c.id] = Number(c.price_per_video ?? 0) || 0;
+
       });
       return map;
     },
