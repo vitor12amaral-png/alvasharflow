@@ -11,8 +11,11 @@ import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { Segmented } from "@/components/segmented";
-import { naturalCompare } from "@/lib/format";
+import { naturalCompare, formatBRL } from "@/lib/format";
 import { WeekBoard } from "@/components/week-board";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { BatchVideosDialog } from "@/components/batch-videos-dialog";
+import { suggestPerVideo } from "@/lib/pricing";
 
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
@@ -20,7 +23,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   CalendarClock, ListOrdered, Loader2, Sun, CheckCircle2, AlarmClock, Inbox,
-  Layers, ChevronDown, ChevronRight, LayoutGrid,
+  Layers, ChevronDown, ChevronRight, LayoutGrid, Layers3, Wallet,
 } from "lucide-react";
 
 
