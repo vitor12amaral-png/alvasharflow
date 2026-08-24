@@ -19,18 +19,21 @@ function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const [clients, videos, packages, activity] = await Promise.all([
+      const [clients, videos, packages, activity, leads] = await Promise.all([
         supabase.from("clients").select("id, name, status, parent_client_id, videos(id, status)"),
         supabase.from("videos").select("id, title, status, due_date, priority, client_id, created_at, clients(name)"),
         supabase.from("client_packages").select("id, client_id, size, total_videos, videos_used, end_date, status, clients(name)").eq("status", "ativo"),
         supabase.from("activity_log").select("*, profiles(full_name)").order("created_at", { ascending: false }).limit(20),
+        supabase.from("leads").select("id, name, company, stage, estimated_value, next_follow_up, last_contact_at, created_at"),
       ]);
       return {
         clients: clients.data ?? [],
         videos: videos.data ?? [],
         packages: packages.data ?? [],
         activity: activity.data ?? [],
+        leads: (leads.data ?? []) as unknown as Lead[],
       };
+
     },
   });
 
