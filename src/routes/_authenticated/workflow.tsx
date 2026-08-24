@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
@@ -30,7 +30,7 @@ import { BatchVideosDialog } from "@/components/batch-videos-dialog";
 import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
-import { VideoChecklist } from "@/components/video-checklist";
+import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -67,6 +67,7 @@ type VideoRow = {
   created_at: string;
   client_id: string;
   color: string | null;
+  checklist: unknown;
   clients: { name: string } | null;
 };
 
@@ -227,7 +228,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, client_id, color, clients(name)").order("position");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, client_id, color, checklist, clients(name)").order("position");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -873,6 +874,25 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
   );
 }
 
+/** Progresso do checklist direto no cartão. */
+function ChecklistBadge({ value }: { value: unknown }) {
+  const items = parseChecklist(value);
+  if (!items.length) return null;
+  const done = items.filter((i) => i.done).length;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-border/60 px-1.5 py-px",
+        done === items.length && "border-[oklch(0.68_0.17_155)]/50 text-[oklch(0.68_0.17_155)]",
+      )}
+      title="Checklist de entrega"
+    >
+      <ListChecks className="h-2.5 w-2.5" />
+      {done}/{items.length}
+    </span>
+  );
+}
+
 function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedCount }: {
   video: VideoRow;
   selected: boolean;
@@ -913,6 +933,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
               </button>
             </DueDatePopover>
             <span className={cn("font-medium", PRIORITY_COLOR[video.priority])}>{PRIORITY_LABEL[video.priority]}</span>
+            <ChecklistBadge value={video.checklist} />
             {selected && anySelected && selectedCount > 1 && (
               <span className="text-primary">· move {selectedCount}</span>
             )}
