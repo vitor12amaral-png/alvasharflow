@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Kanban, Calendar, FolderOpen,
   Wallet, Settings, UsersRound, LogOut, Loader2,
-  CheckSquare, Megaphone, ListOrdered, Volume2, VolumeX,
+  CheckSquare, Megaphone, ListOrdered, Volume2, VolumeX, Sparkles,
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
