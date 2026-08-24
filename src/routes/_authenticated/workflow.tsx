@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
@@ -30,6 +30,7 @@ import { BatchVideosDialog } from "@/components/batch-videos-dialog";
 import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
+import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -66,6 +67,7 @@ type VideoRow = {
   created_at: string;
   client_id: string;
   color: string | null;
+  checklist: unknown;
   clients: { name: string } | null;
 };
 
@@ -203,6 +205,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
   const [hideDone, setHideDone] = useState(false);
+  const [monthOnly, setMonthOnly] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
@@ -225,7 +228,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, client_id, color, clients(name)").order("position");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, client_id, color, checklist, clients(name)").order("position");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -233,17 +236,17 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     },
   });
 
-  // Filtro por mês: usa o prazo do vídeo quando existe, senão a data de criação.
+  // Filtro por mês é opcional: por padrão o quadro mostra todas as demandas ativas.
   const { ym } = useMonthFromSearch();
   const term = q.trim().toLowerCase();
   const videos = useMemo(
     () =>
       (allVideos ?? [])
-        .filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym)
+        .filter((v) => !monthOnly || (v.due_date ?? v.created_at).slice(0, 7) === ym)
         .filter((v) => !hideDone || (v.status !== "aprovado" && v.status !== "entregue"))
         .filter((v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term))
         .sort((a, b) => naturalCompare(a.title, b.title)),
-    [allVideos, ym, hideDone, term],
+    [allVideos, ym, hideDone, term, monthOnly],
   );
 
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
@@ -421,7 +424,13 @@ function WorkflowBoard({ clientId, clients, onBack }: {
         </button>
         <PageHeader
           title={clientName}
-          subtitle={hiddenCount > 0 ? `${videos.length} vídeo(s) no mês · ${hiddenCount} fora do período` : "Kanban e lista sincronizados"}
+          subtitle={
+            hiddenCount > 0
+              ? `${videos.length} vídeo(s) visíveis · ${hiddenCount} ocultos pelos filtros`
+              : monthOnly
+                ? "Mostrando apenas o mês selecionado"
+                : "Todas as demandas ativas"
+          }
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Input
@@ -442,7 +451,19 @@ function WorkflowBoard({ clientId, clients, onBack }: {
               >
                 Ocultar concluídos
               </button>
-              <MonthPicker />
+              <button
+                onClick={() => setMonthOnly((v) => !v)}
+                className={cn(
+                  "h-9 rounded-full border px-3 text-xs transition",
+                  monthOnly
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
+                )}
+                title="Alternar entre todas as demandas e apenas o mês selecionado"
+              >
+                {monthOnly ? "Filtrando por mês" : "Todas as demandas"}
+              </button>
+              {monthOnly && <MonthPicker />}
 
               <Segmented
                 className="hidden md:inline-flex"
@@ -853,6 +874,25 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
   );
 }
 
+/** Progresso do checklist direto no cartão. */
+function ChecklistBadge({ value }: { value: unknown }) {
+  const items = parseChecklist(value);
+  if (!items.length) return null;
+  const done = items.filter((i) => i.done).length;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-border/60 px-1.5 py-px",
+        done === items.length && "border-[oklch(0.68_0.17_155)]/50 text-[oklch(0.68_0.17_155)]",
+      )}
+      title="Checklist de entrega"
+    >
+      <ListChecks className="h-2.5 w-2.5" />
+      {done}/{items.length}
+    </span>
+  );
+}
+
 function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedCount }: {
   video: VideoRow;
   selected: boolean;
@@ -893,6 +933,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
               </button>
             </DueDatePopover>
             <span className={cn("font-medium", PRIORITY_COLOR[video.priority])}>{PRIORITY_LABEL[video.priority]}</span>
+            <ChecklistBadge value={video.checklist} />
             {selected && anySelected && selectedCount > 1 && (
               <span className="text-primary">· move {selectedCount}</span>
             )}
@@ -1177,6 +1218,8 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
             <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">
               {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
             </Button>
+
+            <VideoChecklist videoId={videoId!} workspaceId={video.workspace_id ?? null} value={video.checklist} />
 
             <div className="border-t border-border pt-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Arquivos anexos</p>
