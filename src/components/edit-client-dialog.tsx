@@ -20,6 +20,8 @@ export type EditableClient = {
   phone: string | null;
   instagram: string | null;
   status: string;
+  pause_reason: string | null;
+  pause_until: string | null;
   delivery_method: string | null;
   delivery_link: string | null;
   logo_url: string | null;
@@ -36,6 +38,8 @@ export function EditClientDialog({ client, onSaved }: { client: EditableClient; 
     whatsapp: client.whatsapp ?? client.phone ?? "",
     instagram: client.instagram ?? "",
     status: client.status ?? "ativo",
+    pause_reason: client.pause_reason ?? "",
+    pause_until: client.pause_until ?? "",
     delivery_method: (client.delivery_method ?? "drive") as DeliveryMethod,
     delivery_link: client.delivery_link ?? "",
     logo_url: client.logo_url ?? "",
@@ -47,6 +51,7 @@ export function EditClientDialog({ client, onSaved }: { client: EditableClient; 
   async function save() {
     if (!form.name.trim()) { toast.error("Nome é obrigatório"); return; }
     setSaving(true);
+    const paused = form.status === "pausado";
     const { error } = await supabase.from("clients").update({
       name: form.name.trim(),
       company: form.company.trim() || null,
@@ -55,17 +60,35 @@ export function EditClientDialog({ client, onSaved }: { client: EditableClient; 
       phone: form.whatsapp.trim() || null,
       instagram: form.instagram.trim() || null,
       status: form.status,
+      pause_reason: paused ? (form.pause_reason.trim() || null) : null,
+      pause_until: paused ? (form.pause_until || null) : null,
       delivery_method: form.delivery_method,
       delivery_link: form.delivery_link.trim() || null,
       logo_url: form.logo_url.trim() || null,
       notes: form.notes.trim() || null,
     }).eq("id", client.id);
+    if (error) { setSaving(false); toast.error(error.message); return; }
+
+    // Ao encerrar o cliente, oferece arquivar os pacotes que ainda estão ativos.
+    if (form.status === "encerrado" && client.status !== "encerrado") {
+      const { data: actives } = await supabase
+        .from("client_packages").select("id").eq("client_id", client.id).eq("status", "ativo");
+      if (actives?.length && confirm(`Este cliente tem ${actives.length} pacote(s) ativo(s). Arquivar (sem excluir)?`)) {
+        const { error: pErr } = await supabase
+          .from("client_packages")
+          .update({ status: "arquivado" as never })
+          .in("id", actives.map((p) => p.id));
+        if (pErr) toast.error(pErr.message);
+        else toast.success("Pacotes arquivados");
+      }
+    }
+
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
     toast.success("Perfil atualizado");
     setOpen(false);
     onSaved?.();
   }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -92,6 +115,17 @@ export function EditClientDialog({ client, onSaved }: { client: EditableClient; 
               </SelectContent>
             </Select>
           </F>
+          {form.status === "pausado" && (
+            <>
+              <F label="Motivo da pausa (opcional)" className="col-span-2">
+                <Input value={form.pause_reason} onChange={(e) => set("pause_reason", e.target.value)} placeholder="Ex: aguardando material do cliente" />
+              </F>
+              <F label="Retorno previsto (opcional)">
+                <Input type="date" value={form.pause_until} onChange={(e) => set("pause_until", e.target.value)} />
+              </F>
+            </>
+          )}
+
           <F label="Forma de entrega">
             <Select value={form.delivery_method} onValueChange={(v) => set("delivery_method", v as DeliveryMethod)}>
               <SelectTrigger><SelectValue /></SelectTrigger>

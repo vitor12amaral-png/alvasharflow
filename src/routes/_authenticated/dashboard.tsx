@@ -8,6 +8,8 @@ import { formatBRL, formatDate, relativeTime, daysUntil } from "@/lib/format";
 import { STAGE_LABEL, STAGE_ACCENT, VIDEO_STAGES } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
 import { describeActivity } from "./clientes_.$clientId";
+import { isLeadOverdue, type Lead } from "@/lib/leads";
+
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -19,18 +21,21 @@ function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const [clients, videos, packages, activity] = await Promise.all([
+      const [clients, videos, packages, activity, leads] = await Promise.all([
         supabase.from("clients").select("id, name, status, parent_client_id, videos(id, status)"),
         supabase.from("videos").select("id, title, status, due_date, priority, client_id, created_at, clients(name)"),
         supabase.from("client_packages").select("id, client_id, size, total_videos, videos_used, end_date, status, clients(name)").eq("status", "ativo"),
         supabase.from("activity_log").select("*, profiles(full_name)").order("created_at", { ascending: false }).limit(20),
+        supabase.from("leads").select("id, name, company, stage, estimated_value, next_follow_up, last_contact_at, created_at"),
       ]);
       return {
         clients: clients.data ?? [],
         videos: videos.data ?? [],
         packages: packages.data ?? [],
         activity: activity.data ?? [],
+        leads: (leads.data ?? []) as unknown as Lead[],
       };
+
     },
   });
 
@@ -137,6 +142,46 @@ function DashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* Leads em negociação */}
+      <Card className="mt-4 p-5">
+        <div className="flex items-center justify-between">
+          <p className="font-display text-sm font-semibold">Leads em negociação</p>
+          <Link to="/leads" className="text-xs text-primary hover:underline">Abrir CRM →</Link>
+        </div>
+        {(() => {
+          const open = (data.leads ?? []).filter((l) => l.stage !== "fechado" && l.stage !== "perdido");
+          const late = open.filter(isLeadOverdue);
+          return (
+            <div className="mt-3 space-y-3">
+              <div className="flex flex-wrap gap-6">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Em aberto</p>
+                  <p className="font-display text-xl font-semibold">{open.length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Follow-up atrasado</p>
+                  <p className={`font-display text-xl font-semibold ${late.length ? "text-destructive" : ""}`}>{late.length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Valor potencial</p>
+                  <p className="font-display text-xl font-semibold">
+                    {formatBRL(open.reduce((s, l) => s + (Number(l.estimated_value) || 0), 0))}
+                  </p>
+                </div>
+              </div>
+              {late.slice(0, 3).map((l) => (
+                <Link key={l.id} to="/leads" className="flex items-center justify-between rounded-md border border-destructive/30 px-3 py-2 text-xs transition hover:bg-muted/40">
+                  <span className="truncate">{l.name}{l.company ? ` · ${l.company}` : ""}</span>
+                  <span className="text-destructive">retomar contato</span>
+                </Link>
+              ))}
+              {open.length === 0 && <p className="text-xs text-muted-foreground">Nenhum lead em negociação.</p>}
+            </div>
+          );
+        })()}
+      </Card>
+
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Upcoming packages */}
