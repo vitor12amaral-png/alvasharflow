@@ -115,6 +115,17 @@ export function EditClientDialog({ client, onSaved }: { client: EditableClient; 
               </SelectContent>
             </Select>
           </F>
+          {form.status === "pausado" && (
+            <>
+              <F label="Motivo da pausa (opcional)" className="col-span-2">
+                <Input value={form.pause_reason} onChange={(e) => set("pause_reason", e.target.value)} placeholder="Ex: aguardando material do cliente" />
+              </F>
+              <F label="Retorno previsto (opcional)">
+                <Input type="date" value={form.pause_until} onChange={(e) => set("pause_until", e.target.value)} />
+              </F>
+            </>
+          )}
+
           <F label="Forma de entrega">
             <Select value={form.delivery_method} onValueChange={(v) => set("delivery_method", v as DeliveryMethod)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
