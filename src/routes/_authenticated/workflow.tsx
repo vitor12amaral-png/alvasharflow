@@ -233,17 +233,17 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     },
   });
 
-  // Filtro por mês: usa o prazo do vídeo quando existe, senão a data de criação.
+  // Filtro por mês é opcional: por padrão o quadro mostra todas as demandas ativas.
   const { ym } = useMonthFromSearch();
   const term = q.trim().toLowerCase();
   const videos = useMemo(
     () =>
       (allVideos ?? [])
-        .filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym)
+        .filter((v) => !monthOnly || (v.due_date ?? v.created_at).slice(0, 7) === ym)
         .filter((v) => !hideDone || (v.status !== "aprovado" && v.status !== "entregue"))
         .filter((v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term))
         .sort((a, b) => naturalCompare(a.title, b.title)),
-    [allVideos, ym, hideDone, term],
+    [allVideos, ym, hideDone, term, monthOnly],
   );
 
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
