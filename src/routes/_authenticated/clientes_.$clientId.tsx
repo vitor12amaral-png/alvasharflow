@@ -375,7 +375,7 @@ export function describeActivity(entity: string, action: string, meta: Record<st
 
 function BriefingTab({ client, subs, onSaved }: {
   client: any;
-  subs: { id: string; name: string }[];
+  subs: { id: string; name: string; company?: string | null }[];
   onSaved: () => void;
 }) {
   const [target, setTarget] = useState<string>(client.id);
@@ -397,7 +397,18 @@ function BriefingTab({ client, subs, onSaved }: {
     qc.invalidateQueries({ queryKey: ["client-briefing", target] });
   };
 
-  if (subs.length === 0) return <BriefingEditor client={client} onSaved={onSaved} />;
+  const subsPanel = !client.parent_client_id ? (
+    <BriefingSubClients parentId={client.id} subs={subs} />
+  ) : null;
+
+  if (subs.length === 0) {
+    return (
+      <div className="space-y-3">
+        <BriefingEditor client={client} onSaved={onSaved} />
+        {subsPanel}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -427,9 +438,50 @@ function BriefingTab({ client, subs, onSaved }: {
       ) : (
         <BriefingEditor key={sub.id} client={sub} onSaved={saved} />
       )}
+
+      {subsPanel}
     </div>
   );
 }
+
+/** Lista e cadastro de subclientes (marcas) direto dentro da aba Briefing. */
+function BriefingSubClients({ parentId, subs }: {
+  parentId: string;
+  subs: { id: string; name: string; company?: string | null }[];
+}) {
+  return (
+    <Card className="p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <p className="font-display text-sm font-semibold">Subclientes</p>
+          <p className="text-[11px] text-muted-foreground">Marcas atendidas dentro do pacote deste cliente.</p>
+        </div>
+        <AddSubClientButton parentId={parentId} />
+      </div>
+      {subs.length === 0 ? (
+        <p className="py-5 text-center text-xs text-muted-foreground">Nenhum subcliente cadastrado.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {[...subs].sort((a, b) => naturalCompare(a.name, b.name)).map((s) => (
+            <Link
+              key={s.id}
+              to="/clientes/$clientId"
+              params={{ clientId: s.id }}
+              className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm transition hover:border-primary/40"
+            >
+              <span className="truncate">{s.name}</span>
+              <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                {s.company}
+                <ChevronRight className="h-3.5 w-3.5" />
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 
 function BriefingEditor({ client, onSaved }: { client: any; onSaved: () => void }) {
   const [editing, setEditing] = useState(false);
