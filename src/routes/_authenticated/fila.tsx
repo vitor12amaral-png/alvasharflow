@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
@@ -28,7 +28,10 @@ import {
 
 
 export const Route = createFileRoute("/_authenticated/fila")({
-  component: FilaPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/workflow", search: { view: "fila", client: "all" } });
+  },
+  component: () => null,
   head: () => ({
     meta: [
       { title: "Fila de produção — AlvasharFlow" },
