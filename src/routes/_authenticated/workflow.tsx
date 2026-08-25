@@ -722,6 +722,76 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   );
 }
 
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
+  videos: VideoRow[];
+  mode: "hoje" | "geral";
+  onOpen: (id: string) => void;
+  onToday: (ids: string[]) => void;
+  onStatus: (ids: string[], status: VideoStatus) => void;
+}) {
+  const today = todayISO();
+  const rows = mode === "hoje" ? videos.filter((v) => v.due_date === today || (v.due_date && v.due_date < today)) : videos;
+  const groups = Array.from(rows.reduce((map, video) => {
+    const current = map.get(video.client_id) ?? { name: video.clients?.name ?? "—", rows: [] as VideoRow[] };
+    current.rows.push(video);
+    map.set(video.client_id, current);
+    return map;
+  }, new Map<string, { name: string; rows: VideoRow[] }>()).entries());
+  const late = videos.filter((v) => v.due_date && v.due_date < today).length;
+  const editing = videos.filter((v) => v.status === "editando").length;
+  const pending = videos.filter((v) => ["recebido", "briefing", "organizacao", "fila"].includes(v.status)).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-4">
+        {[
+          [AlarmClock, late, "Atrasados", late ? "text-destructive" : "text-muted-foreground"],
+          [Sun, videos.filter((v) => v.due_date === today).length, "Para hoje", "text-primary"],
+          [Layers3, editing, "Em edição", "text-[oklch(0.72_0.17_155)]"],
+          [Inbox, pending, "Pendentes", "text-muted-foreground"],
+        ].map(([Icon, value, label, color]) => (
+          <div key={String(label)} className="rounded-lg border border-border/70 bg-card p-3">
+            <Icon className={cn("h-4 w-4", color as string)} />
+            <p className="mt-2 text-xl font-semibold">{String(value)}</p><p className="text-xs text-muted-foreground">{String(label)}</p>
+          </div>
+        ))}
+      </div>
+      {groups.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Nenhuma demanda nesta fila.</div>
+      ) : groups.map(([clientId, group]) => (
+        <div key={clientId} className="overflow-hidden rounded-lg border border-border/70 bg-card">
+          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+            <div><p className="text-sm font-semibold">{group.name}</p><p className="text-[11px] text-muted-foreground">{group.rows.length} demanda(s)</p></div>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="outline" onClick={() => onToday(group.rows.map((v) => v.id))}><Sun className="mr-1 h-3.5 w-3.5" />Hoje</Button>
+              <Select onValueChange={(value) => onStatus(group.rows.map((v) => v.id), value as VideoStatus)}>
+                <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Mover grupo" /></SelectTrigger>
+                <SelectContent>{Object.keys(STAGE_LABEL).map((s) => <SelectItem key={s} value={s}>{STAGE_LABEL[s as VideoStatus]}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="divide-y divide-border/50">
+            {group.rows.map((video) => (
+              <button key={video.id} onClick={() => onOpen(video.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-muted/35">
+                <span className={cn("h-2 w-2 shrink-0 rounded-full", STAGE_ACCENT[video.status])} />
+                <span className="min-w-0 flex-1 truncate text-sm">{video.title}</span>
+                <Badge variant="outline" className="text-[10px]">{PRIORITY_LABEL[video.priority]}</Badge>
+                <span className={cn("text-xs", video.due_date && video.due_date < today ? "text-destructive" : "text-muted-foreground")}>{video.due_date ? formatDate(video.due_date) : "Sem prazo"}</span>
+                {video.status !== "entregue" && <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onStatus([video.id], "entregue"); }}><CheckCircle2 className="h-4 w-4" /></Button>}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone }: {
   count: number;
   onClear: () => void;
