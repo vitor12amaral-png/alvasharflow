@@ -293,7 +293,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
 
-  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority };
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
@@ -319,7 +319,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
   // Criação rápida direto na coluna (estilo Trello).
   const quickAdd = useMutation({
-    mutationFn: async ({ title, status, client_id }: { title: string; status: VideoStatus; client_id: string }) => {
+    mutationFn: async ({ title, status, client_id, due_date }: { title: string; status: VideoStatus; client_id: string; due_date?: string | null }) => {
       const { data: cli, error: ce } = await supabase.from("clients").select("workspace_id").eq("id", client_id).single();
       if (ce) throw ce;
       const { data: pkg } = await supabase
@@ -329,6 +329,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
         client_id,
         title,
         status,
+        due_date: due_date ?? null,
         package_id: pkg?.id ?? null,
       });
       if (error) throw error;
@@ -390,6 +391,24 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   }
   function clearSel() { if (selected.size) sfx.close(); setSelected(new Set()); }
 
+  function setStatus(ids: string[], status: VideoStatus) {
+    const rows = (allVideos ?? []).filter((v) => ids.includes(v.id));
+    if (status === "entregue") {
+      const pending = rows.reduce((sum, v) => sum + parseChecklist(v.checklist).filter((item) => !item.done).length, 0);
+      if (pending > 0 && !window.confirm(`${pending} item(ns) do checklist ainda estão pendentes. Entregar mesmo assim?`)) return;
+    }
+    patch.mutate({ ids, changes: { status } });
+    if (status === "editando") {
+      const withoutDue = rows.filter((v) => !v.due_date).map((v) => v.id);
+      if (withoutDue.length) {
+        const d = new Date();
+        d.setDate(d.getDate() + 2);
+        setPendingDue(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+        setPendingDueIds(withoutDue);
+      }
+    }
+  }
+
   function onDragEnd(e: DragEndEvent) {
     const dragId = String(e.active.id);
     const toGroup = e.over?.id as GroupId | undefined;
@@ -402,7 +421,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
       if (fromGroup === toGroup) return;
       const vids = (videos ?? []).filter((v) => v.client_id === cid && STATUS_TO_GROUP[v.status] === fromGroup);
       if (vids.length === 0) return;
-      patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
+      setStatus(vids.map((v) => v.id), target.statuses[0]);
       sfx.drop();
       return;
     }
@@ -411,7 +430,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     const ids = selected.has(dragId) ? Array.from(selected) : [dragId];
     const vids = (videos ?? []).filter((v) => ids.includes(v.id) && STATUS_TO_GROUP[v.status] !== toGroup);
     if (vids.length === 0) return;
-    patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
+    setStatus(vids.map((v) => v.id), target.statuses[0]);
     sfx.drop();
     if (selected.has(dragId)) setSelected(new Set());
   }
@@ -436,7 +455,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
       const idx = Number(e.key);
       if (idx >= 1 && idx <= GROUPS.length) {
         e.preventDefault();
-        patch.mutate({ ids, changes: { status: GROUPS[idx - 1].statuses[0] } });
+        setStatus(ids, GROUPS[idx - 1].statuses[0]);
         sfx.drop();
         setSelected(new Set());
         return;
