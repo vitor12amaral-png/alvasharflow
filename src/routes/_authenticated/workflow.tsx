@@ -13,13 +13,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks, Sun, AlarmClock, Inbox, Wallet, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
-import { formatDate, naturalCompare } from "@/lib/format";
+import { formatBRL, formatDate, naturalCompare } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
@@ -31,13 +31,26 @@ import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
+import { WeekBoard } from "@/components/week-board";
+import { suggestPerVideo } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
   validateSearch: (search: Record<string, unknown>) => ({
     month: typeof search.month === "string" ? search.month : undefined,
+    view: search.view === "fila" || search.view === "semana" ? search.view : "kanban",
+    client: typeof search.client === "string" ? search.client : undefined,
+    video: typeof search.video === "string" ? search.video : undefined,
+    new: search.new === "video" ? "video" : undefined,
   }),
-  head: () => ({ meta: [{ title: "Workflow — AlvasharFlow" }] }),
+  head: () => ({ meta: [
+    { title: "Workflow de produção — AlvasharFlow" },
+    { name: "description", content: "Kanban, fila diária e planejamento semanal de demandas de vídeo." },
+    { property: "og:title", content: "Workflow de produção — AlvasharFlow" },
+    { property: "og:description", content: "Gerencie demandas no Kanban, na fila diária e na semana." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 type GroupId = "sem_material" | "em_producao" | "enviado" | "em_revisao" | "aprovado";
@@ -74,7 +87,9 @@ type VideoRow = {
 type ClientMin = { id: string; name: string; parent_client_id: string | null };
 
 function WorkflowPage() {
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const selectedClient = search.client ?? null;
 
   const { data: clients } = useQuery({
     queryKey: ["clients-min"],
@@ -83,9 +98,19 @@ function WorkflowPage() {
   });
 
   if (!selectedClient) {
-    return <ClientPicker clients={clients ?? []} onPick={setSelectedClient} />;
+    return <ClientPicker clients={clients ?? []} onPick={(client) => navigate({ search: (prev) => ({ ...prev, client }) })} />;
   }
-  return <WorkflowBoard clientId={selectedClient} clients={clients ?? []} onBack={() => setSelectedClient(null)} />;
+  return (
+    <WorkflowBoard
+      clientId={selectedClient}
+      clients={clients ?? []}
+      primaryView={search.view}
+      initialVideoId={search.video}
+      openNew={search.new === "video"}
+      onViewChange={(view) => navigate({ search: (prev) => ({ ...prev, view }) })}
+      onBack={() => navigate({ search: (prev) => ({ ...prev, client: undefined, video: undefined }) })}
+    />
+  );
 }
 
 function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: string) => void }) {
@@ -192,19 +217,26 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
 }
 
 
-function WorkflowBoard({ clientId, clients, onBack }: {
+function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew, onViewChange, onBack }: {
   clientId: string;
   clients: ClientMin[];
+  primaryView: "kanban" | "fila" | "semana";
+  initialVideoId?: string;
+  openNew: boolean;
+  onViewChange: (view: "kanban" | "fila" | "semana") => void;
   onBack: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openNew);
   const [batchOpen, setBatchOpen] = useState(false);
-  const [view, setView] = useState<"split" | "kanban" | "list">("split");
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [boardView, setBoardView] = useState<"split" | "kanban" | "list">("kanban");
+  const [queueMode, setQueueMode] = useState<"hoje" | "geral">("hoje");
+  const [detailId, setDetailId] = useState<string | null>(initialVideoId ?? null);
+  const [pendingDueIds, setPendingDueIds] = useState<string[]>([]);
+  const [pendingDue, setPendingDue] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
-  const [hideDone, setHideDone] = useState(false);
+  const [showDone, setShowDone] = useState(false);
   const [monthOnly, setMonthOnly] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
@@ -243,10 +275,16 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     () =>
       (allVideos ?? [])
         .filter((v) => !monthOnly || (v.due_date ?? v.created_at).slice(0, 7) === ym)
-        .filter((v) => !hideDone || (v.status !== "aprovado" && v.status !== "entregue"))
+        .filter((v) => showDone || (v.status !== "aprovado" && v.status !== "entregue"))
         .filter((v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term))
-        .sort((a, b) => naturalCompare(a.title, b.title)),
-    [allVideos, ym, hideDone, term, monthOnly],
+        .sort((a, b) => {
+          const weight: Record<VideoPriority, number> = { urgente: 0, alta: 1, media: 2, baixa: 3 };
+          const priority = weight[a.priority] - weight[b.priority];
+          if (priority) return priority;
+          const due = (a.due_date ?? "9999-12-31").localeCompare(b.due_date ?? "9999-12-31");
+          return due || naturalCompare(a.title, b.title);
+        }),
+    [allVideos, ym, showDone, term, monthOnly],
   );
 
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
@@ -255,7 +293,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
 
-  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority };
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
@@ -281,7 +319,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
 
   // Criação rápida direto na coluna (estilo Trello).
   const quickAdd = useMutation({
-    mutationFn: async ({ title, status, client_id }: { title: string; status: VideoStatus; client_id: string }) => {
+    mutationFn: async ({ title, status, client_id, due_date }: { title: string; status: VideoStatus; client_id: string; due_date?: string | null }) => {
       const { data: cli, error: ce } = await supabase.from("clients").select("workspace_id").eq("id", client_id).single();
       if (ce) throw ce;
       const { data: pkg } = await supabase
@@ -291,6 +329,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
         client_id,
         title,
         status,
+        due_date: due_date ?? null,
         package_id: pkg?.id ?? null,
       });
       if (error) throw error;
@@ -352,6 +391,24 @@ function WorkflowBoard({ clientId, clients, onBack }: {
   }
   function clearSel() { if (selected.size) sfx.close(); setSelected(new Set()); }
 
+  function setStatus(ids: string[], status: VideoStatus) {
+    const rows = (allVideos ?? []).filter((v) => ids.includes(v.id));
+    if (status === "entregue") {
+      const pending = rows.reduce((sum, v) => sum + parseChecklist(v.checklist).filter((item) => !item.done).length, 0);
+      if (pending > 0 && !window.confirm(`${pending} item(ns) do checklist ainda estão pendentes. Entregar mesmo assim?`)) return;
+    }
+    patch.mutate({ ids, changes: { status } });
+    if (status === "editando") {
+      const withoutDue = rows.filter((v) => !v.due_date).map((v) => v.id);
+      if (withoutDue.length) {
+        const d = new Date();
+        d.setDate(d.getDate() + 2);
+        setPendingDue(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+        setPendingDueIds(withoutDue);
+      }
+    }
+  }
+
   function onDragEnd(e: DragEndEvent) {
     const dragId = String(e.active.id);
     const toGroup = e.over?.id as GroupId | undefined;
@@ -364,7 +421,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       if (fromGroup === toGroup) return;
       const vids = (videos ?? []).filter((v) => v.client_id === cid && STATUS_TO_GROUP[v.status] === fromGroup);
       if (vids.length === 0) return;
-      patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
+      setStatus(vids.map((v) => v.id), target.statuses[0]);
       sfx.drop();
       return;
     }
@@ -373,7 +430,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     const ids = selected.has(dragId) ? Array.from(selected) : [dragId];
     const vids = (videos ?? []).filter((v) => ids.includes(v.id) && STATUS_TO_GROUP[v.status] !== toGroup);
     if (vids.length === 0) return;
-    patch.mutate({ ids: vids.map((v) => v.id), changes: { status: target.statuses[0] } });
+    setStatus(vids.map((v) => v.id), target.statuses[0]);
     sfx.drop();
     if (selected.has(dragId)) setSelected(new Set());
   }
@@ -398,7 +455,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
       const idx = Number(e.key);
       if (idx >= 1 && idx <= GROUPS.length) {
         e.preventDefault();
-        patch.mutate({ ids, changes: { status: GROUPS[idx - 1].statuses[0] } });
+        setStatus(ids, GROUPS[idx - 1].statuses[0]);
         sfx.drop();
         setSelected(new Set());
         return;
@@ -441,15 +498,15 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                 className="h-9 w-52 rounded-full"
               />
               <button
-                onClick={() => setHideDone((v) => !v)}
+                onClick={() => setShowDone((v) => !v)}
                 className={cn(
                   "h-9 rounded-full border px-3 text-xs transition",
-                  hideDone
+                  showDone
                     ? "border-primary/50 bg-primary/10 text-primary"
                     : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
                 )}
               >
-                Ocultar concluídos
+                {showDone ? "Ocultar concluídos" : "Mostrar concluídos"}
               </button>
               <button
                 onClick={() => setMonthOnly((v) => !v)}
@@ -465,17 +522,6 @@ function WorkflowBoard({ clientId, clients, onBack }: {
               </button>
               {monthOnly && <MonthPicker />}
 
-              <Segmented
-                className="hidden md:inline-flex"
-                value={view}
-                onChange={setView}
-                options={[
-                  { value: "split", label: "Ambos", icon: <SplitSquareVertical className="h-3.5 w-3.5" /> },
-                  { value: "kanban", label: "Kanban", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
-                  { value: "list", label: "Lista", icon: <Rows3 className="h-3.5 w-3.5" /> },
-                ]}
-              />
-
               <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline"><Layers3 className="mr-1 h-4 w-4" />Nova leva</Button>
@@ -489,6 +535,30 @@ function WorkflowBoard({ clientId, clients, onBack }: {
             </div>
           }
         />
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <Segmented
+            value={primaryView}
+            onChange={onViewChange}
+            options={[
+              { value: "kanban", label: "Kanban", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+              { value: "fila", label: "Fila", icon: <Inbox className="h-3.5 w-3.5" /> },
+              { value: "semana", label: "Semana", icon: <CalendarClock className="h-3.5 w-3.5" /> },
+            ]}
+          />
+          {primaryView === "kanban" && (
+            <Segmented value={boardView} onChange={setBoardView} options={[
+              { value: "kanban", label: "Quadro", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+              { value: "list", label: "Lista", icon: <Rows3 className="h-3.5 w-3.5" /> },
+              { value: "split", label: "Ambos", icon: <SplitSquareVertical className="h-3.5 w-3.5" /> },
+            ]} />
+          )}
+          {primaryView === "fila" && (
+            <Segmented value={queueMode} onChange={setQueueMode} options={[
+              { value: "hoje", label: "Hoje", icon: <Sun className="h-3.5 w-3.5" /> },
+              { value: "geral", label: "Fila geral", icon: <Inbox className="h-3.5 w-3.5" /> },
+            ]} />
+          )}
+        </div>
         <div className="mt-3 hidden flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground md:flex">
           <span className="uppercase tracking-wider">Atalhos</span>
           {[
@@ -513,7 +583,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
         <div className="flex flex-1 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (
         <div className="mt-4 flex flex-1 flex-col gap-6 px-6 pb-24 md:px-8">
-          {view !== "list" && (
+          {primaryView === "kanban" && boardView !== "list" && (
             <DndContext sensors={sensors} onDragEnd={onDragEnd}>
               <div
                 ref={marquee.containerRef}
@@ -562,7 +632,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                               expanded={isExpanded}
                               onToggle={() => toggleGroup(key)}
                               ids={arr.map((v) => v.id)}
-                              onSetStatus={(s) => patch.mutate({ ids: arr.map((v) => v.id), changes: { status: s } })}
+                              onSetStatus={(s) => setStatus(arr.map((v) => v.id), s)}
                             >
                               {arr.map((v) => (
                                 <VideoCard key={v.id} video={v}
@@ -584,7 +654,7 @@ function WorkflowBoard({ clientId, clients, onBack }: {
             </DndContext>
           )}
 
-          {view !== "kanban" && (
+          {primaryView === "kanban" && boardView !== "kanban" && (
             <ListView
               videos={videos ?? []}
               selected={selected}
@@ -594,9 +664,29 @@ function WorkflowBoard({ clientId, clients, onBack }: {
                 ids.forEach((id) => { if (on) next.add(id); else next.delete(id); });
                 return next;
               })}
-              onStatusChange={(id, status) => patch.mutate({ ids: [id], changes: { status } })}
+              onStatusChange={(id, status) => setStatus([id], status)}
               onDueChange={(id, due_date) => patch.mutate({ ids: [id], changes: { due_date } })}
               onOpen={(id) => setDetailId(id)}
+            />
+          )}
+
+          {primaryView === "fila" && (
+            <QueueView
+              videos={videos}
+              mode={queueMode}
+              onOpen={setDetailId}
+              onToday={(ids) => patch.mutate({ ids, changes: { due_date: todayISO() } })}
+              onStatus={setStatus}
+            />
+          )}
+
+          {primaryView === "semana" && (
+            <WeekBoard
+              items={videos}
+              clients={clients}
+              onPatch={(ids, changes) => changes.status ? setStatus(ids, changes.status) : patch.mutate({ ids, changes })}
+              onCreate={(payload) => quickAdd.mutate({ ...payload, status: "recebido" })}
+              onOpen={setDetailId}
             />
           )}
         </div>
@@ -609,13 +699,95 @@ function WorkflowBoard({ clientId, clients, onBack }: {
         <BulkBar
           count={selected.size}
           onClear={clearSel}
-          onSetStatus={(s) => { patch.mutate({ ids: Array.from(selected), changes: { status: s } }); clearSel(); }}
+          onSetStatus={(s) => { setStatus(Array.from(selected), s); clearSel(); }}
           onSetPriority={(p) => { patch.mutate({ ids: Array.from(selected), changes: { priority: p } }); clearSel(); }}
           ids={Array.from(selected)}
           onDueDone={clearSel}
           onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
       )}
+
+      <Dialog open={pendingDueIds.length > 0} onOpenChange={(value) => { if (!value) setPendingDueIds([]); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>Definir prazo de produção</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{pendingDueIds.length} demanda(s) entraram em produção sem prazo.</p>
+          <Input type="date" value={pendingDue} onChange={(e) => setPendingDue(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDueIds([])}>Agora não</Button>
+            <Button disabled={!pendingDue} onClick={() => { patch.mutate({ ids: pendingDueIds, changes: { due_date: pendingDue } }); setPendingDueIds([]); }}>Salvar prazo</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
+  videos: VideoRow[];
+  mode: "hoje" | "geral";
+  onOpen: (id: string) => void;
+  onToday: (ids: string[]) => void;
+  onStatus: (ids: string[], status: VideoStatus) => void;
+}) {
+  const today = todayISO();
+  const rows = mode === "hoje" ? videos.filter((v) => v.due_date === today || (v.due_date && v.due_date < today)) : videos;
+  const groups = Array.from(rows.reduce((map, video) => {
+    const current = map.get(video.client_id) ?? { name: video.clients?.name ?? "—", rows: [] as VideoRow[] };
+    current.rows.push(video);
+    map.set(video.client_id, current);
+    return map;
+  }, new Map<string, { name: string; rows: VideoRow[] }>()).entries());
+  const late = videos.filter((v) => v.due_date && v.due_date < today).length;
+  const editing = videos.filter((v) => v.status === "editando").length;
+  const pending = videos.filter((v) => ["recebido", "briefing", "organizacao", "fila"].includes(v.status)).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-4">
+        {[
+          [AlarmClock, late, "Atrasados", late ? "text-destructive" : "text-muted-foreground"],
+          [Sun, videos.filter((v) => v.due_date === today).length, "Para hoje", "text-primary"],
+          [Layers3, editing, "Em edição", "text-[oklch(0.72_0.17_155)]"],
+          [Inbox, pending, "Pendentes", "text-muted-foreground"],
+        ].map(([Icon, value, label, color]) => (
+          <div key={String(label)} className="rounded-lg border border-border/70 bg-card p-3">
+            <Icon className={cn("h-4 w-4", color as string)} />
+            <p className="mt-2 text-xl font-semibold">{String(value)}</p><p className="text-xs text-muted-foreground">{String(label)}</p>
+          </div>
+        ))}
+      </div>
+      {groups.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Nenhuma demanda nesta fila.</div>
+      ) : groups.map(([clientId, group]) => (
+        <div key={clientId} className="overflow-hidden rounded-lg border border-border/70 bg-card">
+          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+            <div><p className="text-sm font-semibold">{group.name}</p><p className="text-[11px] text-muted-foreground">{group.rows.length} demanda(s)</p></div>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="outline" onClick={() => onToday(group.rows.map((v) => v.id))}><Sun className="mr-1 h-3.5 w-3.5" />Hoje</Button>
+              <Select onValueChange={(value) => onStatus(group.rows.map((v) => v.id), value as VideoStatus)}>
+                <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Mover grupo" /></SelectTrigger>
+                <SelectContent>{Object.keys(STAGE_LABEL).map((s) => <SelectItem key={s} value={s}>{STAGE_LABEL[s as VideoStatus]}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="divide-y divide-border/50">
+            {group.rows.map((video) => (
+              <button key={video.id} onClick={() => onOpen(video.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-muted/35">
+                <span className={cn("h-2 w-2 shrink-0 rounded-full", STAGE_ACCENT[video.status])} />
+                <span className="min-w-0 flex-1 truncate text-sm">{video.title}</span>
+                <Badge variant="outline" className="text-[10px]">{PRIORITY_LABEL[video.priority]}</Badge>
+                <span className={cn("text-xs", video.due_date && video.due_date < today ? "text-destructive" : "text-muted-foreground")}>{video.due_date ? formatDate(video.due_date) : "Sem prazo"}</span>
+                {video.status !== "entregue" && <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onStatus([video.id], "entregue"); }}><CheckCircle2 className="h-4 w-4" /></Button>}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

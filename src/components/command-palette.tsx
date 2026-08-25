@@ -6,8 +6,8 @@ import {
 } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  LayoutDashboard, Users, Kanban, ListOrdered, CheckSquare, Megaphone, UsersRound,
-  Calendar, FolderOpen, Wallet, Settings, Sparkles, Video, Search,
+  LayoutDashboard, Users, Kanban, CheckSquare, Megaphone, UsersRound,
+  Calendar, FolderOpen, Wallet, Settings, Sparkles, Video, Search, Plus,
 } from "lucide-react";
 
 const PAGES = [
@@ -15,7 +15,6 @@ const PAGES = [
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/leads", label: "Leads", icon: Sparkles },
   { to: "/workflow", label: "Workflow", icon: Kanban },
-  { to: "/fila", label: "Fila", icon: ListOrdered },
   { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
   { to: "/marketing", label: "Marketing", icon: Megaphone },
   { to: "/equipe", label: "Equipe", icon: UsersRound },
@@ -101,6 +100,23 @@ export function CommandPalette() {
           </CommandGroup>
         )}
 
+        {!term && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Ações rápidas">
+              <CommandItem value="novo cliente" onSelect={() => go("/clientes?new=client")}>
+                <Plus className="mr-2 h-4 w-4 text-muted-foreground" />Novo cliente
+              </CommandItem>
+              <CommandItem value="novo video" onSelect={() => go("/workflow?client=all&new=video")}>
+                <Video className="mr-2 h-4 w-4 text-muted-foreground" />Novo vídeo
+              </CommandItem>
+              <CommandItem value="nova tarefa" onSelect={() => go("/tarefas?new=task")}>
+                <CheckSquare className="mr-2 h-4 w-4 text-muted-foreground" />Nova tarefa
+              </CommandItem>
+            </CommandGroup>
+          </>
+        )}
+
         {!!data?.clients.length && (
           <>
             <CommandSeparator />
@@ -120,7 +136,7 @@ export function CommandPalette() {
             <CommandSeparator />
             <CommandGroup heading="Vídeos">
               {data.videos.map((v) => (
-                <CommandItem key={v.id} value={`video ${v.title}`} onSelect={() => go("/workflow")}>
+                <CommandItem key={v.id} value={`video ${v.title}`} onSelect={() => go(`/workflow?client=${v.client_id}&video=${v.id}`)}>
                   <Video className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="truncate">{v.title}</span>
                   {v.clients?.name && (
@@ -137,7 +153,7 @@ export function CommandPalette() {
             <CommandSeparator />
             <CommandGroup heading="Tarefas">
               {data.tasks.map((t) => (
-                <CommandItem key={t.id} value={`tarefa ${t.title}`} onSelect={() => go("/tarefas")}>
+                <CommandItem key={t.id} value={`tarefa ${t.title}`} onSelect={() => go(`/tarefas?task=${t.id}`)}>
                   <CheckSquare className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="truncate">{t.title}</span>
                 </CommandItem>
