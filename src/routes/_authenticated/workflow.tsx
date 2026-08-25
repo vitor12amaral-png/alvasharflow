@@ -13,13 +13,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks, Sun, AlarmClock, Inbox, Wallet, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
-import { formatDate, naturalCompare } from "@/lib/format";
+import { formatBRL, formatDate, naturalCompare } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
@@ -31,13 +31,26 @@ import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
+import { WeekBoard } from "@/components/week-board";
+import { suggestPerVideo } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
   validateSearch: (search: Record<string, unknown>) => ({
     month: typeof search.month === "string" ? search.month : undefined,
+    view: search.view === "fila" || search.view === "semana" ? search.view : "kanban",
+    client: typeof search.client === "string" ? search.client : undefined,
+    video: typeof search.video === "string" ? search.video : undefined,
+    new: search.new === "video" ? "video" : undefined,
   }),
-  head: () => ({ meta: [{ title: "Workflow — AlvasharFlow" }] }),
+  head: () => ({ meta: [
+    { title: "Workflow de produção — AlvasharFlow" },
+    { name: "description", content: "Kanban, fila diária e planejamento semanal de demandas de vídeo." },
+    { property: "og:title", content: "Workflow de produção — AlvasharFlow" },
+    { property: "og:description", content: "Gerencie demandas no Kanban, na fila diária e na semana." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 type GroupId = "sem_material" | "em_producao" | "enviado" | "em_revisao" | "aprovado";
@@ -74,7 +87,9 @@ type VideoRow = {
 type ClientMin = { id: string; name: string; parent_client_id: string | null };
 
 function WorkflowPage() {
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const selectedClient = search.client ?? null;
 
   const { data: clients } = useQuery({
     queryKey: ["clients-min"],
@@ -83,9 +98,19 @@ function WorkflowPage() {
   });
 
   if (!selectedClient) {
-    return <ClientPicker clients={clients ?? []} onPick={setSelectedClient} />;
+    return <ClientPicker clients={clients ?? []} onPick={(client) => navigate({ search: (prev) => ({ ...prev, client }) })} />;
   }
-  return <WorkflowBoard clientId={selectedClient} clients={clients ?? []} onBack={() => setSelectedClient(null)} />;
+  return (
+    <WorkflowBoard
+      clientId={selectedClient}
+      clients={clients ?? []}
+      primaryView={search.view}
+      initialVideoId={search.video}
+      openNew={search.new === "video"}
+      onViewChange={(view) => navigate({ search: (prev) => ({ ...prev, view }) })}
+      onBack={() => navigate({ search: (prev) => ({ ...prev, client: undefined, video: undefined }) })}
+    />
+  );
 }
 
 function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: string) => void }) {
@@ -192,19 +217,26 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
 }
 
 
-function WorkflowBoard({ clientId, clients, onBack }: {
+function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew, onViewChange, onBack }: {
   clientId: string;
   clients: ClientMin[];
+  primaryView: "kanban" | "fila" | "semana";
+  initialVideoId?: string;
+  openNew: boolean;
+  onViewChange: (view: "kanban" | "fila" | "semana") => void;
   onBack: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openNew);
   const [batchOpen, setBatchOpen] = useState(false);
-  const [view, setView] = useState<"split" | "kanban" | "list">("split");
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [boardView, setBoardView] = useState<"split" | "kanban" | "list">("kanban");
+  const [queueMode, setQueueMode] = useState<"hoje" | "geral">("hoje");
+  const [detailId, setDetailId] = useState<string | null>(initialVideoId ?? null);
+  const [pendingDueIds, setPendingDueIds] = useState<string[]>([]);
+  const [pendingDue, setPendingDue] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
-  const [hideDone, setHideDone] = useState(false);
+  const [showDone, setShowDone] = useState(false);
   const [monthOnly, setMonthOnly] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
@@ -243,10 +275,16 @@ function WorkflowBoard({ clientId, clients, onBack }: {
     () =>
       (allVideos ?? [])
         .filter((v) => !monthOnly || (v.due_date ?? v.created_at).slice(0, 7) === ym)
-        .filter((v) => !hideDone || (v.status !== "aprovado" && v.status !== "entregue"))
+        .filter((v) => showDone || (v.status !== "aprovado" && v.status !== "entregue"))
         .filter((v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term))
-        .sort((a, b) => naturalCompare(a.title, b.title)),
-    [allVideos, ym, hideDone, term, monthOnly],
+        .sort((a, b) => {
+          const weight: Record<VideoPriority, number> = { urgente: 0, alta: 1, media: 2, baixa: 3 };
+          const priority = weight[a.priority] - weight[b.priority];
+          if (priority) return priority;
+          const due = (a.due_date ?? "9999-12-31").localeCompare(b.due_date ?? "9999-12-31");
+          return due || naturalCompare(a.title, b.title);
+        }),
+    [allVideos, ym, showDone, term, monthOnly],
   );
 
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
