@@ -498,15 +498,15 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 className="h-9 w-52 rounded-full"
               />
               <button
-                onClick={() => setHideDone((v) => !v)}
+                onClick={() => setShowDone((v) => !v)}
                 className={cn(
                   "h-9 rounded-full border px-3 text-xs transition",
-                  hideDone
+                  showDone
                     ? "border-primary/50 bg-primary/10 text-primary"
                     : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
                 )}
               >
-                Ocultar concluídos
+                {showDone ? "Ocultar concluídos" : "Mostrar concluídos"}
               </button>
               <button
                 onClick={() => setMonthOnly((v) => !v)}
@@ -522,17 +522,6 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
               </button>
               {monthOnly && <MonthPicker />}
 
-              <Segmented
-                className="hidden md:inline-flex"
-                value={view}
-                onChange={setView}
-                options={[
-                  { value: "split", label: "Ambos", icon: <SplitSquareVertical className="h-3.5 w-3.5" /> },
-                  { value: "kanban", label: "Kanban", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
-                  { value: "list", label: "Lista", icon: <Rows3 className="h-3.5 w-3.5" /> },
-                ]}
-              />
-
               <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline"><Layers3 className="mr-1 h-4 w-4" />Nova leva</Button>
@@ -546,6 +535,30 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
             </div>
           }
         />
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <Segmented
+            value={primaryView}
+            onChange={onViewChange}
+            options={[
+              { value: "kanban", label: "Kanban", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+              { value: "fila", label: "Fila", icon: <Inbox className="h-3.5 w-3.5" /> },
+              { value: "semana", label: "Semana", icon: <CalendarClock className="h-3.5 w-3.5" /> },
+            ]}
+          />
+          {primaryView === "kanban" && (
+            <Segmented value={boardView} onChange={setBoardView} options={[
+              { value: "kanban", label: "Quadro", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+              { value: "list", label: "Lista", icon: <Rows3 className="h-3.5 w-3.5" /> },
+              { value: "split", label: "Ambos", icon: <SplitSquareVertical className="h-3.5 w-3.5" /> },
+            ]} />
+          )}
+          {primaryView === "fila" && (
+            <Segmented value={queueMode} onChange={setQueueMode} options={[
+              { value: "hoje", label: "Hoje", icon: <Sun className="h-3.5 w-3.5" /> },
+              { value: "geral", label: "Fila geral", icon: <Inbox className="h-3.5 w-3.5" /> },
+            ]} />
+          )}
+        </div>
         <div className="mt-3 hidden flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground md:flex">
           <span className="uppercase tracking-wider">Atalhos</span>
           {[
@@ -570,7 +583,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
         <div className="flex flex-1 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (
         <div className="mt-4 flex flex-1 flex-col gap-6 px-6 pb-24 md:px-8">
-          {view !== "list" && (
+          {primaryView === "kanban" && boardView !== "list" && (
             <DndContext sensors={sensors} onDragEnd={onDragEnd}>
               <div
                 ref={marquee.containerRef}
@@ -619,7 +632,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                               expanded={isExpanded}
                               onToggle={() => toggleGroup(key)}
                               ids={arr.map((v) => v.id)}
-                              onSetStatus={(s) => patch.mutate({ ids: arr.map((v) => v.id), changes: { status: s } })}
+                              onSetStatus={(s) => setStatus(arr.map((v) => v.id), s)}
                             >
                               {arr.map((v) => (
                                 <VideoCard key={v.id} video={v}
@@ -641,7 +654,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
             </DndContext>
           )}
 
-          {view !== "kanban" && (
+          {primaryView === "kanban" && boardView !== "kanban" && (
             <ListView
               videos={videos ?? []}
               selected={selected}
@@ -651,9 +664,29 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 ids.forEach((id) => { if (on) next.add(id); else next.delete(id); });
                 return next;
               })}
-              onStatusChange={(id, status) => patch.mutate({ ids: [id], changes: { status } })}
+              onStatusChange={(id, status) => setStatus([id], status)}
               onDueChange={(id, due_date) => patch.mutate({ ids: [id], changes: { due_date } })}
               onOpen={(id) => setDetailId(id)}
+            />
+          )}
+
+          {primaryView === "fila" && (
+            <QueueView
+              videos={videos}
+              mode={queueMode}
+              onOpen={setDetailId}
+              onToday={(ids) => patch.mutate({ ids, changes: { due_date: todayISO() } })}
+              onStatus={setStatus}
+            />
+          )}
+
+          {primaryView === "semana" && (
+            <WeekBoard
+              items={videos}
+              clients={clients}
+              onPatch={(ids, changes) => changes.status ? setStatus(ids, changes.status) : patch.mutate({ ids, changes })}
+              onCreate={(payload) => quickAdd.mutate({ ...payload, status: "recebido" })}
+              onOpen={setDetailId}
             />
           )}
         </div>
@@ -666,13 +699,25 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
         <BulkBar
           count={selected.size}
           onClear={clearSel}
-          onSetStatus={(s) => { patch.mutate({ ids: Array.from(selected), changes: { status: s } }); clearSel(); }}
+          onSetStatus={(s) => { setStatus(Array.from(selected), s); clearSel(); }}
           onSetPriority={(p) => { patch.mutate({ ids: Array.from(selected), changes: { priority: p } }); clearSel(); }}
           ids={Array.from(selected)}
           onDueDone={clearSel}
           onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
       )}
+
+      <Dialog open={pendingDueIds.length > 0} onOpenChange={(value) => { if (!value) setPendingDueIds([]); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>Definir prazo de produção</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">{pendingDueIds.length} demanda(s) entraram em produção sem prazo.</p>
+          <Input type="date" value={pendingDue} onChange={(e) => setPendingDue(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDueIds([])}>Agora não</Button>
+            <Button disabled={!pendingDue} onClick={() => { patch.mutate({ ids: pendingDueIds, changes: { due_date: pendingDue } }); setPendingDueIds([]); }}>Salvar prazo</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
