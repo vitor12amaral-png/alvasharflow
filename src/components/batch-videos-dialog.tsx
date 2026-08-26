@@ -35,6 +35,8 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
+  const [templateId, setTemplateId] = useState("");
+  const [templateChecklist, setTemplateChecklist] = useState<{ label: string; done: boolean }[]>([]);
   const qc = useQueryClient();
   const { data: me } = useCurrentUser();
 
@@ -48,6 +50,30 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
     () => [...(clientsProp ?? fetched ?? [])].sort((a, b) => naturalCompare(a.name, b.name)),
     [clientsProp, fetched],
   );
+  const { data: templates } = useQuery({
+    queryKey: ["project-templates", me?.workspaceId],
+    enabled: !!me?.workspaceId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("project_templates").select("id, name, default_status, default_priority, due_in_days, titles, checklist").eq("workspace_id", me?.workspaceId ?? "").order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  function applyTemplate(id: string) {
+    setTemplateId(id);
+    const template = templates?.find((item) => item.id === id);
+    if (!template) return;
+    const templateTitles = Array.isArray(template.titles) ? template.titles.map(String) : [];
+    if (templateTitles.length) { setMode("lista"); setTitles(templateTitles.join("\n")); }
+    setStatus(template.default_status as VideoStatus);
+    setPriority(template.default_priority as VideoPriority);
+    setTemplateChecklist(Array.isArray(template.checklist) ? template.checklist.map((item: any) => ({ label: String(item?.label ?? item), done: false })) : []);
+    if (template.due_in_days != null) {
+      const date = new Date(); date.setDate(date.getDate() + Number(template.due_in_days));
+      setDueDate(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`);
+    }
+  }
 
   useEffect(() => {
     let alive = true;
@@ -80,6 +106,7 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
       priority,
       due_date: dueDate || null,
       package_id: info.packageId,
+      checklist: templateChecklist,
     }));
     const { error } = await supabase.from("videos").insert(rows);
     setSaving(false);
@@ -102,6 +129,10 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
     <DialogContent className="max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>Nova leva de vídeos</DialogTitle></DialogHeader>
       <form onSubmit={submit} className="space-y-3">
+        {(templates ?? []).length > 0 && <div className="space-y-1.5">
+          <Label>Template de demanda</Label>
+          <Select value={templateId} onValueChange={applyTemplate}><SelectTrigger><SelectValue placeholder="Começar sem template" /></SelectTrigger><SelectContent>{templates?.map((template) => <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>)}</SelectContent></Select>
+        </div>}
         <div className="space-y-1.5">
           <Label>Cliente *</Label>
           <Select value={clientId} onValueChange={setClientId}>

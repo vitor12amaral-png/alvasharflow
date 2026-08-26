@@ -3,6 +3,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,13 +14,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks, Sun, AlarmClock, Inbox, Wallet, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks, Sun, AlarmClock, Inbox, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
-import { formatBRL, formatDate, naturalCompare } from "@/lib/format";
+import { formatDate, naturalCompare } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
@@ -32,13 +33,14 @@ import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 import { WeekBoard } from "@/components/week-board";
-import { suggestPerVideo } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): {
+    month?: string; view?: "kanban" | "fila" | "semana"; client?: string; video?: string; new?: "video";
+  } => ({
     month: typeof search.month === "string" ? search.month : undefined,
-    view: search.view === "fila" || search.view === "semana" ? search.view : "kanban",
+    view: search.view === "fila" || search.view === "semana" || search.view === "kanban" ? search.view : undefined,
     client: typeof search.client === "string" ? search.client : undefined,
     video: typeof search.video === "string" ? search.video : undefined,
     new: search.new === "video" ? "video" : undefined,
@@ -104,7 +106,7 @@ function WorkflowPage() {
     <WorkflowBoard
       clientId={selectedClient}
       clients={clients ?? []}
-      primaryView={search.view}
+      primaryView={search.view ?? "kanban"}
       initialVideoId={search.video}
       openNew={search.new === "video"}
       onViewChange={(view) => navigate({ search: (prev) => ({ ...prev, view }) })}
@@ -750,14 +752,14 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
     <div className="space-y-4">
       <div className="grid gap-2 sm:grid-cols-4">
         {[
-          [AlarmClock, late, "Atrasados", late ? "text-destructive" : "text-muted-foreground"],
-          [Sun, videos.filter((v) => v.due_date === today).length, "Para hoje", "text-primary"],
-          [Layers3, editing, "Em edição", "text-[oklch(0.72_0.17_155)]"],
-          [Inbox, pending, "Pendentes", "text-muted-foreground"],
-        ].map(([Icon, value, label, color]) => (
-          <div key={String(label)} className="rounded-lg border border-border/70 bg-card p-3">
-            <Icon className={cn("h-4 w-4", color as string)} />
-            <p className="mt-2 text-xl font-semibold">{String(value)}</p><p className="text-xs text-muted-foreground">{String(label)}</p>
+          { Icon: AlarmClock, value: late, label: "Atrasados", color: late ? "text-destructive" : "text-muted-foreground" },
+          { Icon: Sun, value: videos.filter((v) => v.due_date === today).length, label: "Para hoje", color: "text-primary" },
+          { Icon: Layers3, value: editing, label: "Em edição", color: "text-[oklch(0.72_0.17_155)]" },
+          { Icon: Inbox, value: pending, label: "Pendentes", color: "text-muted-foreground" },
+        ].map(({ Icon, value, label, color }) => (
+          <div key={label} className="rounded-lg border border-border/70 bg-card p-3">
+            <Icon className={cn("h-4 w-4", color)} />
+            <p className="mt-2 text-xl font-semibold">{value}</p><p className="text-xs text-muted-foreground">{label}</p>
           </div>
         ))}
       </div>
@@ -1426,10 +1428,29 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
 }
 
 function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => void; clients: { id: string; name: string }[]; defaultClientId?: string }) {
-  const [form, setForm] = useState({ title: "", description: "", client_id: defaultClientId ?? "", priority: "media" as VideoPriority, due_date: "" });
+  const [form, setForm] = useState({ title: "", description: "", client_id: defaultClientId ?? "", priority: "media" as VideoPriority, status: "recebido" as VideoStatus, due_date: "", checklist: [] as { label: string; done: boolean }[] });
+  const [templateId, setTemplateId] = useState("");
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
   const { data: me } = useCurrentUser();
+  const { data: templates } = useQuery({
+    queryKey: ["project-templates", me?.workspaceId], enabled: !!me?.workspaceId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("project_templates").select("id, name, default_status, default_priority, due_in_days, titles, checklist").eq("workspace_id", me?.workspaceId ?? "").order("name");
+      if (error) throw error; return data ?? [];
+    },
+  });
+
+  function applyTemplate(id: string) {
+    setTemplateId(id);
+    const template = templates?.find((item) => item.id === id);
+    if (!template) return;
+    const title = Array.isArray(template.titles) && template.titles.length ? String(template.titles[0]) : form.title;
+    let due_date = form.due_date;
+    if (template.due_in_days != null) { const date = new Date(); date.setDate(date.getDate() + Number(template.due_in_days)); due_date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
+    const checklist = Array.isArray(template.checklist) ? template.checklist.map((item: any) => ({ label: String(item?.label ?? item), done: false })) : [];
+    setForm({ ...form, title, due_date, checklist, status: template.default_status as VideoStatus, priority: template.default_priority as VideoPriority });
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -1440,7 +1461,7 @@ function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => 
     const { error } = await supabase.from("videos").insert({
       workspace_id: me.workspaceId,
       title: form.title, description: form.description || null, client_id: form.client_id,
-      priority: form.priority, due_date: form.due_date || null, package_id: pkg?.id ?? null,
+      priority: form.priority, status: form.status, due_date: form.due_date || null, package_id: pkg?.id ?? null, checklist: form.checklist,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -1454,6 +1475,7 @@ function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => 
     <DialogContent>
       <DialogHeader><DialogTitle>Novo vídeo</DialogTitle></DialogHeader>
       <form onSubmit={submit} className="space-y-3">
+        {(templates ?? []).length > 0 && <div className="space-y-1.5"><Label>Template de demanda</Label><Select value={templateId} onValueChange={applyTemplate}><SelectTrigger><SelectValue placeholder="Começar sem template" /></SelectTrigger><SelectContent>{templates?.map((template) => <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>)}</SelectContent></Select></div>}
         <div className="space-y-1.5"><Label>Título *</Label><Input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} autoFocus /></div>
         <div className="space-y-1.5"><Label>Cliente *</Label>
           <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
@@ -1461,7 +1483,8 @@ function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => 
             <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1.5"><Label>Situação</Label><Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as VideoStatus })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{ALL_STATUSES.map((status) => <SelectItem key={status} value={status}>{STAGE_LABEL[status]}</SelectItem>)}</SelectContent></Select></div>
           <div className="space-y-1.5"><Label>Prioridade</Label>
             <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v as VideoPriority })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
