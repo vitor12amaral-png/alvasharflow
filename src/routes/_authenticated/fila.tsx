@@ -29,7 +29,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/fila")({
   beforeLoad: () => {
-    throw redirect({ to: "/workflow", search: { view: "fila", client: "all" } });
+    throw redirect({ to: "/workflow", search: { view: "fila", client: "all", month: undefined, video: undefined, new: undefined } });
   },
   component: () => null,
   head: () => ({
