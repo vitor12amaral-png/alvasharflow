@@ -15,11 +15,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LogOut, Loader2, Copy, Link2, Trash2, Plus } from "lucide-react";
 import { initials } from "@/lib/format";
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { STAGE_LABEL, PRIORITY_LABEL } from "@/lib/video-workflow";
+import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: ConfigPage,
@@ -291,6 +294,8 @@ function TemplatesTab() {
   const [titles, setTitles] = useState("");
   const [checklist, setChecklist] = useState("");
   const [dueInDays, setDueInDays] = useState("7");
+  const [defaultStatus, setDefaultStatus] = useState<VideoStatus>("recebido");
+  const [defaultPriority, setDefaultPriority] = useState<VideoPriority>("media");
 
   const create = useMutation({
     mutationFn: async () => {
@@ -301,6 +306,8 @@ function TemplatesTab() {
         name: name.trim(),
         created_by: me?.id ?? null,
         due_in_days: Number(dueInDays) || null,
+        default_status: defaultStatus,
+        default_priority: defaultPriority,
         titles: titles.split("\n").map((t) => t.trim()).filter(Boolean),
         checklist: checklist.split("\n").map((t) => t.trim()).filter(Boolean).map((label) => ({ label, done: false })),
       });
@@ -335,6 +342,10 @@ function TemplatesTab() {
           <Label>Prazo padrão (dias)</Label>
           <Input type="number" min={0} value={dueInDays} onChange={(e) => setDueInDays(e.target.value)} />
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5"><Label>Situação padrão</Label><Select value={defaultStatus} onValueChange={(value) => setDefaultStatus(value as VideoStatus)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.keys(STAGE_LABEL).map((status) => <SelectItem key={status} value={status}>{STAGE_LABEL[status as VideoStatus]}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-1.5"><Label>Prioridade padrão</Label><Select value={defaultPriority} onValueChange={(value) => setDefaultPriority(value as VideoPriority)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.keys(PRIORITY_LABEL).map((priority) => <SelectItem key={priority} value={priority}>{PRIORITY_LABEL[priority as VideoPriority]}</SelectItem>)}</SelectContent></Select></div>
+        </div>
         <div className="space-y-1.5">
           <Label>Títulos dos vídeos (um por linha)</Label>
           <Textarea rows={5} value={titles} onChange={(e) => setTitles(e.target.value)} placeholder={"Reels 01\nReels 02"} />
@@ -363,6 +374,7 @@ function TemplatesTab() {
                   <p className="text-[11px] text-muted-foreground">
                     {(t.titles?.length ?? 0)} vídeo(s) · {(t.checklist?.length ?? 0)} itens de checklist
                     {t.due_in_days ? ` · prazo ${t.due_in_days}d` : ""}
+                    {` · ${STAGE_LABEL[t.default_status as VideoStatus]} · ${PRIORITY_LABEL[t.default_priority as VideoPriority]}`}
                   </p>
                 </div>
                 <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={() => remove.mutate(t.id)} aria-label="Remover template">
