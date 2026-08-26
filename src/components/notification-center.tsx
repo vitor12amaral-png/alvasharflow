@@ -1,12 +1,12 @@
 import { useEffect, useMemo } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { BellRing, CheckCheck, CalendarClock, CheckCircle2, Send, Flame } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/format";
+import { formatDate, relativeTime } from "@/lib/format";
 
 type Notification = {
   id: string;
@@ -40,6 +40,7 @@ function inDaysISO(n: number) {
 export function NotificationCenter() {
   const { data: me } = useCurrentUser();
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: rows } = useQuery({
     queryKey: ["notifications", me?.id],
@@ -153,7 +154,8 @@ export function NotificationCenter() {
               {(dueSoon ?? []).map((v) => (
                 <Link
                   key={v.id}
-                  to="/fila"
+                  to="/workflow"
+                  search={{ view: "fila", client: "all", video: v.id }}
                   className="flex items-start gap-2 px-3 py-2 text-xs transition hover:bg-muted/40"
                 >
                   <CalendarClock
@@ -178,7 +180,10 @@ export function NotificationCenter() {
               return (
                 <button
                   key={n.id}
-                  onClick={() => markOne.mutate(n.id)}
+                  onClick={() => {
+                    markOne.mutate(n.id);
+                    if (n.link) navigate({ to: n.link as "/workflow" });
+                  }}
                   className={cn(
                     "flex w-full items-start gap-2 px-3 py-2 text-left text-xs transition hover:bg-muted/40",
                     !n.read_at && "bg-primary/5",
@@ -188,6 +193,7 @@ export function NotificationCenter() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{n.title}</span>
                     {n.body && <span className="block truncate text-[11px] text-muted-foreground">{n.body}</span>}
+                    <span className="block text-[10px] text-muted-foreground">{relativeTime(n.created_at)}</span>
                   </span>
                 </button>
               );

@@ -8,6 +8,7 @@ import { Loader2, TrendingUp, CalendarClock, AlertCircle, DollarSign } from "luc
 import { formatBRL, formatDate, daysUntil } from "@/lib/format";
 import { PACKAGE_LABEL } from "@/lib/video-workflow";
 import type { PackageSize } from "@/lib/video-workflow";
+import { suggestPerVideo } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/financeiro")({
   component: FinanceiroPage,
@@ -15,22 +16,33 @@ export const Route = createFileRoute("/_authenticated/financeiro")({
 });
 
 function FinanceiroPage() {
-  const { data: packages, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["packages"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("client_packages")
-        .select("*, clients(name)")
-        .order("end_date", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
+      const [packages, videos, clients] = await Promise.all([
+        supabase.from("client_packages").select("*, clients(name)").order("end_date", { ascending: true }),
+        supabase.from("videos").select("id, client_id, created_at"),
+        supabase.from("clients").select("id, parent_client_id, price_per_video"),
+      ]);
+      if (packages.error) throw packages.error;
+      if (videos.error) throw videos.error;
+      if (clients.error) throw clients.error;
+      return { packages: packages.data ?? [], videos: videos.data ?? [], clients: clients.data ?? [] };
     },
   });
 
-  if (isLoading || !packages) return <div className="p-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+  if (isLoading || !data) return <div className="p-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+
+  const packages = data.packages;
 
   const active = packages.filter((p) => p.status === "ativo");
   const total = active.reduce((s, p) => s + Number(p.price ?? 0), 0);
+  const month = new Date().toISOString().slice(0, 7);
+  const activeByClient = new Map(active.map((p) => [p.client_id, suggestPerVideo(p.price_per_video, p.price, p.total_videos)]));
+  const generated = data.videos.filter((v) => v.created_at.slice(0, 7) === month).reduce((sum, video) => {
+    const client = data.clients.find((item) => item.id === video.client_id);
+    return sum + (activeByClient.get(video.client_id) ?? (client?.parent_client_id ? activeByClient.get(client.parent_client_id) : undefined) ?? Number(client?.price_per_video ?? 0));
+  }, 0);
   const upcoming = active.filter((p) => {
     const d = daysUntil(p.end_date);
     return d !== null && d <= 30;
@@ -44,7 +56,12 @@ function FinanceiroPage() {
     <div className="p-6 md:p-8">
       <PageHeader title="Financeiro" subtitle="Pacotes e receitas" />
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className="mt-6 grid gap-3 sm:grid-cols-4">
+        <Card className="p-4">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          <p className="mt-2 font-display text-2xl font-bold">{formatBRL(generated)}</p>
+          <p className="text-xs text-muted-foreground">Gerado pelos vídeos neste mês</p>
+        </Card>
         <Card className="p-4">
           <DollarSign className="h-4 w-4 text-[oklch(0.72_0.17_155)]" />
           <p className="mt-2 font-display text-2xl font-bold">{formatBRL(total)}</p>
