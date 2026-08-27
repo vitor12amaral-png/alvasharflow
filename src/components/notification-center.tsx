@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { BellRing, CheckCheck, CalendarClock, CheckCircle2, Send, Flame } from "lucide-react";
+import { BellRing, CheckCheck, CalendarClock, CheckCircle2, Send, Flame, Package } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -14,6 +14,9 @@ type Notification = {
   title: string;
   body: string | null;
   link: string | null;
+  video_id: string | null;
+  task_id: string | null;
+  client_id: string | null;
   read_at: string | null;
   created_at: string;
 };
@@ -23,6 +26,7 @@ const ICON: Record<string, typeof BellRing> = {
   video_entregue: Send,
   tarefa_urgente: Flame,
   prazo: CalendarClock,
+  pacote_limite: Package,
 };
 
 function todayISO() {
@@ -49,7 +53,7 @@ export function NotificationCenter() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notifications")
-        .select("id, kind, title, body, link, read_at, created_at")
+        .select("id, kind, title, body, link, video_id, task_id, client_id, read_at, created_at")
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
@@ -64,7 +68,7 @@ export function NotificationCenter() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("videos")
-        .select("id, title, due_date, status, clients(name)")
+        .select("id, title, due_date, status, client_id, clients(name)")
         .not("due_date", "is", null)
         .lte("due_date", inDaysISO(2))
         .not("status", "in", "(aprovado,entregue)")
@@ -72,8 +76,24 @@ export function NotificationCenter() {
         .limit(15);
       if (error) throw error;
       return (data ?? []) as unknown as {
-        id: string; title: string; due_date: string; clients: { name: string } | null;
+        id: string; title: string; due_date: string; client_id: string; clients: { name: string } | null;
       }[];
+    },
+  });
+
+  const { data: packageAlerts } = useQuery({
+    queryKey: ["notifications-packages", me?.workspaceId],
+    enabled: !!me?.workspaceId,
+    refetchInterval: 120_000,
+    queryFn: async () => {
+      const [settings, packages] = await Promise.all([
+        supabase.from("workspace_settings").select("package_alert_threshold").eq("workspace_id", me?.workspaceId ?? "").maybeSingle(),
+        supabase.from("client_packages").select("id, client_id, total_videos, videos_used, clients(name)").eq("status", "ativo"),
+      ]);
+      if (settings.error) throw settings.error;
+      if (packages.error) throw packages.error;
+      const threshold = settings.data?.package_alert_threshold ?? 2;
+      return (packages.data ?? []).filter((item) => item.total_videos - item.videos_used <= threshold);
     },
   });
 
@@ -111,7 +131,21 @@ export function NotificationCenter() {
 
   const unread = useMemo(() => (rows ?? []).filter((n) => !n.read_at).length, [rows]);
   const overdue = (dueSoon ?? []).filter((v) => v.due_date < todayISO()).length;
-  const badge = unread + overdue;
+  const badge = unread + overdue + (packageAlerts?.length ?? 0);
+
+  function openNotification(notification: Notification) {
+    markOne.mutate(notification.id);
+    if (notification.video_id) {
+      navigate({ to: "/workflow", search: { client: notification.client_id ?? "all", video: notification.video_id, view: "kanban" } });
+    } else if (notification.task_id) {
+      navigate({ to: "/tarefas", search: { task: notification.task_id } } as never);
+    } else if (notification.client_id) {
+      navigate({ to: "/clientes/$clientId", params: { clientId: notification.client_id } });
+    } else if (notification.link) {
+      const destination = notification.link.startsWith("/fila") ? "/workflow?view=fila&client=all" : notification.link;
+      navigate({ to: destination } as never);
+    }
+  }
 
   return (
     <Popover>
@@ -172,6 +206,18 @@ export function NotificationCenter() {
             </div>
           )}
 
+          {(packageAlerts ?? []).length > 0 && (
+            <div className="border-b border-border/60">
+              <p className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Pacotes próximos do limite</p>
+              {(packageAlerts ?? []).map((item) => (
+                <Link key={item.id} to="/clientes/$clientId" params={{ clientId: item.client_id }} className="flex items-start gap-2 px-3 py-2 text-xs transition hover:bg-muted/40">
+                  <Package className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1"><span className="block truncate font-medium">{item.clients?.name ?? "Cliente"}</span><span className="block text-[11px] text-muted-foreground">Restam {Math.max(0, item.total_videos - item.videos_used)} de {item.total_videos} vídeos</span></span>
+                </Link>
+              ))}
+            </div>
+          )}
+
           {(rows ?? []).length === 0 && (dueSoon ?? []).length === 0 ? (
             <p className="px-3 py-8 text-center text-xs text-muted-foreground">Nenhuma notificação. 🎉</p>
           ) : (
@@ -181,8 +227,7 @@ export function NotificationCenter() {
                 <button
                   key={n.id}
                   onClick={() => {
-                    markOne.mutate(n.id);
-                    if (n.link) navigate({ to: n.link as "/workflow" });
+                    openNotification(n);
                   }}
                   className={cn(
                     "flex w-full items-start gap-2 px-3 py-2 text-left text-xs transition hover:bg-muted/40",

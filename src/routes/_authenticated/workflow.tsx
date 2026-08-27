@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
 import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
-import { formatDate, naturalCompare } from "@/lib/format";
+import { formatBRL, formatDate, naturalCompare } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
@@ -33,6 +33,7 @@ import { ColorPicker, colorValue } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 import { WeekBoard } from "@/components/week-board";
+import { suggestPerVideo } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -242,6 +243,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   const [monthOnly, setMonthOnly] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
+  const { data: me } = useCurrentUser();
 
   function toggleGroup(key: string) {
     setExpandedGroups((prev) => {
@@ -270,6 +272,21 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     },
   });
 
+  const { data: priceByClient } = useQuery({
+    queryKey: ["workflow-pricing", me?.workspaceId],
+    enabled: !!me?.workspaceId,
+    queryFn: async () => {
+      const [packages, clientRows] = await Promise.all([
+        supabase.from("client_packages").select("client_id, price, total_videos, price_per_video").eq("status", "ativo"),
+        supabase.from("clients").select("id, parent_client_id, price_per_video"),
+      ]);
+      if (packages.error) throw packages.error;
+      if (clientRows.error) throw clientRows.error;
+      const packagePrice = new Map((packages.data ?? []).map((item) => [item.client_id, suggestPerVideo(item.price_per_video, item.price, item.total_videos)]));
+      return Object.fromEntries((clientRows.data ?? []).map((client) => [client.id, packagePrice.get(client.id) ?? (client.parent_client_id ? packagePrice.get(client.parent_client_id) : undefined) ?? Number(client.price_per_video ?? 0)]));
+    },
+  });
+
   // Filtro por mês é opcional: por padrão o quadro mostra todas as demandas ativas.
   const { ym } = useMonthFromSearch();
   const term = q.trim().toLowerCase();
@@ -290,6 +307,14 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   );
 
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
+  const weekRevenue = useMemo(() => {
+    const now = new Date();
+    const day = (now.getDay() + 6) % 7;
+    const start = new Date(now); start.setDate(now.getDate() - day); start.setHours(0, 0, 0, 0);
+    const end = new Date(start); end.setDate(start.getDate() + 7);
+    const created = (allVideos ?? []).filter((video) => { const date = new Date(video.created_at); return date >= start && date < end; });
+    return { count: created.length, total: created.reduce((sum, video) => sum + (priceByClient?.[video.client_id] ?? 0), 0) };
+  }, [allVideos, priceByClient]);
 
 
 
@@ -683,13 +708,19 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           )}
 
           {primaryView === "semana" && (
-            <WeekBoard
-              items={videos}
-              clients={clients}
-              onPatch={(ids, changes) => changes.status ? setStatus(ids, changes.status) : patch.mutate({ ids, changes })}
-              onCreate={(payload) => quickAdd.mutate({ ...payload, status: "recebido" })}
-              onOpen={setDetailId}
-            />
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-card px-4 py-3">
+                <div><p className="text-sm font-semibold">Produção criada nesta semana</p><p className="text-xs text-muted-foreground">{weekRevenue.count} vídeo(s), calculados pela data de criação</p></div>
+                <p className="text-lg font-semibold text-primary">{formatBRL(weekRevenue.total)}</p>
+              </div>
+              <WeekBoard
+                items={videos}
+                clients={clients}
+                onPatch={(ids, changes) => changes.status ? setStatus(ids, changes.status) : patch.mutate({ ids, changes })}
+                onCreate={(payload) => quickAdd.mutate({ ...payload, status: "recebido" })}
+                onOpen={setDetailId}
+              />
+            </div>
           )}
         </div>
       )}
