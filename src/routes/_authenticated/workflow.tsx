@@ -810,13 +810,18 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
           </div>
           <div className="divide-y divide-border/50">
             {group.rows.map((video) => (
-              <button key={video.id} onClick={() => onOpen(video.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-muted/35">
-                <span className={cn("h-2 w-2 shrink-0 rounded-full", STAGE_ACCENT[video.status])} />
-                <span className="min-w-0 flex-1 truncate text-sm">{video.title}</span>
-                <Badge variant="outline" className="text-[10px]">{PRIORITY_LABEL[video.priority]}</Badge>
-                <span className={cn("text-xs", video.due_date && video.due_date < today ? "text-destructive" : "text-muted-foreground")}>{video.due_date ? formatDate(video.due_date) : "Sem prazo"}</span>
-                {video.status !== "entregue" && <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onStatus([video.id], "entregue"); }}><CheckCircle2 className="h-4 w-4" /></Button>}
-              </button>
+              <div key={video.id} className="flex w-full items-center gap-3 px-4 py-3 transition hover:bg-muted/35">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: STAGE_ACCENT[video.status] }} />
+                <button onClick={() => onOpen(video.id)} className="min-w-0 flex-1 truncate text-left text-sm hover:text-primary">{video.title}</button>
+                <Badge variant="outline" className="shrink-0 text-[10px]">{PRIORITY_LABEL[video.priority]}</Badge>
+                <Badge variant="outline" className="hidden shrink-0 text-[10px] sm:inline-flex">{STAGE_LABEL[video.status]}</Badge>
+                <span className={cn("shrink-0 text-xs", video.due_date && video.due_date < today ? "text-destructive" : "text-muted-foreground")}>{video.due_date ? formatDate(video.due_date) : "Sem prazo"}</span>
+                {video.status !== "entregue" && (
+                  <Button size="sm" variant="ghost" title="Marcar como entregue" onClick={() => onStatus([video.id], "entregue")}>
+                    <CheckCircle2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             ))}
           </div>
         </div>
