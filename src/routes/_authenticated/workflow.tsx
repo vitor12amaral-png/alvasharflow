@@ -243,6 +243,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   const [monthOnly, setMonthOnly] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
+  const { data: me } = useCurrentUser();
 
   function toggleGroup(key: string) {
     setExpandedGroups((prev) => {
