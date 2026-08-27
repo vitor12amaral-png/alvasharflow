@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LogOut, Loader2, Copy, Link2, Trash2, Plus } from "lucide-react";
+import { LogOut, Loader2, Copy, Link2, Trash2, Plus, Pencil, X } from "lucide-react";
 import { initials } from "@/lib/format";
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
@@ -296,12 +296,28 @@ function TemplatesTab() {
   const [dueInDays, setDueInDays] = useState("7");
   const [defaultStatus, setDefaultStatus] = useState<VideoStatus>("recebido");
   const [defaultPriority, setDefaultPriority] = useState<VideoPriority>("media");
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  function resetForm() {
+    setEditingId(null); setName(""); setTitles(""); setChecklist(""); setDueInDays("7");
+    setDefaultStatus("recebido"); setDefaultPriority("media");
+  }
+
+  function editTemplate(template: any) {
+    setEditingId(template.id);
+    setName(template.name ?? "");
+    setDueInDays(String(template.due_in_days ?? ""));
+    setDefaultStatus(template.default_status ?? "recebido");
+    setDefaultPriority(template.default_priority ?? "media");
+    setTitles((template.titles ?? []).join("\n"));
+    setChecklist((template.checklist ?? []).map((item: any) => typeof item === "string" ? item : item.label).filter(Boolean).join("\n"));
+  }
 
   const create = useMutation({
     mutationFn: async () => {
       if (!workspaceId) throw new Error("Workspace não encontrado");
       if (!name.trim()) throw new Error("Dê um nome ao template");
-      const { error } = await supabase.from("project_templates").insert({
+      const payload = {
         workspace_id: workspaceId,
         name: name.trim(),
         created_by: me?.id ?? null,
@@ -310,13 +326,16 @@ function TemplatesTab() {
         default_priority: defaultPriority,
         titles: titles.split("\n").map((t) => t.trim()).filter(Boolean),
         checklist: checklist.split("\n").map((t) => t.trim()).filter(Boolean).map((label) => ({ label, done: false })),
-      });
+      };
+      const { error } = editingId
+        ? await supabase.from("project_templates").update(payload).eq("id", editingId)
+        : await supabase.from("project_templates").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
       sfx.success();
-      toast.success("Template criado");
-      setName(""); setTitles(""); setChecklist("");
+      toast.success(editingId ? "Template atualizado" : "Template criado");
+      resetForm();
       qc.invalidateQueries({ queryKey: ["project-templates"] });
     },
     onError: (e: any) => toast.error(e.message ?? "Falha ao criar"),
@@ -333,7 +352,7 @@ function TemplatesTab() {
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
       <Card className="space-y-3 p-5">
-        <p className="font-display text-sm font-semibold">Novo template</p>
+        <div className="flex items-center justify-between"><p className="font-display text-sm font-semibold">{editingId ? "Editar template" : "Novo template"}</p>{editingId && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={resetForm} aria-label="Cancelar edição"><X className="h-3.5 w-3.5" /></Button>}</div>
         <div className="space-y-1.5">
           <Label>Nome</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Pacote Reels 10" />
@@ -355,7 +374,7 @@ function TemplatesTab() {
           <Textarea rows={4} value={checklist} onChange={(e) => setChecklist(e.target.value)} placeholder={"Decupagem\nCorte bruto\nColor\nExport"} />
         </div>
         <Button className="w-full" onClick={() => create.mutate()} disabled={create.isPending}>
-          {create.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}Criar template
+          {create.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : editingId ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}{editingId ? "Salvar alterações" : "Criar template"}
         </Button>
       </Card>
 
@@ -377,6 +396,7 @@ function TemplatesTab() {
                     {` · ${STAGE_LABEL[t.default_status as VideoStatus]} · ${PRIORITY_LABEL[t.default_priority as VideoPriority]}`}
                   </p>
                 </div>
+                <Button size="sm" variant="ghost" className="h-7" onClick={() => editTemplate(t)} aria-label="Editar template"><Pencil className="h-3.5 w-3.5" /></Button>
                 <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={() => remove.mutate(t.id)} aria-label="Remover template">
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
