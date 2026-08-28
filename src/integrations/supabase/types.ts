@@ -1465,6 +1465,180 @@ export type Database = {
           },
         ]
       }
+      whatsapp_channels: {
+        Row: {
+          access_token: string | null
+          api_base: string | null
+          created_at: string
+          display_number: string | null
+          enabled: boolean
+          phone_number_id: string | null
+          provider: string
+          updated_at: string
+          verify_token: string | null
+          workspace_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          api_base?: string | null
+          created_at?: string
+          display_number?: string | null
+          enabled?: boolean
+          phone_number_id?: string | null
+          provider?: string
+          updated_at?: string
+          verify_token?: string | null
+          workspace_id: string
+        }
+        Update: {
+          access_token?: string | null
+          api_base?: string | null
+          created_at?: string
+          display_number?: string | null
+          enabled?: boolean
+          phone_number_id?: string | null
+          provider?: string
+          updated_at?: string
+          verify_token?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_channels_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_conversations: {
+        Row: {
+          client_id: string | null
+          contact_name: string | null
+          created_at: string
+          id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          lead_id: string | null
+          status: string
+          unread_count: number
+          updated_at: string
+          wa_phone: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          lead_id?: string | null
+          status?: string
+          unread_count?: number
+          updated_at?: string
+          wa_phone: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          lead_id?: string | null
+          status?: string
+          unread_count?: number
+          updated_at?: string
+          wa_phone?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_messages: {
+        Row: {
+          author_id: string | null
+          body: string | null
+          conversation_id: string
+          created_at: string
+          direction: string
+          id: string
+          media_type: string | null
+          media_url: string | null
+          provider_message_id: string | null
+          sent_at: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          provider_message_id?: string | null
+          sent_at?: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          provider_message_id?: string | null
+          sent_at?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_invites: {
         Row: {
           accepted_at: string | null
