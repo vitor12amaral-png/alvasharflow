@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Kanban, Calendar, FolderOpen,
   Wallet, Settings, UsersRound, LogOut, Loader2,
-  CheckSquare, Megaphone, Volume2, VolumeX, Sparkles,
+  CheckSquare, Megaphone, Volume2, VolumeX, Sparkles, MessageCircle,
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,6 +23,7 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/leads", label: "Leads", icon: Sparkles },
+  { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
 
   { to: "/workflow", label: "Workflow", icon: Kanban },
   { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
