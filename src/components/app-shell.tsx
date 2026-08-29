@@ -23,6 +23,7 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/leads", label: "Leads", icon: Sparkles },
+  { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
 
   { to: "/workflow", label: "Workflow", icon: Kanban },
   { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
