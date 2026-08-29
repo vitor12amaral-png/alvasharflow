@@ -19,6 +19,7 @@ import { Route as OnboardingTokenRouteImport } from './routes/onboarding.$token'
 import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
 import { Route as ApiCopilotRouteImport } from './routes/api/copilot'
 import { Route as AuthenticatedWorkflowRouteImport } from './routes/_authenticated/workflow'
+import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedVideosRouteImport } from './routes/_authenticated/videos'
 import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
 import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
@@ -85,6 +86,11 @@ const ApiCopilotRoute = ApiCopilotRouteImport.update({
 const AuthenticatedWorkflowRoute = AuthenticatedWorkflowRouteImport.update({
   id: '/workflow',
   path: '/workflow',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedVideosRoute = AuthenticatedVideosRouteImport.update({
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/marketing': typeof AuthenticatedMarketingRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/videos': typeof AuthenticatedVideosRoute
+  '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
   '/convite/$token': typeof ConviteTokenRoute
@@ -231,6 +238,7 @@ export interface FileRoutesByTo {
   '/marketing': typeof AuthenticatedMarketingRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/videos': typeof AuthenticatedVideosRoute
+  '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
   '/convite/$token': typeof ConviteTokenRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/_authenticated/marketing': typeof AuthenticatedMarketingRoute
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
   '/_authenticated/videos': typeof AuthenticatedVideosRoute
+  '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/_authenticated/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
   '/convite/$token': typeof ConviteTokenRoute
@@ -293,6 +302,7 @@ export interface FileRouteTypes {
     | '/marketing'
     | '/tarefas'
     | '/videos'
+    | '/whatsapp'
     | '/workflow'
     | '/api/copilot'
     | '/convite/$token'
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/marketing'
     | '/tarefas'
     | '/videos'
+    | '/whatsapp'
     | '/workflow'
     | '/api/copilot'
     | '/convite/$token'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing'
     | '/_authenticated/tarefas'
     | '/_authenticated/videos'
+    | '/_authenticated/whatsapp'
     | '/_authenticated/workflow'
     | '/api/copilot'
     | '/convite/$token'
@@ -450,6 +462,13 @@ declare module '@tanstack/react-router' {
       path: '/workflow'
       fullPath: '/workflow'
       preLoaderRoute: typeof AuthenticatedWorkflowRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/whatsapp': {
+      id: '/_authenticated/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof AuthenticatedWhatsappRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/videos': {
@@ -594,6 +613,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRoute
   AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
   AuthenticatedVideosRoute: typeof AuthenticatedVideosRoute
+  AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedWorkflowRoute: typeof AuthenticatedWorkflowRoute
   AuthenticatedClientesClientIdRoute: typeof AuthenticatedClientesClientIdRoute
 }
@@ -611,6 +631,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMarketingRoute: AuthenticatedMarketingRoute,
   AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
   AuthenticatedVideosRoute: AuthenticatedVideosRoute,
+  AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedWorkflowRoute: AuthenticatedWorkflowRoute,
   AuthenticatedClientesClientIdRoute: AuthenticatedClientesClientIdRoute,
 }
