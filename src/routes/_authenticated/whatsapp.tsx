@@ -131,6 +131,9 @@ function WhatsappPage() {
         subtitle="Conversas de clientes e leads em um só lugar."
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setAlertsOpen(true)}>
+              <BellRing className="mr-1.5 h-4 w-4" /> Avisos
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
               <Settings2 className="mr-1.5 h-4 w-4" /> Conexão
             </Button>
