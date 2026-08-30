@@ -207,7 +207,7 @@ export const Route = createFileRoute("/api/copilot")({
               if (matches.length > 1) return { needs_clarification: true, candidates: matches };
               const patch = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== null && v !== undefined));
               if (Object.keys(patch).length === 0) return { error: "Nada para atualizar." };
-              const { error } = await supabase.from("clients").update(patch).eq("id", matches[0].id);
+              const { error } = await supabase.from("clients").update(patch as never).eq("id", matches[0].id);
               if (error) return { error: error.message };
               return { ok: true, client: matches[0].name, updated: Object.keys(patch) };
             },
@@ -278,7 +278,7 @@ export const Route = createFileRoute("/api/copilot")({
               if (input.description) patch.description = input.description;
               if (input.final_file_link) patch.final_file_link = input.final_file_link;
               if (Object.keys(patch).length === 0) return { error: "Nada para atualizar." };
-              const { data, error } = await supabase.from("videos").update(patch).eq("id", id).select("id, title, status, due_date").single();
+              const { data, error } = await supabase.from("videos").update(patch as never).eq("id", id).select("id, title, status, due_date").single();
               if (error) return { error: error.message };
               return { ok: true, video: data };
             },
@@ -362,7 +362,7 @@ export const Route = createFileRoute("/api/copilot")({
               if (input.due_date) patch.due_date = input.due_date;
               if (input.new_title) patch.title = input.new_title;
               if (Object.keys(patch).length === 0) return { error: "Nada para atualizar." };
-              const { data, error } = await supabase.from("tasks").update(patch).eq("id", id).select("id, title, status").single();
+              const { data, error } = await supabase.from("tasks").update(patch as never).eq("id", id).select("id, title, status").single();
               if (error) return { error: error.message };
               return { ok: true, task: data };
             },
