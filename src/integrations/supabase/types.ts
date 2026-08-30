@@ -844,6 +844,7 @@ export type Database = {
           updated_at: string
           user_id: string
           video_id: string | null
+          whatsapp_sent_at: string | null
           workspace_id: string
         }
         Insert: {
@@ -859,6 +860,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           video_id?: string | null
+          whatsapp_sent_at?: string | null
           workspace_id: string
         }
         Update: {
@@ -874,6 +876,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_id?: string | null
+          whatsapp_sent_at?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -1458,6 +1461,59 @@ export type Database = {
           },
           {
             foreignKeyName: "videos_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_alert_prefs: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          on_due_soon: boolean
+          on_package_limit: boolean
+          on_urgent_task: boolean
+          on_video_approved: boolean
+          on_video_delivered: boolean
+          phone: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          on_due_soon?: boolean
+          on_package_limit?: boolean
+          on_urgent_task?: boolean
+          on_video_approved?: boolean
+          on_video_delivered?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          on_due_soon?: boolean
+          on_package_limit?: boolean
+          on_urgent_task?: boolean
+          on_video_approved?: boolean
+          on_video_delivered?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_alert_prefs_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
