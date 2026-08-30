@@ -428,3 +428,95 @@ function ChannelDialog({ open, onOpenChange, workspaceId }: { open: boolean; onO
     </Dialog>
   );
 }
+
+const ALERT_FIELDS = [
+  { key: "on_due_soon", label: "Prazo vencendo", hint: "Vídeos com entrega hoje ou amanhã." },
+  { key: "on_video_approved", label: "Vídeo aprovado", hint: "Quando o cliente aprova." },
+  { key: "on_video_delivered", label: "Vídeo entregue", hint: "Quando a entrega é marcada." },
+  { key: "on_package_limit", label: "Pacote perto do limite", hint: "Levas chegando ao fim." },
+  { key: "on_urgent_task", label: "Tarefa urgente", hint: "Tarefa urgente atribuída a você." },
+] as const;
+
+function AlertPrefsDialog({
+  open, onOpenChange, workspaceId, userId,
+}: { open: boolean; onOpenChange: (v: boolean) => void; workspaceId: string | null; userId: string | null }) {
+  const qc = useQueryClient();
+  const { data: prefs } = useQuery({
+    queryKey: ["wa-alert-prefs", userId],
+    enabled: open && !!userId,
+    queryFn: async () => {
+      const { data } = await supabase.from("whatsapp_alert_prefs").select("*").eq("user_id", userId!).maybeSingle();
+      return data;
+    },
+  });
+
+  const [form, setForm] = useState({
+    phone: "", enabled: true,
+    on_due_soon: true, on_video_approved: true, on_video_delivered: true,
+    on_package_limit: true, on_urgent_task: true,
+  });
+
+  useEffect(() => {
+    if (prefs) {
+      setForm({
+        phone: prefs.phone ?? "",
+        enabled: prefs.enabled,
+        on_due_soon: prefs.on_due_soon,
+        on_video_approved: prefs.on_video_approved,
+        on_video_delivered: prefs.on_video_delivered,
+        on_package_limit: prefs.on_package_limit,
+        on_urgent_task: prefs.on_urgent_task,
+      });
+    }
+  }, [prefs]);
+
+  async function save() {
+    if (!workspaceId || !userId) return;
+    const { error } = await supabase
+      .from("whatsapp_alert_prefs")
+      .upsert(
+        { workspace_id: workspaceId, user_id: userId, ...form, phone: form.phone ? normalizePhone(form.phone) : null },
+        { onConflict: "workspace_id,user_id" },
+      );
+    if (error) toast.error(error.message);
+    else { toast.success("Avisos atualizados"); qc.invalidateQueries({ queryKey: ["wa-alert-prefs", userId] }); onOpenChange(false); }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Meus avisos por WhatsApp</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Meu número (com DDD)</Label>
+            <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="(11) 91234-5678" />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Os avisos só saem depois que a conexão da Cloud API estiver ativa.
+            </p>
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+            <p className="text-sm font-medium">Receber avisos</p>
+            <Switch checked={form.enabled} onCheckedChange={(v) => setForm((f) => ({ ...f, enabled: v }))} />
+          </div>
+          <div className="space-y-1.5">
+            {ALERT_FIELDS.map((f) => (
+              <div key={f.key} className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
+                <div>
+                  <p className="text-sm">{f.label}</p>
+                  <p className="text-[11px] text-muted-foreground">{f.hint}</p>
+                </div>
+                <Switch
+                  checked={form[f.key]}
+                  disabled={!form.enabled}
+                  onCheckedChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        <DialogFooter><Button onClick={save}>Salvar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
