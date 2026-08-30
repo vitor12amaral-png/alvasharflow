@@ -128,7 +128,7 @@ function WhatsappPage() {
     <div className="p-4 md:p-6">
       <PageHeader
         title="WhatsApp"
-        description="Conversas de clientes e leads em um só lugar."
+        subtitle="Conversas de clientes e leads em um só lugar."
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>

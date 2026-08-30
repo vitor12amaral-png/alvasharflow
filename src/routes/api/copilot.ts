@@ -207,7 +207,7 @@ export const Route = createFileRoute("/api/copilot")({
               if (matches.length > 1) return { needs_clarification: true, candidates: matches };
               const patch = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== null && v !== undefined));
               if (Object.keys(patch).length === 0) return { error: "Nada para atualizar." };
-              const { error } = await supabase.from("clients").update(patch).eq("id", matches[0].id);
+              const { error } = await supabase.from("clients").update(patch as never).eq("id", matches[0].id);
               if (error) return { error: error.message };
               return { ok: true, client: matches[0].name, updated: Object.keys(patch) };
             },
@@ -278,7 +278,7 @@ export const Route = createFileRoute("/api/copilot")({
               if (input.description) patch.description = input.description;
               if (input.final_file_link) patch.final_file_link = input.final_file_link;
               if (Object.keys(patch).length === 0) return { error: "Nada para atualizar." };
-              const { data, error } = await supabase.from("videos").update(patch).eq("id", id).select("id, title, status, due_date").single();
+              const { data, error } = await supabase.from("videos").update(patch as never).eq("id", id).select("id, title, status, due_date").single();
               if (error) return { error: error.message };
               return { ok: true, video: data };
             },
@@ -362,7 +362,7 @@ export const Route = createFileRoute("/api/copilot")({
               if (input.due_date) patch.due_date = input.due_date;
               if (input.new_title) patch.title = input.new_title;
               if (Object.keys(patch).length === 0) return { error: "Nada para atualizar." };
-              const { data, error } = await supabase.from("tasks").update(patch).eq("id", id).select("id, title, status").single();
+              const { data, error } = await supabase.from("tasks").update(patch as never).eq("id", id).select("id, title, status").single();
               if (error) return { error: error.message };
               return { ok: true, task: data };
             },
@@ -604,6 +604,10 @@ Regras:
 - Se faltar informação obrigatória (título, nome do cliente), pergunte antes de chamar a tool.
 - Se o nome do cliente for ambíguo, use list_clients para desambiguar.
 - Interprete "amanhã", "sexta", "próxima semana" em relação à data de hoje e converta para YYYY-MM-DD.
+- Você pode executar praticamente tudo que existe no app: clientes (criar, editar, pausar), vídeos (criar, criar em leva, mover status, prazos, excluir), tarefas, leads do CRM, pacotes, registro de tempo, resumo financeiro, equipe e WhatsApp (listar, ler e responder conversas).
+- Para EXCLUIR qualquer coisa, pergunte antes e só chame a tool com confirmed=true depois do "sim" explícito do usuário.
+- Antes de atualizar algo, use a tool de listagem correspondente para achar o id certo; se houver mais de um candidato, pergunte qual.
+- Se uma tool retornar needs_clarification, mostre as opções e peça para o usuário escolher.
 - Responda em português brasileiro, tom direto e curto.`;
 
         const result = streamText({
