@@ -19,6 +19,9 @@ import { NotificationCenter } from "@/components/notification-center";
 import { CommandPalette } from "@/components/command-palette";
 import { useServerFn } from "@tanstack/react-start";
 import { dispatchMyWhatsappAlerts } from "@/lib/whatsapp-alerts.functions";
+import { amIPlatformOwner } from "@/lib/platform.functions";
+import { TrialBanner, TrialExpired } from "@/components/trial-gate";
+import { useQuery } from "@tanstack/react-query";
 
 
 const NAV = [
