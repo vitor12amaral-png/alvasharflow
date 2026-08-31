@@ -46,6 +46,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => installGlobalSfx(), []);
 
+  // Dispara avisos pendentes por WhatsApp (respeita as preferências do usuário).
+  const dispatchAlerts = useServerFn(dispatchMyWhatsappAlerts);
+  useEffect(() => {
+    if (!user) return;
+    const run = () => { void dispatchAlerts({}).catch(() => {}); };
+    run();
+    const id = setInterval(run, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [user?.id]);
+
 
 
   async function signOut() {
