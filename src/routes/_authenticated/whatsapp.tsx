@@ -246,6 +246,7 @@ function WhatsappPage() {
         }}
       />
       <ChannelDialog open={settingsOpen} onOpenChange={setSettingsOpen} workspaceId={me?.workspaceId ?? null} />
+      <AlertPrefsDialog open={alertsOpen} onOpenChange={setAlertsOpen} workspaceId={me?.workspaceId ?? null} userId={me?.id ?? null} />
     </div>
   );
 }
