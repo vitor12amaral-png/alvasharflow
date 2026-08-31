@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, MessageCircle, Plus, Send, Settings2, Search, Link2 } from "lucide-react";
+import { Loader2, MessageCircle, Plus, Send, Settings2, Search, Link2, BellRing } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatPhone, normalizePhone, type WaConversation, type WaMessage } from "@/lib/whatsapp";
