@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, MessageCircle, Plus, Send, Settings2, Search, Link2 } from "lucide-react";
+import { Loader2, MessageCircle, Plus, Send, Settings2, Search, Link2, BellRing } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatPhone, normalizePhone, type WaConversation, type WaMessage } from "@/lib/whatsapp";
@@ -44,6 +44,7 @@ function WhatsappPage() {
   const [draft, setDraft] = useState("");
   const [newOpen, setNewOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: conversations, isLoading } = useQuery({
@@ -245,6 +246,7 @@ function WhatsappPage() {
         }}
       />
       <ChannelDialog open={settingsOpen} onOpenChange={setSettingsOpen} workspaceId={me?.workspaceId ?? null} />
+      <AlertPrefsDialog open={alertsOpen} onOpenChange={setAlertsOpen} workspaceId={me?.workspaceId ?? null} userId={me?.id ?? null} />
     </div>
   );
 }

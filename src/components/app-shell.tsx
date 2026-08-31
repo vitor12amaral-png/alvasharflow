@@ -17,6 +17,8 @@ import { useBranding, DEFAULT_BRANDING } from "@/hooks/use-branding";
 import { PackageAlertsBell } from "@/components/package-alerts";
 import { NotificationCenter } from "@/components/notification-center";
 import { CommandPalette } from "@/components/command-palette";
+import { useServerFn } from "@tanstack/react-start";
+import { dispatchMyWhatsappAlerts } from "@/lib/whatsapp-alerts.functions";
 
 
 const NAV = [
@@ -45,6 +47,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const brand = branding ?? DEFAULT_BRANDING;
 
   useEffect(() => installGlobalSfx(), []);
+
+  // Dispara avisos pendentes por WhatsApp (respeita as preferências do usuário).
+  const dispatchAlerts = useServerFn(dispatchMyWhatsappAlerts);
+  useEffect(() => {
+    if (!user) return;
+    const run = () => { void dispatchAlerts({}).catch(() => {}); };
+    run();
+    const id = setInterval(run, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [user?.id]);
 
 
 
