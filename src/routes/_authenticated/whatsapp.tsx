@@ -44,6 +44,7 @@ function WhatsappPage() {
   const [draft, setDraft] = useState("");
   const [newOpen, setNewOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: conversations, isLoading } = useQuery({
