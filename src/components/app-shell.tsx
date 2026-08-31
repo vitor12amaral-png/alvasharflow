@@ -19,6 +19,9 @@ import { NotificationCenter } from "@/components/notification-center";
 import { CommandPalette } from "@/components/command-palette";
 import { useServerFn } from "@tanstack/react-start";
 import { dispatchMyWhatsappAlerts } from "@/lib/whatsapp-alerts.functions";
+import { amIPlatformOwner } from "@/lib/platform.functions";
+import { TrialBanner, TrialExpired } from "@/components/trial-gate";
+import { useQuery } from "@tanstack/react-query";
 
 
 const NAV = [
@@ -58,7 +61,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => clearInterval(id);
   }, [user?.id]);
 
-
+  // Painel de contas aparece só para o dono da plataforma.
+  const checkOwner = useServerFn(amIPlatformOwner);
+  const { data: ownerCheck } = useQuery({
+    queryKey: ["platform-owner"],
+    queryFn: () => checkOwner({}),
+    enabled: !!user,
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+  const isPlatformOwner = Boolean((ownerCheck as { owner?: boolean } | undefined)?.owner);
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -74,6 +86,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
     );
   }
+
+  // Teste vencido/conta suspensa: aviso claro no lugar de telas vazias.
+  if (!user.isActive) return <TrialExpired user={user} onSignOut={signOut} />;
+
 
   return (
     <div className="flex min-h-screen w-full">

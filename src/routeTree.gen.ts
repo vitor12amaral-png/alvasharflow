@@ -28,6 +28,7 @@ import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authentic
 import { Route as AuthenticatedFilaRouteImport } from './routes/_authenticated/fila'
 import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedContasRouteImport } from './routes/_authenticated/contas'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
@@ -133,6 +134,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedContasRoute = AuthenticatedContasRouteImport.update({
+  id: '/contas',
+  path: '/contas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedConfiguracoesRoute =
   AuthenticatedConfiguracoesRouteImport.update({
     id: '/configuracoes',
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/contas': typeof AuthenticatedContasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
   '/fila': typeof AuthenticatedFilaRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/contas': typeof AuthenticatedContasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
   '/fila': typeof AuthenticatedFilaRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/contas': typeof AuthenticatedContasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
   '/_authenticated/fila': typeof AuthenticatedFilaRoute
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/clientes'
     | '/configuracoes'
+    | '/contas'
     | '/dashboard'
     | '/equipe'
     | '/fila'
@@ -324,6 +334,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/clientes'
     | '/configuracoes'
+    | '/contas'
     | '/dashboard'
     | '/equipe'
     | '/fila'
@@ -355,6 +366,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendario'
     | '/_authenticated/clientes'
     | '/_authenticated/configuracoes'
+    | '/_authenticated/contas'
     | '/_authenticated/dashboard'
     | '/_authenticated/equipe'
     | '/_authenticated/fila'
@@ -527,6 +539,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/contas': {
+      id: '/_authenticated/contas'
+      path: '/contas'
+      fullPath: '/contas'
+      preLoaderRoute: typeof AuthenticatedContasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/configuracoes': {
       id: '/_authenticated/configuracoes'
       path: '/configuracoes'
@@ -605,6 +624,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedContasRoute: typeof AuthenticatedContasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
   AuthenticatedFilaRoute: typeof AuthenticatedFilaRoute
@@ -623,6 +643,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedContasRoute: AuthenticatedContasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,
   AuthenticatedFilaRoute: AuthenticatedFilaRoute,
