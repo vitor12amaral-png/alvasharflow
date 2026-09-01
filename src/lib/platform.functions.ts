@@ -64,7 +64,7 @@ export const setAccountPlan = createServerFn({ method: "POST" })
     assertPlatformOwner(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const patch: Record<string, unknown> =
+    const patch: { plan: "active" | "suspended" | "trial"; trial_ends_at?: string } =
       data.action === "activate"
         ? { plan: "active" }
         : data.action === "suspend"
