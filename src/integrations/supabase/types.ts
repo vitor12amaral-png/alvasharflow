@@ -368,6 +368,7 @@ export type Database = {
           created_at: string
           delivery_link: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"] | null
+          drive_folder_url: string | null
           email: string | null
           id: string
           instagram: string | null
@@ -396,6 +397,7 @@ export type Database = {
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
             | null
+          drive_folder_url?: string | null
           email?: string | null
           id?: string
           instagram?: string | null
@@ -424,6 +426,7 @@ export type Database = {
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
             | null
+          drive_folder_url?: string | null
           email?: string | null
           id?: string
           instagram?: string | null
@@ -1108,6 +1111,50 @@ export type Database = {
           },
         ]
       }
+      proposal_templates: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          position: number
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          body?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          position?: number
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          position?: number
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -1375,6 +1422,8 @@ export type Database = {
       }
       videos: {
         Row: {
+          batch_id: string | null
+          batch_label: string | null
           checklist: Json
           client_id: string
           color: string | null
@@ -1392,10 +1441,13 @@ export type Database = {
           raw_files_link: string | null
           status: Database["public"]["Enums"]["video_status"]
           title: string
+          unit_price: number | null
           updated_at: string
           workspace_id: string
         }
         Insert: {
+          batch_id?: string | null
+          batch_label?: string | null
           checklist?: Json
           client_id: string
           color?: string | null
@@ -1413,10 +1465,13 @@ export type Database = {
           raw_files_link?: string | null
           status?: Database["public"]["Enums"]["video_status"]
           title: string
+          unit_price?: number | null
           updated_at?: string
           workspace_id: string
         }
         Update: {
+          batch_id?: string | null
+          batch_label?: string | null
           checklist?: Json
           client_id?: string
           color?: string | null
@@ -1434,6 +1489,7 @@ export type Database = {
           raw_files_link?: string | null
           status?: Database["public"]["Enums"]["video_status"]
           title?: string
+          unit_price?: number | null
           updated_at?: string
           workspace_id?: string
         }
@@ -1780,7 +1836,9 @@ export type Database = {
           brand_name: string
           brand_tagline: string | null
           created_at: string
+          drive_folder_template: Json
           drive_folder_url: string | null
+          drive_root_folder_id: string | null
           logo_letter: string | null
           logo_url: string | null
           nps_enabled: boolean
@@ -1798,7 +1856,9 @@ export type Database = {
           brand_name?: string
           brand_tagline?: string | null
           created_at?: string
+          drive_folder_template?: Json
           drive_folder_url?: string | null
+          drive_root_folder_id?: string | null
           logo_letter?: string | null
           logo_url?: string | null
           nps_enabled?: boolean
@@ -1816,7 +1876,9 @@ export type Database = {
           brand_name?: string
           brand_tagline?: string | null
           created_at?: string
+          drive_folder_template?: Json
           drive_folder_url?: string | null
+          drive_root_folder_id?: string | null
           logo_letter?: string | null
           logo_url?: string | null
           nps_enabled?: boolean
