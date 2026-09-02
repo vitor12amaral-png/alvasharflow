@@ -418,6 +418,17 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   }
   function clearSel() { if (selected.size) sfx.close(); setSelected(new Set()); }
 
+  // Cliente principal comum à seleção — habilita vincular a uma marca/subcliente.
+  const selectionParentId = useMemo(() => {
+    const rows = (videos ?? []).filter((v) => selected.has(v.id));
+    if (!rows.length) return null;
+    const roots = new Set(rows.map((v) => {
+      const c = clients.find((item) => item.id === v.client_id);
+      return c?.parent_client_id ?? v.client_id;
+    }));
+    return roots.size === 1 ? Array.from(roots)[0] : null;
+  }, [selected, videos, clients]);
+
   function setStatus(ids: string[], status: VideoStatus) {
     const rows = (allVideos ?? []).filter((v) => ids.includes(v.id));
     if (status === "entregue") {
