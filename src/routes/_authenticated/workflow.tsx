@@ -726,6 +726,9 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           onSetStatus={(s) => { setStatus(Array.from(selected), s); clearSel(); }}
           onSetPriority={(p) => { patch.mutate({ ids: Array.from(selected), changes: { priority: p } }); clearSel(); }}
           ids={Array.from(selected)}
+          clients={clients}
+          parentId={selectionParentId}
+          onSetClient={(cid) => { patch.mutate({ ids: Array.from(selected), changes: { client_id: cid } }); clearSel(); }}
           onDueDone={clearSel}
           onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
