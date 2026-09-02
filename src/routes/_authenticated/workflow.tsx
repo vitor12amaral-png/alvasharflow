@@ -524,30 +524,26 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 placeholder="Buscar vídeo ou cliente…  /"
                 className="h-9 w-52 rounded-full"
               />
-              <button
-                onClick={() => setShowDone((v) => !v)}
-                className={cn(
-                  "h-9 rounded-full border px-3 text-xs transition",
-                  showDone
-                    ? "border-primary/50 bg-primary/10 text-primary"
-                    : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {showDone ? "Ocultar concluídos" : "Mostrar concluídos"}
-              </button>
-              <button
-                onClick={() => setMonthOnly((v) => !v)}
-                className={cn(
-                  "h-9 rounded-full border px-3 text-xs transition",
-                  monthOnly
-                    ? "border-primary/50 bg-primary/10 text-primary"
-                    : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
-                )}
-                title="Alternar entre todas as demandas e apenas o mês selecionado"
-              >
-                {monthOnly ? "Filtrando por mês" : "Todas as demandas"}
-              </button>
               {monthOnly && <MonthPicker />}
+              <MoreMenu label="Filtros">
+                <MoreMenuItem active={showDone} onClick={() => setShowDone((v) => !v)}>
+                  {showDone ? "Ocultar concluídos" : "Mostrar concluídos"}
+                </MoreMenuItem>
+                <MoreMenuItem active={monthOnly} onClick={() => setMonthOnly((v) => !v)}>
+                  {monthOnly ? "Filtrando por mês" : "Todas as demandas"}
+                </MoreMenuItem>
+              </MoreMenu>
+              <ShortcutsHint
+                items={[
+                  ["/", "Buscar"],
+                  ["N", "Novo vídeo"],
+                  ["1–5", "Mover seleção"],
+                  ["T", "Prazo hoje"],
+                  ["⌘A", "Selecionar tudo"],
+                  ["Esc", "Limpar seleção"],
+                ]}
+              />
+
 
               <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
                 <DialogTrigger asChild>
