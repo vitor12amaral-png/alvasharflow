@@ -877,6 +877,9 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, o
             ))}
           </PopoverContent>
         </Popover>
+        <SubclientPicker clients={clients} parentId={parentId} onPick={onSetClient} align="center">
+          <Button size="sm" variant="outline" className="h-7 text-xs">Marca</Button>
+        </SubclientPicker>
         <DeleteAction
           table="videos"
           id={ids}
