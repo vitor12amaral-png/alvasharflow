@@ -34,6 +34,9 @@ import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 import { WeekBoard } from "@/components/week-board";
 import { suggestPerVideo } from "@/lib/pricing";
+import { ShortcutsHint } from "@/components/shortcuts-hint";
+import { MoreMenu, MoreMenuItem } from "@/components/more-menu";
+import { SubclientPicker } from "@/components/subclient-picker";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -320,7 +323,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
 
-  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string };
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
@@ -417,6 +420,17 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     });
   }
   function clearSel() { if (selected.size) sfx.close(); setSelected(new Set()); }
+
+  // Cliente principal comum à seleção — habilita vincular a uma marca/subcliente.
+  const selectionParentId = useMemo(() => {
+    const rows = (videos ?? []).filter((v) => selected.has(v.id));
+    if (!rows.length) return null;
+    const roots = new Set(rows.map((v) => {
+      const c = clients.find((item) => item.id === v.client_id);
+      return c?.parent_client_id ?? v.client_id;
+    }));
+    return roots.size === 1 ? Array.from(roots)[0] : null;
+  }, [selected, videos, clients]);
 
   function setStatus(ids: string[], status: VideoStatus) {
     const rows = (allVideos ?? []).filter((v) => ids.includes(v.id));
@@ -524,30 +538,26 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 placeholder="Buscar vídeo ou cliente…  /"
                 className="h-9 w-52 rounded-full"
               />
-              <button
-                onClick={() => setShowDone((v) => !v)}
-                className={cn(
-                  "h-9 rounded-full border px-3 text-xs transition",
-                  showDone
-                    ? "border-primary/50 bg-primary/10 text-primary"
-                    : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {showDone ? "Ocultar concluídos" : "Mostrar concluídos"}
-              </button>
-              <button
-                onClick={() => setMonthOnly((v) => !v)}
-                className={cn(
-                  "h-9 rounded-full border px-3 text-xs transition",
-                  monthOnly
-                    ? "border-primary/50 bg-primary/10 text-primary"
-                    : "border-border/70 bg-muted/30 text-muted-foreground hover:text-foreground",
-                )}
-                title="Alternar entre todas as demandas e apenas o mês selecionado"
-              >
-                {monthOnly ? "Filtrando por mês" : "Todas as demandas"}
-              </button>
               {monthOnly && <MonthPicker />}
+              <MoreMenu label="Filtros">
+                <MoreMenuItem active={showDone} onClick={() => setShowDone((v) => !v)}>
+                  {showDone ? "Ocultar concluídos" : "Mostrar concluídos"}
+                </MoreMenuItem>
+                <MoreMenuItem active={monthOnly} onClick={() => setMonthOnly((v) => !v)}>
+                  {monthOnly ? "Filtrando por mês" : "Todas as demandas"}
+                </MoreMenuItem>
+              </MoreMenu>
+              <ShortcutsHint
+                items={[
+                  ["/", "Buscar"],
+                  ["N", "Novo vídeo"],
+                  ["1–5", "Mover seleção"],
+                  ["T", "Prazo hoje"],
+                  ["⌘A", "Selecionar tudo"],
+                  ["Esc", "Limpar seleção"],
+                ]}
+              />
+
 
               <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
                 <DialogTrigger asChild>
@@ -585,22 +595,6 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
               { value: "geral", label: "Fila geral", icon: <Inbox className="h-3.5 w-3.5" /> },
             ]} />
           )}
-        </div>
-        <div className="mt-3 hidden flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground md:flex">
-          <span className="uppercase tracking-wider">Atalhos</span>
-          {[
-            ["/", "buscar"],
-            ["N", "novo vídeo"],
-            ["1–5", "mover seleção"],
-            ["T", "prazo hoje"],
-            ["⌘A", "selecionar tudo"],
-            ["Esc", "limpar"],
-          ].map(([k, d]) => (
-            <span key={k} className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/25 px-2 py-0.5">
-              <kbd className="font-mono text-[9px] text-foreground">{k}</kbd>
-              {d}
-            </span>
-          ))}
         </div>
       </div>
 
@@ -735,6 +729,9 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           onSetStatus={(s) => { setStatus(Array.from(selected), s); clearSel(); }}
           onSetPriority={(p) => { patch.mutate({ ids: Array.from(selected), changes: { priority: p } }); clearSel(); }}
           ids={Array.from(selected)}
+          clients={clients}
+          parentId={selectionParentId}
+          onSetClient={(cid) => { patch.mutate({ ids: Array.from(selected), changes: { client_id: cid } }); clearSel(); }}
           onDueDone={clearSel}
           onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
@@ -830,7 +827,7 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
   );
 }
 
-function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone }: {
+function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone, clients, parentId, onSetClient }: {
   count: number;
   onClear: () => void;
   onSetStatus: (s: VideoStatus) => void;
@@ -838,6 +835,9 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, o
   ids: string[];
   onDeleted: () => void;
   onDueDone: () => void;
+  clients: ClientMin[];
+  parentId: string | null;
+  onSetClient: (clientId: string) => void;
 }) {
   return (
     <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
@@ -880,6 +880,9 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, o
             ))}
           </PopoverContent>
         </Popover>
+        <SubclientPicker clients={clients} parentId={parentId} onPick={onSetClient} align="center">
+          <Button size="sm" variant="outline" className="h-7 text-xs">Marca</Button>
+        </SubclientPicker>
         <DeleteAction
           table="videos"
           id={ids}
