@@ -582,22 +582,6 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
             ]} />
           )}
         </div>
-        <div className="mt-3 hidden flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground md:flex">
-          <span className="uppercase tracking-wider">Atalhos</span>
-          {[
-            ["/", "buscar"],
-            ["N", "novo vídeo"],
-            ["1–5", "mover seleção"],
-            ["T", "prazo hoje"],
-            ["⌘A", "selecionar tudo"],
-            ["Esc", "limpar"],
-          ].map(([k, d]) => (
-            <span key={k} className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/25 px-2 py-0.5">
-              <kbd className="font-mono text-[9px] text-foreground">{k}</kbd>
-              {d}
-            </span>
-          ))}
-        </div>
       </div>
 
 
