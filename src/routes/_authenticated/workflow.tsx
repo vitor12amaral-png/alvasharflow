@@ -824,7 +824,7 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
   );
 }
 
-function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone }: {
+function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone, clients, parentId, onSetClient }: {
   count: number;
   onClear: () => void;
   onSetStatus: (s: VideoStatus) => void;
@@ -832,6 +832,9 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, o
   ids: string[];
   onDeleted: () => void;
   onDueDone: () => void;
+  clients: ClientMin[];
+  parentId: string | null;
+  onSetClient: (clientId: string) => void;
 }) {
   return (
     <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
