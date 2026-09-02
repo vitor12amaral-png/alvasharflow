@@ -323,7 +323,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
 
-  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string };
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
