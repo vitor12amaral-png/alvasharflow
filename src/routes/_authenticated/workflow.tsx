@@ -34,6 +34,9 @@ import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 import { WeekBoard } from "@/components/week-board";
 import { suggestPerVideo } from "@/lib/pricing";
+import { ShortcutsHint } from "@/components/shortcuts-hint";
+import { MoreMenu, MoreMenuItem } from "@/components/more-menu";
+import { SubclientPicker } from "@/components/subclient-picker";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
