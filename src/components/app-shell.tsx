@@ -3,8 +3,10 @@ import {
   LayoutDashboard, Users, Kanban, Calendar, FolderOpen,
   Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone, Volume2, VolumeX, Sparkles, MessageCircle,
+  Wrench, ShieldCheck, ChevronDown,
 } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -24,21 +26,68 @@ import { TrialBanner, TrialExpired } from "@/components/trial-gate";
 import { useQuery } from "@tanstack/react-query";
 
 
-const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/leads", label: "Leads", icon: Sparkles },
-  { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerOnly?: boolean };
+type NavGroup = { id: string; label: string; items: NavItem[] };
 
-  { to: "/workflow", label: "Workflow", icon: Kanban },
-  { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
-  { to: "/marketing", label: "Marketing", icon: Megaphone },
-  { to: "/equipe", label: "Equipe", icon: UsersRound },
-  { to: "/calendario", label: "Calendário", icon: Calendar },
-  { to: "/biblioteca", label: "Biblioteca", icon: FolderOpen },
-  { to: "/financeiro", label: "Financeiro", icon: Wallet },
-  { to: "/configuracoes", label: "Configurações", icon: Settings },
-] as const;
+const SOLO_TOP: NavItem[] = [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }];
+
+const NAV_GROUPS: NavGroup[] = [
+  { id: "clientes", label: "Clientes", items: [
+    { to: "/clientes", label: "Clientes", icon: Users },
+    { to: "/leads", label: "Leads", icon: Sparkles },
+    { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+  ] },
+  { id: "trabalho", label: "Trabalho", items: [
+    { to: "/workflow", label: "Workflow", icon: Kanban },
+    { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
+  ] },
+  { id: "conteudo", label: "Conteúdo", items: [
+    { to: "/marketing", label: "Marketing", icon: Megaphone },
+    { to: "/calendario", label: "Calendário", icon: Calendar },
+    { to: "/biblioteca", label: "Biblioteca", icon: FolderOpen },
+  ] },
+  { id: "gestao", label: "Gestão", items: [
+    { to: "/financeiro", label: "Financeiro", icon: Wallet },
+    { to: "/equipe", label: "Equipe", icon: UsersRound },
+    { to: "/ferramentas", label: "Ferramentas", icon: Wrench },
+    { to: "/contas", label: "Contas", icon: ShieldCheck, ownerOnly: true },
+  ] },
+];
+
+const SOLO_BOTTOM: NavItem[] = [{ to: "/configuracoes", label: "Configurações", icon: Settings }];
+
+const NAV = [...SOLO_TOP, ...NAV_GROUPS.flatMap((g) => g.items), ...SOLO_BOTTOM] as NavItem[];
+
+function isActivePath(pathname: string, to: string) {
+  return pathname === to || pathname.startsWith(to + "/");
+}
+
+function NavLinkRow({ item, pathname }: { item: NavItem; pathname: string }) {
+  const active = isActivePath(pathname, item.to);
+  return (
+    <Link
+      to={item.to}
+      className={cn(
+        "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-[7px] text-[13px] transition-all duration-200",
+        active
+          ? "bg-[linear-gradient(180deg,oklch(1_0_0_/_0.09),oklch(1_0_0_/_0.03))] text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0_/_0.08),0_6px_18px_-12px_oklch(0_0_0)]"
+          : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground",
+      )}
+    >
+      <span className={cn(
+        "absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-primary transition-opacity duration-200",
+        active ? "opacity-100 shadow-[0_0_10px_var(--primary)]" : "opacity-0",
+      )} />
+      <item.icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-primary" : "group-hover:text-foreground")} />
+      <span className="font-medium">{item.label}</span>
+    </Link>
+  );
+}
+
+const GROUPS_KEY = "af-nav-groups";
+
+
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useCurrentUser();
@@ -50,6 +99,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const brand = branding ?? DEFAULT_BRANDING;
 
   useEffect(() => installGlobalSfx(), []);
+
+  const [openGroups, setOpenGroupsState] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(GROUPS_KEY);
+      if (raw) setOpenGroupsState(JSON.parse(raw) as Record<string, boolean>);
+    } catch { /* ignore */ }
+  }, []);
+  function setOpenGroups(next: Record<string, boolean>) {
+    setOpenGroupsState(next);
+    try { localStorage.setItem(GROUPS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  }
+
 
   // Dispara avisos pendentes por WhatsApp (respeita as preferências do usuário).
   const dispatchAlerts = useServerFn(dispatchMyWhatsappAlerts);
@@ -109,32 +171,36 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
 
-        <nav className="flex-1 space-y-[3px] px-2.5">
-          {NAV.map((item) => {
-            const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+        <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 pb-2">
+          {SOLO_TOP.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
+          {NAV_GROUPS.map((group) => {
+            const items = group.items.filter((i) => !i.ownerOnly || isPlatformOwner);
+            if (!items.length) return null;
+            const hasActive = items.some((i) => isActivePath(location.pathname, i.to));
+            const open = openGroups[group.id] ?? true;
+            const expanded = open || hasActive;
             return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-[7px] text-[13px] transition-all duration-200",
-                  active
-                    ? "bg-[linear-gradient(180deg,oklch(1_0_0_/_0.09),oklch(1_0_0_/_0.03))] text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0_/_0.08),0_6px_18px_-12px_oklch(0_0_0)]"
-                    : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground",
+              <div key={group.id} className="pt-1">
+                <button
+                  onClick={() => setOpenGroups({ ...openGroups, [group.id]: !expanded })}
+                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 hover:text-foreground"
+                >
+                  {group.label}
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", expanded ? "" : "-rotate-90")} />
+                </button>
+                {expanded && (
+                  <div className="mt-0.5 space-y-[3px]">
+                    {items.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
+                  </div>
                 )}
-              >
-                <span
-                  className={cn(
-                    "absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-primary transition-opacity duration-200",
-                    active ? "opacity-100 shadow-[0_0_10px_var(--primary)]" : "opacity-0",
-                  )}
-                />
-                <item.icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-primary" : "group-hover:text-foreground")} />
-                <span className="font-medium">{item.label}</span>
-              </Link>
+              </div>
             );
           })}
+          <div className="pt-2">
+            {SOLO_BOTTOM.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
+          </div>
         </nav>
+
 
         <div className="border-t border-sidebar-border p-2.5">
           <div className="flex items-center gap-2.5 rounded-xl bg-sidebar-accent/25 px-2 py-2">

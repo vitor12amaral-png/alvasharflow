@@ -59,11 +59,12 @@ export const Route = createFileRoute("/_authenticated/workflow")({
   ] }),
 });
 
-type GroupId = "sem_material" | "em_producao" | "enviado" | "em_revisao" | "aprovado";
+type GroupId = "sem_material" | "na_fila" | "em_producao" | "enviado" | "em_revisao" | "aprovado";
 
 const GROUPS: { id: GroupId; label: string; statuses: VideoStatus[]; dot: string }[] = [
   { id: "sem_material", label: "Sem material", statuses: ["recebido", "briefing"], dot: "bg-[oklch(0.72_0.16_30)]" },
-  { id: "em_producao", label: "Em produção", statuses: ["organizacao", "fila", "editando"], dot: "bg-[oklch(0.78_0.16_75)]" },
+  { id: "na_fila", label: "Na fila para edição", statuses: ["fila"], dot: "bg-[oklch(0.72_0.16_200)]" },
+  { id: "em_producao", label: "Em produção", statuses: ["organizacao", "editando"], dot: "bg-[oklch(0.78_0.16_75)]" },
   { id: "enviado", label: "Enviado", statuses: ["aguardando_cliente"], dot: "bg-[oklch(0.72_0.19_235)]" },
   { id: "em_revisao", label: "Em revisão", statuses: ["revisao", "alteracoes"], dot: "bg-[oklch(0.72_0.15_300)]" },
   { id: "aprovado", label: "Aprovado", statuses: ["aprovado", "entregue"], dot: "bg-[oklch(0.68_0.17_155)]" },
@@ -243,7 +244,6 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
   const [showDone, setShowDone] = useState(false);
-  const [monthOnly, setMonthOnly] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
   const { data: me } = useCurrentUser();
@@ -296,7 +296,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   const videos = useMemo(
     () =>
       (allVideos ?? [])
-        .filter((v) => !monthOnly || (v.due_date ?? v.created_at).slice(0, 7) === ym)
+        .filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym)
         .filter((v) => showDone || (v.status !== "aprovado" && v.status !== "entregue"))
         .filter((v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term))
         .sort((a, b) => {
@@ -306,7 +306,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           const due = (a.due_date ?? "9999-12-31").localeCompare(b.due_date ?? "9999-12-31");
           return due || naturalCompare(a.title, b.title);
         }),
-    [allVideos, ym, showDone, term, monthOnly],
+    [allVideos, ym, showDone, term],
   );
 
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
@@ -387,7 +387,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
   const grouped = useMemo(() => {
     const out: Record<GroupId, VideoRow[]> = {
-      sem_material: [], em_producao: [], enviado: [], em_revisao: [], aprovado: [],
+      sem_material: [], na_fila: [], em_producao: [], enviado: [], em_revisao: [], aprovado: [],
     };
     (videos ?? []).forEach((v) => {
       const g = STATUS_TO_GROUP[v.status];
@@ -525,9 +525,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           subtitle={
             hiddenCount > 0
               ? `${videos.length} vídeo(s) visíveis · ${hiddenCount} ocultos pelos filtros`
-              : monthOnly
-                ? "Mostrando apenas o mês selecionado"
-                : "Todas as demandas ativas"
+              : "Mostrando o mês selecionado"
           }
           actions={
             <div className="flex flex-wrap items-center gap-2">
@@ -538,13 +536,10 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 placeholder="Buscar vídeo ou cliente…  /"
                 className="h-9 w-52 rounded-full"
               />
-              {monthOnly && <MonthPicker />}
+              <MonthPicker />
               <MoreMenu label="Filtros">
                 <MoreMenuItem active={showDone} onClick={() => setShowDone((v) => !v)}>
                   {showDone ? "Ocultar concluídos" : "Mostrar concluídos"}
-                </MoreMenuItem>
-                <MoreMenuItem active={monthOnly} onClick={() => setMonthOnly((v) => !v)}>
-                  {monthOnly ? "Filtrando por mês" : "Todas as demandas"}
                 </MoreMenuItem>
               </MoreMenu>
               <ShortcutsHint
@@ -563,11 +558,11 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 <DialogTrigger asChild>
                   <Button variant="outline"><Layers3 className="mr-1 h-4 w-4" />Nova leva</Button>
                 </DialogTrigger>
-                <BatchVideosDialog onClose={() => setBatchOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} />
+                <BatchVideosDialog onClose={() => setBatchOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} month={ym} />
               </Dialog>
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Novo vídeo</Button></DialogTrigger>
-                <NewVideoDialog onClose={() => setOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} />
+                <NewVideoDialog onClose={() => setOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} month={ym} />
               </Dialog>
             </div>
           }
@@ -765,25 +760,27 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
   onStatus: (ids: string[], status: VideoStatus) => void;
 }) {
   const today = todayISO();
-  const rows = mode === "hoje" ? videos.filter((v) => v.due_date === today || (v.due_date && v.due_date < today)) : videos;
+  // A fila mostra somente o que está em produção ou aguardando edição.
+  const active = videos.filter((v) => ["fila", "organizacao", "editando"].includes(v.status));
+  const rows = mode === "hoje" ? active.filter((v) => v.due_date === today || (v.due_date && v.due_date < today)) : active;
   const groups = Array.from(rows.reduce((map, video) => {
     const current = map.get(video.client_id) ?? { name: video.clients?.name ?? "—", rows: [] as VideoRow[] };
     current.rows.push(video);
     map.set(video.client_id, current);
     return map;
   }, new Map<string, { name: string; rows: VideoRow[] }>()).entries());
-  const late = videos.filter((v) => v.due_date && v.due_date < today).length;
-  const editing = videos.filter((v) => v.status === "editando").length;
-  const pending = videos.filter((v) => ["recebido", "briefing", "organizacao", "fila"].includes(v.status)).length;
+  const late = active.filter((v) => v.due_date && v.due_date < today).length;
+  const editing = active.filter((v) => v.status === "editando").length;
+  const pending = active.filter((v) => v.status === "fila").length;
 
   return (
     <div className="space-y-4">
       <div className="grid gap-2 sm:grid-cols-4">
         {[
           { Icon: AlarmClock, value: late, label: "Atrasados", color: late ? "text-destructive" : "text-muted-foreground" },
-          { Icon: Sun, value: videos.filter((v) => v.due_date === today).length, label: "Para hoje", color: "text-primary" },
+          { Icon: Sun, value: active.filter((v) => v.due_date === today).length, label: "Para hoje", color: "text-primary" },
           { Icon: Layers3, value: editing, label: "Em edição", color: "text-[oklch(0.72_0.17_155)]" },
-          { Icon: Inbox, value: pending, label: "Pendentes", color: "text-muted-foreground" },
+          { Icon: Inbox, value: pending, label: "Na fila", color: "text-muted-foreground" },
         ].map(({ Icon, value, label, color }) => (
           <div key={label} className="rounded-lg border border-border/70 bg-card p-3">
             <Icon className={cn("h-4 w-4", color)} />
@@ -1466,8 +1463,13 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
   );
 }
 
-function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => void; clients: { id: string; name: string }[]; defaultClientId?: string }) {
-  const [form, setForm] = useState({ title: "", description: "", client_id: defaultClientId ?? "", priority: "media" as VideoPriority, status: "recebido" as VideoStatus, due_date: "", checklist: [] as { label: string; done: boolean }[] });
+function NewVideoDialog({ onClose, clients, defaultClientId, month }: { onClose: () => void; clients: { id: string; name: string }[]; defaultClientId?: string; month?: string }) {
+  const suggestedDue = (() => {
+    const now = new Date();
+    const current = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return month && month !== current ? `${month}-01` : "";
+  })();
+  const [form, setForm] = useState({ title: "", description: "", client_id: defaultClientId ?? "", priority: "media" as VideoPriority, status: "recebido" as VideoStatus, due_date: suggestedDue, checklist: [] as { label: string; done: boolean }[] });
   const [templateId, setTemplateId] = useState("");
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();

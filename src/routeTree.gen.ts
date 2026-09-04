@@ -26,6 +26,7 @@ import { Route as AuthenticatedMarketingRouteImport } from './routes/_authentica
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedFilaRouteImport } from './routes/_authenticated/fila'
+import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedContasRouteImport } from './routes/_authenticated/contas'
@@ -124,6 +125,12 @@ const AuthenticatedFilaRoute = AuthenticatedFilaRouteImport.update({
   path: '/fila',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFerramentasRoute =
+  AuthenticatedFerramentasRouteImport.update({
+    id: '/ferramentas',
+    path: '/ferramentas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEquipeRoute = AuthenticatedEquipeRouteImport.update({
   id: '/equipe',
   path: '/equipe',
@@ -209,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/contas': typeof AuthenticatedContasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
+  '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/fila': typeof AuthenticatedFilaRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/leads': typeof AuthenticatedLeadsRoute
@@ -240,6 +248,7 @@ export interface FileRoutesByTo {
   '/contas': typeof AuthenticatedContasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
+  '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/fila': typeof AuthenticatedFilaRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/leads': typeof AuthenticatedLeadsRoute
@@ -273,6 +282,7 @@ export interface FileRoutesById {
   '/_authenticated/contas': typeof AuthenticatedContasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
+  '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRoute
   '/_authenticated/fila': typeof AuthenticatedFilaRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/contas'
     | '/dashboard'
     | '/equipe'
+    | '/ferramentas'
     | '/fila'
     | '/financeiro'
     | '/leads'
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/contas'
     | '/dashboard'
     | '/equipe'
+    | '/ferramentas'
     | '/fila'
     | '/financeiro'
     | '/leads'
@@ -369,6 +381,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contas'
     | '/_authenticated/dashboard'
     | '/_authenticated/equipe'
+    | '/_authenticated/ferramentas'
     | '/_authenticated/fila'
     | '/_authenticated/financeiro'
     | '/_authenticated/leads'
@@ -525,6 +538,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFilaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ferramentas': {
+      id: '/_authenticated/ferramentas'
+      path: '/ferramentas'
+      fullPath: '/ferramentas'
+      preLoaderRoute: typeof AuthenticatedFerramentasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/equipe': {
       id: '/_authenticated/equipe'
       path: '/equipe'
@@ -627,6 +647,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContasRoute: typeof AuthenticatedContasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
+  AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRoute
   AuthenticatedFilaRoute: typeof AuthenticatedFilaRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
@@ -646,6 +667,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContasRoute: AuthenticatedContasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,
+  AuthenticatedFerramentasRoute: AuthenticatedFerramentasRoute,
   AuthenticatedFilaRoute: AuthenticatedFilaRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,

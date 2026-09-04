@@ -20,10 +20,20 @@ export type ClientMin = { id: string; name: string; parent_client_id: string | n
 
 const ALL_STATUSES = Object.keys(STAGE_LABEL) as VideoStatus[];
 
-export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClientId }: {
+function defaultDueForMonth(ym?: string) {
+  if (!ym) return "";
+  const now = new Date();
+  const current = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  if (ym === current) return "";
+  // Mês futuro/passado: sugere o primeiro dia do mês exibido.
+  return `${ym}-01`;
+}
+
+export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClientId, month }: {
   onClose: () => void;
   clients?: ClientMin[];
   defaultClientId?: string;
+  month?: string;
 }) {
   const [clientId, setClientId] = useState(defaultClientId ?? "");
   const [mode, setMode] = useState<"lista" | "quantidade">("lista");
@@ -32,7 +42,7 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
   const [qty, setQty] = useState(5);
   const [status, setStatus] = useState<VideoStatus>("recebido");
   const [priority, setPriority] = useState<VideoPriority>("media");
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState(defaultDueForMonth(month));
   const [saving, setSaving] = useState(false);
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
   const [templateId, setTemplateId] = useState("");
@@ -98,6 +108,10 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
     if (parsed.length === 0) { toast.error("Adicione ao menos um título"); return; }
     setSaving(true);
     const info = pricing ?? (await resolveClientPricing(clientId));
+    const batchId = crypto.randomUUID();
+    const label = (mode === "quantidade" && prefix.trim())
+      ? prefix.trim()
+      : `Leva ${new Date().toLocaleDateString("pt-BR")}`;
     const rows = parsed.map((title) => ({
       workspace_id: me.workspaceId!,
       client_id: clientId,
@@ -107,7 +121,11 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
       due_date: dueDate || null,
       package_id: info.packageId,
       checklist: templateChecklist,
+      unit_price: info.pricePerVideo > 0 ? info.pricePerVideo : null,
+      batch_id: batchId,
+      batch_label: label,
     }));
+
     const { error } = await supabase.from("videos").insert(rows);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
