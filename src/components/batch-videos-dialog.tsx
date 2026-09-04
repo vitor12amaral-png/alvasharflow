@@ -98,6 +98,10 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
     if (parsed.length === 0) { toast.error("Adicione ao menos um título"); return; }
     setSaving(true);
     const info = pricing ?? (await resolveClientPricing(clientId));
+    const batchId = crypto.randomUUID();
+    const label = (mode === "quantidade" && prefix.trim())
+      ? prefix.trim()
+      : `Leva ${new Date().toLocaleDateString("pt-BR")}`;
     const rows = parsed.map((title) => ({
       workspace_id: me.workspaceId!,
       client_id: clientId,
@@ -107,7 +111,11 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
       due_date: dueDate || null,
       package_id: info.packageId,
       checklist: templateChecklist,
+      unit_price: info.pricePerVideo > 0 ? info.pricePerVideo : null,
+      batch_id: batchId,
+      batch_label: label,
     }));
+
     const { error } = await supabase.from("videos").insert(rows);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
