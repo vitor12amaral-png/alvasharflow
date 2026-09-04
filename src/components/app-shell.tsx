@@ -24,21 +24,38 @@ import { TrialBanner, TrialExpired } from "@/components/trial-gate";
 import { useQuery } from "@tanstack/react-query";
 
 
-const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/leads", label: "Leads", icon: Sparkles },
-  { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerOnly?: boolean };
+type NavGroup = { id: string; label: string; items: NavItem[] };
 
-  { to: "/workflow", label: "Workflow", icon: Kanban },
-  { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
-  { to: "/marketing", label: "Marketing", icon: Megaphone },
-  { to: "/equipe", label: "Equipe", icon: UsersRound },
-  { to: "/calendario", label: "Calendário", icon: Calendar },
-  { to: "/biblioteca", label: "Biblioteca", icon: FolderOpen },
-  { to: "/financeiro", label: "Financeiro", icon: Wallet },
-  { to: "/configuracoes", label: "Configurações", icon: Settings },
-] as const;
+const SOLO_TOP: NavItem[] = [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }];
+
+const NAV_GROUPS: NavGroup[] = [
+  { id: "clientes", label: "Clientes", items: [
+    { to: "/clientes", label: "Clientes", icon: Users },
+    { to: "/leads", label: "Leads", icon: Sparkles },
+    { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+  ] },
+  { id: "trabalho", label: "Trabalho", items: [
+    { to: "/workflow", label: "Workflow", icon: Kanban },
+    { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
+  ] },
+  { id: "conteudo", label: "Conteúdo", items: [
+    { to: "/marketing", label: "Marketing", icon: Megaphone },
+    { to: "/calendario", label: "Calendário", icon: Calendar },
+    { to: "/biblioteca", label: "Biblioteca", icon: FolderOpen },
+  ] },
+  { id: "gestao", label: "Gestão", items: [
+    { to: "/financeiro", label: "Financeiro", icon: Wallet },
+    { to: "/equipe", label: "Equipe", icon: UsersRound },
+    { to: "/ferramentas", label: "Ferramentas", icon: Wrench },
+    { to: "/contas", label: "Contas", icon: ShieldCheck, ownerOnly: true },
+  ] },
+];
+
+const SOLO_BOTTOM: NavItem[] = [{ to: "/configuracoes", label: "Configurações", icon: Settings }];
+
+const NAV = [...SOLO_TOP, ...NAV_GROUPS.flatMap((g) => g.items), ...SOLO_BOTTOM] as NavItem[];
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useCurrentUser();
