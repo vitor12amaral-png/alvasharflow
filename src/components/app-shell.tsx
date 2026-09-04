@@ -100,6 +100,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => installGlobalSfx(), []);
 
+  const [openGroups, setOpenGroupsState] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(GROUPS_KEY);
+      if (raw) setOpenGroupsState(JSON.parse(raw) as Record<string, boolean>);
+    } catch { /* ignore */ }
+  }, []);
+  function setOpenGroups(next: Record<string, boolean>) {
+    setOpenGroupsState(next);
+    try { localStorage.setItem(GROUPS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  }
+
+
   // Dispara avisos pendentes por WhatsApp (respeita as preferências do usuário).
   const dispatchAlerts = useServerFn(dispatchMyWhatsappAlerts);
   useEffect(() => {
