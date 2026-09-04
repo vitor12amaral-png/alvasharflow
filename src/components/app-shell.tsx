@@ -58,6 +58,36 @@ const SOLO_BOTTOM: NavItem[] = [{ to: "/configuracoes", label: "Configurações"
 
 const NAV = [...SOLO_TOP, ...NAV_GROUPS.flatMap((g) => g.items), ...SOLO_BOTTOM] as NavItem[];
 
+function isActivePath(pathname: string, to: string) {
+  return pathname === to || pathname.startsWith(to + "/");
+}
+
+function NavLinkRow({ item, pathname }: { item: NavItem; pathname: string }) {
+  const active = isActivePath(pathname, item.to);
+  return (
+    <Link
+      to={item.to}
+      className={cn(
+        "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-[7px] text-[13px] transition-all duration-200",
+        active
+          ? "bg-[linear-gradient(180deg,oklch(1_0_0_/_0.09),oklch(1_0_0_/_0.03))] text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0_/_0.08),0_6px_18px_-12px_oklch(0_0_0)]"
+          : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground",
+      )}
+    >
+      <span className={cn(
+        "absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-primary transition-opacity duration-200",
+        active ? "opacity-100 shadow-[0_0_10px_var(--primary)]" : "opacity-0",
+      )} />
+      <item.icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-primary" : "group-hover:text-foreground")} />
+      <span className="font-medium">{item.label}</span>
+    </Link>
+  );
+}
+
+const GROUPS_KEY = "af-nav-groups";
+
+
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useCurrentUser();
