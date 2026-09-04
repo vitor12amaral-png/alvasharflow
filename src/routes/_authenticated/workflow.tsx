@@ -1463,8 +1463,13 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
   );
 }
 
-function NewVideoDialog({ onClose, clients, defaultClientId }: { onClose: () => void; clients: { id: string; name: string }[]; defaultClientId?: string }) {
-  const [form, setForm] = useState({ title: "", description: "", client_id: defaultClientId ?? "", priority: "media" as VideoPriority, status: "recebido" as VideoStatus, due_date: "", checklist: [] as { label: string; done: boolean }[] });
+function NewVideoDialog({ onClose, clients, defaultClientId, month }: { onClose: () => void; clients: { id: string; name: string }[]; defaultClientId?: string; month?: string }) {
+  const suggestedDue = (() => {
+    const now = new Date();
+    const current = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return month && month !== current ? `${month}-01` : "";
+  })();
+  const [form, setForm] = useState({ title: "", description: "", client_id: defaultClientId ?? "", priority: "media" as VideoPriority, status: "recebido" as VideoStatus, due_date: suggestedDue, checklist: [] as { label: string; done: boolean }[] });
   const [templateId, setTemplateId] = useState("");
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
