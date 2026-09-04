@@ -558,11 +558,11 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 <DialogTrigger asChild>
                   <Button variant="outline"><Layers3 className="mr-1 h-4 w-4" />Nova leva</Button>
                 </DialogTrigger>
-                <BatchVideosDialog onClose={() => setBatchOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} />
+                <BatchVideosDialog onClose={() => setBatchOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} month={ym} />
               </Dialog>
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Novo vídeo</Button></DialogTrigger>
-                <NewVideoDialog onClose={() => setOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} />
+                <NewVideoDialog onClose={() => setOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} month={ym} />
               </Dialog>
             </div>
           }
