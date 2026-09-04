@@ -126,32 +126,36 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
 
-        <nav className="flex-1 space-y-[3px] px-2.5">
-          {NAV.map((item) => {
-            const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+        <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 pb-2">
+          {SOLO_TOP.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
+          {NAV_GROUPS.map((group) => {
+            const items = group.items.filter((i) => !i.ownerOnly || isPlatformOwner);
+            if (!items.length) return null;
+            const hasActive = items.some((i) => isActivePath(location.pathname, i.to));
+            const open = openGroups[group.id] ?? true;
+            const expanded = open || hasActive;
             return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-[7px] text-[13px] transition-all duration-200",
-                  active
-                    ? "bg-[linear-gradient(180deg,oklch(1_0_0_/_0.09),oklch(1_0_0_/_0.03))] text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0_/_0.08),0_6px_18px_-12px_oklch(0_0_0)]"
-                    : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground",
+              <div key={group.id} className="pt-1">
+                <button
+                  onClick={() => setOpenGroups({ ...openGroups, [group.id]: !expanded })}
+                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 hover:text-foreground"
+                >
+                  {group.label}
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", expanded ? "" : "-rotate-90")} />
+                </button>
+                {expanded && (
+                  <div className="mt-0.5 space-y-[3px]">
+                    {items.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
+                  </div>
                 )}
-              >
-                <span
-                  className={cn(
-                    "absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-primary transition-opacity duration-200",
-                    active ? "opacity-100 shadow-[0_0_10px_var(--primary)]" : "opacity-0",
-                  )}
-                />
-                <item.icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-primary" : "group-hover:text-foreground")} />
-                <span className="font-medium">{item.label}</span>
-              </Link>
+              </div>
             );
           })}
+          <div className="pt-2">
+            {SOLO_BOTTOM.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
+          </div>
         </nav>
+
 
         <div className="border-t border-sidebar-border p-2.5">
           <div className="flex items-center gap-2.5 rounded-xl bg-sidebar-accent/25 px-2 py-2">
