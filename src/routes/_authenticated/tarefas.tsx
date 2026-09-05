@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2 } from "lucide-react";
 import { DueDatePopover, formatDue } from "@/components/due-date-popover";
 import { DeleteAction } from "@/components/delete-action";
+import { MoreMenu } from "@/components/more-menu";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -131,25 +132,35 @@ function TarefasPage() {
             <TabsTrigger value="agenda"><Calendar className="mr-1 h-3.5 w-3.5" />Agenda</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Select value={filterCat} onValueChange={(v) => setFilterCat(v as TaskCategory | "all")}>
-            <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas categorias</SelectItem>
-              {Object.entries(CATEGORY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={filterPrio} onValueChange={(v) => setFilterPrio(v as TaskPriority | "all")}>
-            <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Prioridade" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas prioridades</SelectItem>
-              {Object.entries(PRIORITY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <label className="flex items-center gap-2 text-xs">
-            <Checkbox checked={filterMine} onCheckedChange={(c) => setFilterMine(!!c)} />Só minhas
-          </label>
+        <div className="ml-auto flex items-center gap-2">
+          {(filterCat !== "all" || filterPrio !== "all" || filterMine) && (
+            <button onClick={() => { setFilterCat("all"); setFilterPrio("all"); setFilterMine(false); }} className="text-[11px] text-muted-foreground underline">
+              Limpar filtros
+            </button>
+          )}
+          <MoreMenu label="Filtros">
+            <div className="space-y-2 p-1">
+              <Select value={filterCat} onValueChange={(v) => setFilterCat(v as TaskCategory | "all")}>
+                <SelectTrigger className="h-9 w-full"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas categorias</SelectItem>
+                  {Object.entries(CATEGORY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterPrio} onValueChange={(v) => setFilterPrio(v as TaskPriority | "all")}>
+                <SelectTrigger className="h-9 w-full"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas prioridades</SelectItem>
+                  {Object.entries(PRIORITY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <label className="flex items-center gap-2 px-1 text-xs">
+                <Checkbox checked={filterMine} onCheckedChange={(c) => setFilterMine(!!c)} />Só minhas
+              </label>
+            </div>
+          </MoreMenu>
         </div>
+
       </div>
 
       {isLoading ? (

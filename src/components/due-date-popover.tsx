@@ -149,10 +149,10 @@ export function DueDatePopover({
   );
 }
 
-export function DueBadge({ due, time, className }: { due: string | null; time?: string | null; className?: string }) {
+export function DueBadge({ due, time, className, muted }: { due: string | null; time?: string | null; className?: string; muted?: boolean }) {
   const today = isoDay(0);
-  const late = !!due && due < today;
-  const isToday = due === today;
+  const late = !muted && !!due && due < today;
+  const isToday = !muted && due === today;
   return (
     <span
       className={cn(

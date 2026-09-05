@@ -657,6 +657,11 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                                   onExpand={() => setDetailId(v.id)}
                                   anySelected={selected.size > 0}
                                   selectedCount={selected.size}
+                                  clients={clients}
+                                  parentId={clients.find((c) => c.id === v.client_id)?.parent_client_id ?? v.client_id}
+                                  brandName={clients.find((c) => c.id === v.client_id)?.parent_client_id ? (v.clients?.name ?? null) : null}
+                                  onSetClient={(cid) => patch.mutate({ ids: [v.id], changes: { client_id: cid } })}
+                                  mutedDue={g.id === "enviado"}
                                 />
                               ))}
                             </ClientStack>
@@ -1103,13 +1108,18 @@ function ChecklistBadge({ value }: { value: unknown }) {
   );
 }
 
-function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedCount }: {
+function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedCount, clients, parentId, brandName, onSetClient, mutedDue }: {
   video: VideoRow;
   selected: boolean;
   onToggle: () => void;
   onExpand: () => void;
   anySelected: boolean;
   selectedCount: number;
+  clients?: ClientMin[];
+  parentId?: string | null;
+  brandName?: string | null;
+  onSetClient?: (clientId: string) => void;
+  mutedDue?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: video.id });
   return (
@@ -1128,7 +1138,18 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
         <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
           <Checkbox checked={selected} onCheckedChange={onToggle} className="h-3.5 w-3.5" />
         </div>
-        <div {...listeners} {...attributes} className="min-w-0 flex-1 cursor-grab active:cursor-grabbing">
+        <div className="min-w-0 flex-1">
+          {clients && onSetClient && parentId && (
+            <SubclientPicker clients={clients} parentId={parentId} currentId={video.client_id} onPick={onSetClient}>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="mb-1 inline-flex max-w-full items-center gap-1 truncate rounded-full border border-border/70 bg-muted/40 px-1.5 py-[1px] text-[9px] text-muted-foreground transition hover:text-foreground"
+              >
+                {brandName ?? "Sem marca"}
+              </button>
+            </SubclientPicker>
+          )}
+          <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
           <p className="truncate text-xs font-medium">{video.title}</p>
           <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
             <DueDatePopover
@@ -1139,7 +1160,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
               invalidate={[["videos-workflow"], ["fila-videos"], ["dashboard"]]}
             >
               <button onClick={(e) => e.stopPropagation()} aria-label="Prazo">
-                <DueBadge due={video.due_date} time={video.due_time} />
+                <DueBadge due={video.due_date} time={video.due_time} muted={mutedDue} />
               </button>
             </DueDatePopover>
             <span className={cn("font-medium", PRIORITY_COLOR[video.priority])}>{PRIORITY_LABEL[video.priority]}</span>
@@ -1147,6 +1168,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
             {selected && anySelected && selectedCount > 1 && (
               <span className="text-primary">· move {selectedCount}</span>
             )}
+          </div>
           </div>
         </div>
         <ColorPicker table="videos" id={video.id} color={video.color} invalidate={[["videos-workflow"], ["fila-videos"]]} className="mt-0.5" />
