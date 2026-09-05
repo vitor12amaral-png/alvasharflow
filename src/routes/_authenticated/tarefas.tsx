@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2 } from "lucide-react";
 import { DueDatePopover, formatDue } from "@/components/due-date-popover";
 import { DeleteAction } from "@/components/delete-action";
+import { MoreMenu } from "@/components/more-menu";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
