@@ -29,7 +29,10 @@ import { useQuery } from "@tanstack/react-query";
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerOnly?: boolean };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-const SOLO_TOP: NavItem[] = [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }];
+const SOLO_TOP: NavItem[] = [
+  { to: "/meu-dia", label: "Meu dia", icon: Sun },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+];
 
 const NAV_GROUPS: NavGroup[] = [
   { id: "clientes", label: "Clientes", items: [
