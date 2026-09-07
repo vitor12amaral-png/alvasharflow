@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Kanban, Calendar, FolderOpen,
   Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone, Volume2, VolumeX, Sparkles, MessageCircle,
-  Wrench, ShieldCheck, ChevronDown,
+  Wrench, ShieldCheck, ChevronDown, Sun,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -29,7 +29,10 @@ import { useQuery } from "@tanstack/react-query";
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerOnly?: boolean };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-const SOLO_TOP: NavItem[] = [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }];
+const SOLO_TOP: NavItem[] = [
+  { to: "/meu-dia", label: "Meu dia", icon: Sun },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+];
 
 const NAV_GROUPS: NavGroup[] = [
   { id: "clientes", label: "Clientes", items: [
