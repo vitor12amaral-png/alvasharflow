@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Kanban, Calendar, FolderOpen,
   Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone, Volume2, VolumeX, Sparkles, MessageCircle,
-  Wrench, ShieldCheck, ChevronDown,
+  Wrench, ShieldCheck, ChevronDown, Sun,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
