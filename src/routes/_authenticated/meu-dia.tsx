@@ -80,7 +80,7 @@ function MyDayPage() {
   });
 
   const patch = useMutation({
-    mutationFn: async ({ ids, changes }: { ids: string[]; changes: Partial<Row> }) => {
+    mutationFn: async ({ ids, changes }: { ids: string[]; changes: { due_date?: string | null; status?: VideoStatus } }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
       if (error) throw error;
     },
