@@ -31,3 +31,10 @@ Ele responde: "Entendi: 5 vídeos para Roney · marca Floor · hoje (07/09) às 
   - resolução de marca: busca em `clients` por `parent_client_id` do cliente principal; se não achar, devolve `needs_clarification` com a opção de criar;
   - regra no prompt do sistema: para criações em lote, sempre chamar `plan_video_batch` primeiro e só executar após confirmação explícita do usuário.
 - Sem mudanças no banco: `videos.due_time`, `videos.batch_id`, `videos.batch_label`, `videos.unit_price` e `clients.parent_client_id` já existem.
+
+## Ajustes no menu lateral (já incluídos)
+
+- Seta de categoria ativa fica azul/brilhante e maior quando o grupo está aberto.
+- Abrir um grupo automaticamente fecha os outros, para só um grupo aparecer expandido por vez.
+- Títulos das categorias (`CLIENTES`, `TRABALHO`, `CONTEÚDO`, `GESTÃO`) com fonte mais forte, tracking mais aberto e cor de destaque maior, facilitando saber em qual categoria você está.
+- Destaque visual do item ativo reforçado dentro do grupo aberto.
