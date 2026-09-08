@@ -64,4 +64,5 @@ Hoje ele erra porque interpreta a frase inteira de uma vez. Passa a funcionar as
 - Abrir um grupo fecha automaticamente os outros.
 - Títulos das categorias maiores e com mais contraste, deixando claro em qual categoria você está.
 - Destaque reforçado do item ativo.
+- Retirar a aba "Meu dia" do menu e do app-shell; a rota, se existir, passa a redirecionar para `/workflow`.
 
