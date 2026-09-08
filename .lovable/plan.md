@@ -32,9 +32,37 @@ Ele responde: "Entendi: 5 vídeos para Roney · marca Floor · hoje (07/09) às 
   - regra no prompt do sistema: para criações em lote, sempre chamar `plan_video_batch` primeiro e só executar após confirmação explícita do usuário.
 - Sem mudanças no banco: `videos.due_time`, `videos.batch_id`, `videos.batch_label`, `videos.unit_price` e `clients.parent_client_id` já existem.
 
-## Ajustes no menu lateral (já incluídos)
+## Copiloto mais esperto
 
-- Seta de categoria ativa fica azul/brilhante e maior quando o grupo está aberto.
-- Abrir um grupo automaticamente fecha os outros, para só um grupo aparecer expandido por vez.
-- Títulos das categorias (`CLIENTES`, `TRABALHO`, `CONTEÚDO`, `GESTÃO`) com fonte mais forte, tracking mais aberto e cor de destaque maior, facilitando saber em qual categoria você está.
-- Destaque visual do item ativo reforçado dentro do grupo aberto.
+Hoje ele erra porque interpreta a frase inteira de uma vez. Passa a funcionar assim:
+
+- Um passo de interpretação antes de agir: ele extrai cliente, marca, quantidade, data, horário, prioridade e etapa em campos separados e mostra no resumo. O que ficou em dúvida aparece marcado como "confirmar".
+- Lista de clientes e marcas é enviada junto com a conversa, então ele reconhece "Roney", "Floor", apelidos e nomes escritos errado (busca por semelhança, não só igual).
+- Ele entende números por extenso ("cinco vídeos"), horas faladas ("até as três da tarde", "meio-dia") e datas relativas ("amanhã", "sexta").
+- Se algo faltar, ele pergunta só o que falta em vez de recomeçar.
+- Modelo com raciocínio ativado para as interpretações, mantendo a resposta curta.
+
+## Memória do copiloto
+
+- Ele guarda o que você ensina na conversa: apelidos de clientes ("Floor é do Roney"), seus padrões ("meus vídeos normalmente são reels de 30s", "prazo padrão 18h"), e preferências de fluxo.
+- Você pode dizer "lembra disso" e ele salva; "esquece isso" e ele apaga.
+- Nas Configurações aparece uma lista **O que o copiloto aprendeu**, onde você lê, edita e apaga cada item.
+- Tecnicamente: nova tabela `copilot_memory` (workspace, autor, tipo, conteúdo, data) com RLS + GRANTs por workspace; tools `remember` / `forget` / `list_memory`; as memórias do workspace entram no prompt de sistema a cada conversa.
+
+## Demandas concluídas sempre visíveis
+
+- Nas listas (Workflow, Fila, Clientes, Meu dia) as concluídas/entregues passam a aparecer por padrão, em estilo esmaecido com risco no título.
+- No topo, um botão claro **Ocultar concluídas** (com contagem, ex.: "Ocultar concluídas (12)"), memorizado por usuário.
+
+## Escolher o mês da leva
+
+- No diálogo "Nova leva de vídeos", um seletor de mês/ano ao lado do prazo; ao escolher um mês futuro, o prazo já sugere um dia daquele mês e os vídeos são criados naquele mês do quadro.
+- O copiloto entende o mesmo por voz ("cria 10 vídeos do Roney para outubro").
+
+## Ajustes no menu lateral
+
+- Seta da categoria aberta em azul brilhante e maior.
+- Abrir um grupo fecha automaticamente os outros.
+- Títulos das categorias maiores e com mais contraste, deixando claro em qual categoria você está.
+- Destaque reforçado do item ativo.
+
