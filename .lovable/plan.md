@@ -19,7 +19,6 @@ Ele responde: "Entendi: 5 vídeos para Roney · marca Floor · hoje (07/09) às 
 - **Marca / subcliente** ("do Roney, que é da Floor") — ele procura a marca dentro do cliente principal; se não existir, pergunta se deve criar.
 - **Etapa inicial** ("põe na fila", "já em edição") — o vídeo entra direto na coluna certa em vez de sempre em "Recebido".
 - **Leva** — os 5 vídeos ficam agrupados como uma leva com nome (ex.: "Floor 07/09"), aproveitando o preço por vídeo do cliente para o resumo financeiro.
-- **Resumo do dia** — depois de criar, ele diz quantos vídeos você tem para hoje e o tempo estimado.
 
 ## Detalhes técnicos
 
@@ -51,7 +50,7 @@ Hoje ele erra porque interpreta a frase inteira de uma vez. Passa a funcionar as
 
 ## Demandas concluídas sempre visíveis
 
-- Nas listas (Workflow, Fila, Clientes, Meu dia) as concluídas/entregues passam a aparecer por padrão, em estilo esmaecido com risco no título.
+- Nas listas (Workflow, Fila, Clientes) as concluídas/entregues passam a aparecer por padrão, em estilo esmaecido com risco no título.
 - No topo, um botão claro **Ocultar concluídas** (com contagem, ex.: "Ocultar concluídas (12)"), memorizado por usuário.
 
 ## Escolher o mês da leva
@@ -65,4 +64,5 @@ Hoje ele erra porque interpreta a frase inteira de uma vez. Passa a funcionar as
 - Abrir um grupo fecha automaticamente os outros.
 - Títulos das categorias maiores e com mais contraste, deixando claro em qual categoria você está.
 - Destaque reforçado do item ativo.
+- Retirar a aba "Meu dia" do menu e do app-shell; a rota, se existir, passa a redirecionar para `/workflow`.
 
