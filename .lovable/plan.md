@@ -50,7 +50,7 @@ Hoje ele erra porque interpreta a frase inteira de uma vez. Passa a funcionar as
 
 ## Demandas concluídas sempre visíveis
 
-- Nas listas (Workflow, Fila, Clientes, Meu dia) as concluídas/entregues passam a aparecer por padrão, em estilo esmaecido com risco no título.
+- Nas listas (Workflow, Fila, Clientes) as concluídas/entregues passam a aparecer por padrão, em estilo esmaecido com risco no título.
 - No topo, um botão claro **Ocultar concluídas** (com contagem, ex.: "Ocultar concluídas (12)"), memorizado por usuário.
 
 ## Escolher o mês da leva
