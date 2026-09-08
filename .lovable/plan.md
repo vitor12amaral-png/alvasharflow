@@ -19,7 +19,6 @@ Ele responde: "Entendi: 5 vídeos para Roney · marca Floor · hoje (07/09) às 
 - **Marca / subcliente** ("do Roney, que é da Floor") — ele procura a marca dentro do cliente principal; se não existir, pergunta se deve criar.
 - **Etapa inicial** ("põe na fila", "já em edição") — o vídeo entra direto na coluna certa em vez de sempre em "Recebido".
 - **Leva** — os 5 vídeos ficam agrupados como uma leva com nome (ex.: "Floor 07/09"), aproveitando o preço por vídeo do cliente para o resumo financeiro.
-- **Resumo do dia** — depois de criar, ele diz quantos vídeos você tem para hoje e o tempo estimado.
 
 ## Detalhes técnicos
 
