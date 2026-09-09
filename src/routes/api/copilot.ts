@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createLovableAiGatewayProvider, createLovableResponsesProvider } from "@/lib/ai-gateway.server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
 import { z } from "zod";
+import { randomUUID } from "crypto";
 
 export const Route = createFileRoute("/api/copilot")({
   server: {
@@ -46,16 +47,62 @@ export const Route = createFileRoute("/api/copilot")({
         if (!Array.isArray(body.messages)) return new Response("Messages required", { status: 400 });
 
         async function findClient(nameOrId: string) {
-          const { data } = await supabase.from("clients").select("id, name").eq("workspace_id", workspaceId!).ilike("name", `%${nameOrId}%`).limit(5);
+          const { data } = await supabase.from("clients").select("id, name, parent_client_id").eq("workspace_id", workspaceId!).ilike("name", `%${nameOrId}%`).limit(5);
           return data ?? [];
         }
+
+        async function findBrand(parentId: string, nameOrId: string) {
+          const { data } = await supabase
+            .from("clients")
+            .select("id, name")
+            .eq("workspace_id", workspaceId!)
+            .eq("parent_client_id", parentId)
+            .ilike("name", `%${nameOrId}%`)
+            .limit(5);
+          return data ?? [];
+        }
+
+        async function resolveClientAndBrand(clientName: string, brandName?: string | null) {
+          const matches = await findClient(clientName);
+          if (matches.length === 0) return { error: `Cliente "${clientName}" não encontrado.` };
+          if (matches.length > 1) return { needs_clarification: true, candidates: matches };
+          const client = matches[0];
+          if (!brandName) return { client };
+          const brands = await findBrand(client.id, brandName);
+          if (brands.length === 0) return { client, error: `Marca/subcliente "${brandName}" não encontrada para ${client.name}.` };
+          if (brands.length > 1) return { client, needs_clarification_brand: true, candidates: brands };
+          return { client, brand: brands[0] };
+        }
+
+        function normalizeTime(t: string | null | undefined) {
+          if (!t) return null;
+          const clean = t.replace(/\s/g, "");
+          if (/^\d{1,2}:\d{2}$/.test(clean)) return `${clean}:00`;
+          if (/^\d{1,2}:\d{2}:\d{2}$/.test(clean)) return clean;
+          return null;
+        }
+
+        function monthFirstDay(month: string | null | undefined) {
+          if (!month) return null;
+          const today = new Date().toISOString().slice(0, 7);
+          if (month === today) return null;
+          return `${month}-01`;
+        }
+
+        const { data: memoryRows } = await supabase
+          .from("copilot_memory")
+          .select("kind, content")
+          .eq("workspace_id", workspaceId)
+          .order("created_at", { ascending: false })
+          .limit(30);
+        const memoryText = (memoryRows ?? []).map((m) => `[${m.kind}] ${m.content}`).join("\n");
 
         const tools = {
           list_clients: tool({
             description: "Lista clientes do workspace para desambiguar nomes antes de criar vídeos/tarefas.",
             inputSchema: z.object({ query: z.string().nullable() }),
             execute: async ({ query }) => {
-              const q = supabase.from("clients").select("id, name, status").eq("workspace_id", workspaceId).order("name").limit(20);
+              const q = supabase.from("clients").select("id, name, status, parent_client_id").eq("workspace_id", workspaceId).order("name").limit(20);
               const { data, error } = query ? await q.ilike("name", `%${query}%`) : await q;
               if (error) return { error: error.message };
               return { clients: data ?? [] };
@@ -102,26 +149,31 @@ export const Route = createFileRoute("/api/copilot")({
             description: "Cria um vídeo para um cliente. Use list_clients primeiro se o nome for ambíguo.",
             inputSchema: z.object({
               client_name: z.string(),
+              brand_name: z.string().nullable().describe("Marca ou subcliente dentro do cliente-mãe"),
               title: z.string(),
               description: z.string().nullable(),
               priority: z.enum(["baixa", "media", "alta", "urgente"]).nullable(),
               due_date: z.string().nullable().describe("YYYY-MM-DD"),
+              due_time: z.string().nullable().describe("HH:MM ou HH:MM:SS"),
+              status: z.enum(["recebido", "briefing", "organizacao", "fila", "editando", "revisao", "aguardando_cliente", "alteracoes", "aprovado", "entregue"]).nullable(),
             }),
             execute: async (input) => {
-              const matches = await findClient(input.client_name);
-              if (matches.length === 0) return { error: `Cliente "${input.client_name}" não encontrado.` };
-              if (matches.length > 1) return { needs_clarification: true, candidates: matches };
+              const resolved = await resolveClientAndBrand(input.client_name, input.brand_name);
+              if ("error" in resolved && resolved.error) return { error: resolved.error };
+              if ((resolved as any).needs_clarification) return resolved;
+              const clientId = (resolved as any).brand?.id ?? resolved.client.id;
               const { data, error } = await supabase.from("videos").insert({
                 workspace_id: workspaceId,
-                client_id: matches[0].id,
+                client_id: clientId,
                 title: input.title,
                 description: input.description,
                 priority: input.priority ?? "media",
                 due_date: input.due_date,
-                status: "recebido",
+                due_time: normalizeTime(input.due_time),
+                status: input.status ?? "recebido",
               }).select("id, title").single();
               if (error) return { error: error.message };
-              return { ok: true, video: data, client: matches[0].name };
+              return { ok: true, video: data, client: resolved.client.name, brand: (resolved as any).brand?.name };
             },
           }),
           create_task: tool({
@@ -131,6 +183,7 @@ export const Route = createFileRoute("/api/copilot")({
               description: z.string().nullable(),
               priority: z.enum(["baixa", "media", "alta", "urgente"]).nullable(),
               due_date: z.string().nullable().describe("YYYY-MM-DD"),
+              due_time: z.string().nullable().describe("HH:MM ou HH:MM:SS"),
               category: z.enum(["financeiro", "atendimento", "marketing", "edicao", "administrativo", "geral"]).nullable(),
               client_name: z.string().nullable(),
             }),
@@ -146,6 +199,7 @@ export const Route = createFileRoute("/api/copilot")({
                 description: input.description,
                 priority: input.priority ?? "media",
                 due_date: input.due_date,
+                due_time: normalizeTime(input.due_time),
                 category: input.category ?? "geral",
                 client_id: clientId,
                 assignee_id: userId,
@@ -216,6 +270,7 @@ export const Route = createFileRoute("/api/copilot")({
             description: "Lista vídeos com filtros de cliente, status, prioridade e prazo. Use para responder perguntas e para achar o id de um vídeo antes de atualizar.",
             inputSchema: z.object({
               client_name: z.string().nullable(),
+              brand_name: z.string().nullable(),
               status: z.enum(["recebido", "briefing", "organizacao", "fila", "editando", "revisao", "aguardando_cliente", "alteracoes", "aprovado", "entregue"]).nullable(),
               search: z.string().nullable(),
               overdue_only: z.boolean().nullable(),
@@ -224,13 +279,13 @@ export const Route = createFileRoute("/api/copilot")({
             execute: async (input) => {
               let clientId: string | null = null;
               if (input.client_name) {
-                const matches = await findClient(input.client_name);
-                if (matches.length === 0) return { error: `Cliente "${input.client_name}" não encontrado.` };
-                if (matches.length > 1) return { needs_clarification: true, candidates: matches };
-                clientId = matches[0].id;
+                const resolved = await resolveClientAndBrand(input.client_name, input.brand_name);
+                if ("error" in resolved && resolved.error) return { error: resolved.error };
+                if ((resolved as any).needs_clarification) return resolved;
+                clientId = (resolved as any).brand?.id ?? resolved.client.id;
               }
               let q = supabase.from("videos")
-                .select("id, title, status, priority, due_date, client_id, clients(name)")
+                .select("id, title, status, priority, due_date, due_time, client_id, clients(name)")
                 .eq("workspace_id", workspaceId)
                 .order("due_date", { ascending: true, nullsFirst: false })
                 .limit(input.limit ?? 30);
@@ -252,6 +307,7 @@ export const Route = createFileRoute("/api/copilot")({
               status: z.enum(["recebido", "briefing", "organizacao", "fila", "editando", "revisao", "aguardando_cliente", "alteracoes", "aprovado", "entregue"]).nullable(),
               priority: z.enum(["baixa", "media", "alta", "urgente"]).nullable(),
               due_date: z.string().nullable().describe("YYYY-MM-DD"),
+              due_time: z.string().nullable().describe("HH:MM ou HH:MM:SS"),
               new_title: z.string().nullable(),
               description: z.string().nullable(),
               final_file_link: z.string().nullable(),
@@ -274,11 +330,12 @@ export const Route = createFileRoute("/api/copilot")({
               if (input.status) patch.status = input.status;
               if (input.priority) patch.priority = input.priority;
               if (input.due_date) patch.due_date = input.due_date;
+              if (input.due_time) patch.due_time = normalizeTime(input.due_time);
               if (input.new_title) patch.title = input.new_title;
               if (input.description) patch.description = input.description;
               if (input.final_file_link) patch.final_file_link = input.final_file_link;
               if (Object.keys(patch).length === 0) return { error: "Nada para atualizar." };
-              const { data, error } = await supabase.from("videos").update(patch as never).eq("id", id).select("id, title, status, due_date").single();
+              const { data, error } = await supabase.from("videos").update(patch as never).eq("id", id).select("id, title, status, due_date, due_time").single();
               if (error) return { error: error.message };
               return { ok: true, video: data };
             },
@@ -293,31 +350,89 @@ export const Route = createFileRoute("/api/copilot")({
               return { ok: true };
             },
           }),
-          create_video_batch: tool({
-            description: "Cria uma leva de vídeos numerados para um cliente (ex.: 10 vídeos 'Reels #1..#10').",
+          plan_video_batch: tool({
+            description: "Monta um plano de leva de vídeos numerados. Use ANTES de executar para mostrar o resumo ao usuário.",
             inputSchema: z.object({
               client_name: z.string(),
+              brand_name: z.string().nullable().describe("Marca/subcliente dentro do cliente-mãe"),
               quantity: z.number().int(),
               title_prefix: z.string(),
               priority: z.enum(["baixa", "media", "alta", "urgente"]).nullable(),
               due_date: z.string().nullable().describe("YYYY-MM-DD"),
+              due_time: z.string().nullable().describe("HH:MM ou HH:MM:SS"),
+              status: z.enum(["recebido", "briefing", "organizacao", "fila", "editando", "revisao", "aguardando_cliente", "alteracoes", "aprovado", "entregue"]).nullable(),
+              batch_label: z.string().nullable().describe("Nome da leva, ex: Leva 1, Outubro"),
+              unit_price: z.number().nullable(),
+              month: z.string().nullable().describe("YYYY-MM para agrupar a leva"),
             }),
             execute: async (input) => {
-              const matches = await findClient(input.client_name);
-              if (matches.length === 0) return { error: `Cliente "${input.client_name}" não encontrado.` };
-              if (matches.length > 1) return { needs_clarification: true, candidates: matches };
+              const resolved = await resolveClientAndBrand(input.client_name, input.brand_name);
+              if ("error" in resolved && resolved.error) return { error: resolved.error };
+              if ((resolved as any).needs_clarification) return resolved;
               const qty = Math.min(Math.max(input.quantity, 1), 60);
+              const clientId = (resolved as any).brand?.id ?? resolved.client.id;
+              const effectiveDueDate = input.due_date ?? monthFirstDay(input.month);
+              const batchId = randomUUID();
+              const plan = Array.from({ length: qty }, (_, i) => ({
+                title: `${input.title_prefix} #${i + 1}`,
+                due_date: effectiveDueDate,
+                due_time: normalizeTime(input.due_time),
+                status: input.status ?? "recebido",
+                priority: input.priority ?? "media",
+                batch_id: batchId,
+                batch_label: input.batch_label ?? (input.month ? `Leva ${input.month}` : "Nova leva"),
+                unit_price: input.unit_price,
+              }));
+              return {
+                plan,
+                client: resolved.client.name,
+                brand: (resolved as any).brand?.name,
+                batch_id: batchId,
+                batch_label: plan[0].batch_label,
+                total_value: input.unit_price ? qty * input.unit_price : null,
+                needs_confirmation: true,
+              };
+            },
+          }),
+          create_video_batch: tool({
+            description: "Cria uma leva de vídeos numerados para um cliente (ex.: 10 vídeos 'Reels #1..#10'). Só chame após o usuário confirmar o plano.",
+            inputSchema: z.object({
+              client_name: z.string(),
+              brand_name: z.string().nullable(),
+              quantity: z.number().int(),
+              title_prefix: z.string(),
+              priority: z.enum(["baixa", "media", "alta", "urgente"]).nullable(),
+              due_date: z.string().nullable().describe("YYYY-MM-DD"),
+              due_time: z.string().nullable().describe("HH:MM ou HH:MM:SS"),
+              status: z.enum(["recebido", "briefing", "organizacao", "fila", "editando", "revisao", "aguardando_cliente", "alteracoes", "aprovado", "entregue"]).nullable(),
+              batch_label: z.string().nullable(),
+              unit_price: z.number().nullable(),
+              month: z.string().nullable().describe("YYYY-MM"),
+            }),
+            execute: async (input) => {
+              const resolved = await resolveClientAndBrand(input.client_name, input.brand_name);
+              if ("error" in resolved && resolved.error) return { error: resolved.error };
+              if ((resolved as any).needs_clarification) return resolved;
+              const qty = Math.min(Math.max(input.quantity, 1), 60);
+              const clientId = (resolved as any).brand?.id ?? resolved.client.id;
+              const effectiveDueDate = input.due_date ?? monthFirstDay(input.month);
+              const batchId = randomUUID();
+              const label = input.batch_label ?? (input.month ? `Leva ${input.month}` : "Nova leva");
               const rows = Array.from({ length: qty }, (_, i) => ({
                 workspace_id: workspaceId,
-                client_id: matches[0].id,
+                client_id: clientId,
                 title: `${input.title_prefix} #${i + 1}`,
                 priority: input.priority ?? "media",
-                due_date: input.due_date,
-                status: "recebido" as const,
+                due_date: effectiveDueDate,
+                due_time: normalizeTime(input.due_time),
+                status: input.status ?? "recebido",
+                batch_id: batchId,
+                batch_label: label,
+                unit_price: input.unit_price,
               }));
               const { data, error } = await supabase.from("videos").insert(rows).select("id");
               if (error) return { error: error.message };
-              return { ok: true, created: data?.length ?? 0, client: matches[0].name };
+              return { ok: true, created: data?.length ?? 0, client: resolved.client.name, brand: (resolved as any).brand?.name, batch_id: batchId, batch_label: label };
             },
           }),
           list_tasks: tool({
@@ -593,29 +708,75 @@ export const Route = createFileRoute("/api/copilot")({
               return { active_clients: clients ?? 0, videos_by_status: byStatus, open_tasks: openTasks ?? 0 };
             },
           }),
+          remember: tool({
+            description: "Armazena uma informação, preferência ou alias do usuário para consultas futuras. Use quando o usuário disser 'lembra disso' ou ensinar algo.",
+            inputSchema: z.object({ content: z.string().min(1), kind: z.enum(["fact", "preference", "alias"]).default("fact") }),
+            execute: async ({ content, kind }) => {
+              const { data, error } = await supabase.from("copilot_memory").insert({
+                workspace_id: workspaceId,
+                author_id: userId,
+                kind,
+                content,
+              }).select("id, kind, content").single();
+              if (error) return { error: error.message };
+              return { ok: true, memory: data };
+            },
+          }),
+          forget: tool({
+            description: "Apaga uma memória do copiloto pelo id ou por trecho do conteúdo. Só apague após confirmação do usuário.",
+            inputSchema: z.object({ id: z.string().nullable(), content_match: z.string().nullable() }),
+            execute: async ({ id, content_match }) => {
+              let q = supabase.from("copilot_memory").delete().eq("workspace_id", workspaceId);
+              if (id) q = q.eq("id", id);
+              else if (content_match) q = q.ilike("content", `%${content_match}%`);
+              else return { error: "Informe id ou content_match." };
+              const { error, count } = await q;
+              if (error) return { error: error.message };
+              return { ok: true, removed: count ?? 0 };
+            },
+          }),
+          list_copilot_memory: tool({
+            description: "Lista as lembranças e preferências que o copiloto armazenou para este workspace.",
+            inputSchema: z.object({}),
+            execute: async () => {
+              const { data, error } = await supabase.from("copilot_memory")
+                .select("id, kind, content, created_at")
+                .eq("workspace_id", workspaceId)
+                .order("created_at", { ascending: false });
+              if (error) return { error: error.message };
+              return { memories: data ?? [] };
+            },
+          }),
         };
 
-        const gateway = createLovableAiGatewayProvider(key);
+        const openai = createLovableResponsesProvider(key);
         const today = new Date().toISOString().slice(0, 10);
         const system = `Você é o Copiloto do AlvasharFlow — sistema de gestão para creators, filmmakers e editores de vídeo. Data de hoje: ${today}. Usuário: ${profile?.full_name ?? "editor"} (papel: ${wsRole}).
 
-Regras:
-- Sempre confirme ações com o usuário APÓS executar, resumindo o que foi criado.
+Regras de interpretação (seja proativo, não pergunte o óbvio):
+- Extraia entidades automaticamente: cliente, marca/subcliente, quantidade, prefixo de título, data, horário, prioridade, etapa de workflow.
+- Números por extenso ("cinco") e algarismos ("5") devem ser interpretados. Horários como "15h", "15:00", "15 horas" vão para due_time.
+- Datas relativas: "hoje", "amanhã", "segunda", "próxima semana", "mês que vem". Converta para YYYY-MM-DD quando necessário.
+- Nomes aproximados: se o usuário disser "Ronei" e existir "Roney", use o mais próximo. Se houver ambiguidade, peça para escolher.
+- Se o cliente informado tiver marcas/subclientes, associe à marca mencionada (ex.: "5 vídeos do Roney da Floor" → cliente Roney, marca Floor).
+- Para criar uma leva, PRIMEIRO chame plan_video_batch, mostre o resumo e peça confirmação. Só então chame create_video_batch.
+- Sempre confirme ações APÓS executar, resumindo o que foi criado/atualizado.
 - Se faltar informação obrigatória (título, nome do cliente), pergunte antes de chamar a tool.
-- Se o nome do cliente for ambíguo, use list_clients para desambiguar.
-- Interprete "amanhã", "sexta", "próxima semana" em relação à data de hoje e converta para YYYY-MM-DD.
-- Você pode executar praticamente tudo que existe no app: clientes (criar, editar, pausar), vídeos (criar, criar em leva, mover status, prazos, excluir), tarefas, leads do CRM, pacotes, registro de tempo, resumo financeiro, equipe e WhatsApp (listar, ler e responder conversas).
-- Para EXCLUIR qualquer coisa, pergunte antes e só chame a tool com confirmed=true depois do "sim" explícito do usuário.
+- Para EXCLUIR qualquer coisa, pergunte antes e só chame a tool com confirmed=true depois do "sim" explícito.
 - Antes de atualizar algo, use a tool de listagem correspondente para achar o id certo; se houver mais de um candidato, pergunte qual.
 - Se uma tool retornar needs_clarification, mostre as opções e peça para o usuário escolher.
-- Responda em português brasileiro, tom direto e curto.`;
+- Responda em português brasileiro, tom direto e curto.
+
+Lembretes armazenados pelo usuário (use como contexto, mas não cite a menos que relevante):
+${memoryText || "Nenhum ainda."}`;
 
         const result = streamText({
-          model: gateway("openai/gpt-5.5"),
+          model: openai("openai/gpt-5.6-sol"),
           system,
           messages: await convertToModelMessages(body.messages),
           tools,
           stopWhen: stepCountIs(50),
+          providerOptions: { openai: { reasoningEffort: "low", store: false } },
         });
 
         return result.toUIMessageStreamResponse({ originalMessages: body.messages });
