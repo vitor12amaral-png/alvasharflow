@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createLovableAiGatewayProvider, createLovableResponsesProvider } from "@/lib/ai-gateway.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
@@ -46,6 +46,8 @@ export const Route = createFileRoute("/api/copilot")({
         const body = (await request.json()) as { messages?: UIMessage[] };
         if (!Array.isArray(body.messages)) return new Response("Messages required", { status: 400 });
 
+        type ClientMatch = { id: string; name: string };
+
         async function findClient(nameOrId: string) {
           const { data } = await supabase.from("clients").select("id, name, parent_client_id").eq("workspace_id", workspaceId!).ilike("name", `%${nameOrId}%`).limit(5);
           return data ?? [];
@@ -62,15 +64,20 @@ export const Route = createFileRoute("/api/copilot")({
           return data ?? [];
         }
 
-        async function resolveClientAndBrand(clientName: string, brandName?: string | null) {
+        type ResolveSuccess = { client: ClientMatch; brand?: ClientMatch };
+        type ResolveClarify = { needs_clarification: true; candidates: ClientMatch[]; client?: ClientMatch };
+        type ResolveError = { error: string };
+        type ResolveResult = ResolveSuccess | ResolveClarify | ResolveError;
+
+        async function resolveClientAndBrand(clientName: string, brandName?: string | null): Promise<ResolveResult> {
           const matches = await findClient(clientName);
           if (matches.length === 0) return { error: `Cliente "${clientName}" não encontrado.` };
           if (matches.length > 1) return { needs_clarification: true, candidates: matches };
           const client = matches[0];
           if (!brandName) return { client };
           const brands = await findBrand(client.id, brandName);
-          if (brands.length === 0) return { client, error: `Marca/subcliente "${brandName}" não encontrada para ${client.name}.` };
-          if (brands.length > 1) return { client, needs_clarification_brand: true, candidates: brands };
+          if (brands.length === 0) return { error: `Marca/subcliente "${brandName}" não encontrada para ${client.name}.` };
+          if (brands.length > 1) return { client, needs_clarification: true, candidates: brands };
           return { client, brand: brands[0] };
         }
 
@@ -159,9 +166,9 @@ export const Route = createFileRoute("/api/copilot")({
             }),
             execute: async (input) => {
               const resolved = await resolveClientAndBrand(input.client_name, input.brand_name);
-              if ("error" in resolved && resolved.error) return { error: resolved.error };
-              if ((resolved as any).needs_clarification) return resolved;
-              const clientId = (resolved as any).brand?.id ?? resolved.client.id;
+              if ("error" in resolved) return { error: resolved.error };
+              if ("needs_clarification" in resolved) return resolved;
+              const clientId = resolved.brand?.id ?? resolved.client.id;
               const { data, error } = await supabase.from("videos").insert({
                 workspace_id: workspaceId,
                 client_id: clientId,
@@ -173,7 +180,7 @@ export const Route = createFileRoute("/api/copilot")({
                 status: input.status ?? "recebido",
               }).select("id, title").single();
               if (error) return { error: error.message };
-              return { ok: true, video: data, client: resolved.client.name, brand: (resolved as any).brand?.name };
+              return { ok: true, video: data, client: resolved.client.name, brand: resolved.brand?.name };
             },
           }),
           create_task: tool({
@@ -280,9 +287,9 @@ export const Route = createFileRoute("/api/copilot")({
               let clientId: string | null = null;
               if (input.client_name) {
                 const resolved = await resolveClientAndBrand(input.client_name, input.brand_name);
-                if ("error" in resolved && resolved.error) return { error: resolved.error };
-                if ((resolved as any).needs_clarification) return resolved;
-                clientId = (resolved as any).brand?.id ?? resolved.client.id;
+                if ("error" in resolved) return { error: resolved.error };
+                if ("needs_clarification" in resolved) return resolved;
+                clientId = resolved.brand?.id ?? resolved.client.id;
               }
               let q = supabase.from("videos")
                 .select("id, title, status, priority, due_date, due_time, client_id, clients(name)")
@@ -367,10 +374,10 @@ export const Route = createFileRoute("/api/copilot")({
             }),
             execute: async (input) => {
               const resolved = await resolveClientAndBrand(input.client_name, input.brand_name);
-              if ("error" in resolved && resolved.error) return { error: resolved.error };
-              if ((resolved as any).needs_clarification) return resolved;
+              if ("error" in resolved) return { error: resolved.error };
+              if ("needs_clarification" in resolved) return resolved;
               const qty = Math.min(Math.max(input.quantity, 1), 60);
-              const clientId = (resolved as any).brand?.id ?? resolved.client.id;
+              const clientId = resolved.brand?.id ?? resolved.client.id;
               const effectiveDueDate = input.due_date ?? monthFirstDay(input.month);
               const batchId = randomUUID();
               const plan = Array.from({ length: qty }, (_, i) => ({
@@ -386,7 +393,7 @@ export const Route = createFileRoute("/api/copilot")({
               return {
                 plan,
                 client: resolved.client.name,
-                brand: (resolved as any).brand?.name,
+                brand: resolved.brand?.name,
                 batch_id: batchId,
                 batch_label: plan[0].batch_label,
                 total_value: input.unit_price ? qty * input.unit_price : null,
@@ -395,7 +402,7 @@ export const Route = createFileRoute("/api/copilot")({
             },
           }),
           create_video_batch: tool({
-            description: "Cria uma leva de vídeos numerados para um cliente (ex.: 10 vídeos 'Reels #1..#10'). Só chame após o usuário confirmar o plano.",
+            description: "Cria uma leva de vídeos numerados para um cliente. Só chame após o usuário confirmar o plano.",
             inputSchema: z.object({
               client_name: z.string(),
               brand_name: z.string().nullable(),
@@ -411,10 +418,10 @@ export const Route = createFileRoute("/api/copilot")({
             }),
             execute: async (input) => {
               const resolved = await resolveClientAndBrand(input.client_name, input.brand_name);
-              if ("error" in resolved && resolved.error) return { error: resolved.error };
-              if ((resolved as any).needs_clarification) return resolved;
+              if ("error" in resolved) return { error: resolved.error };
+              if ("needs_clarification" in resolved) return resolved;
               const qty = Math.min(Math.max(input.quantity, 1), 60);
-              const clientId = (resolved as any).brand?.id ?? resolved.client.id;
+              const clientId = resolved.brand?.id ?? resolved.client.id;
               const effectiveDueDate = input.due_date ?? monthFirstDay(input.month);
               const batchId = randomUUID();
               const label = input.batch_label ?? (input.month ? `Leva ${input.month}` : "Nova leva");
@@ -432,7 +439,7 @@ export const Route = createFileRoute("/api/copilot")({
               }));
               const { data, error } = await supabase.from("videos").insert(rows).select("id");
               if (error) return { error: error.message };
-              return { ok: true, created: data?.length ?? 0, client: resolved.client.name, brand: (resolved as any).brand?.name, batch_id: batchId, batch_label: label };
+              return { ok: true, created: data?.length ?? 0, client: resolved.client.name, brand: resolved.brand?.name, batch_id: batchId, batch_label: label };
             },
           }),
           list_tasks: tool({
@@ -749,7 +756,7 @@ export const Route = createFileRoute("/api/copilot")({
           }),
         };
 
-        const openai = createLovableResponsesProvider(key);
+        const gateway = createLovableAiGatewayProvider(key);
         const today = new Date().toISOString().slice(0, 10);
         const system = `Você é o Copiloto do AlvasharFlow — sistema de gestão para creators, filmmakers e editores de vídeo. Data de hoje: ${today}. Usuário: ${profile?.full_name ?? "editor"} (papel: ${wsRole}).
 
@@ -771,12 +778,11 @@ Lembretes armazenados pelo usuário (use como contexto, mas não cite a menos qu
 ${memoryText || "Nenhum ainda."}`;
 
         const result = streamText({
-          model: openai("openai/gpt-5.6-sol"),
+          model: gateway("openai/gpt-5.6-sol"),
           system,
           messages: await convertToModelMessages(body.messages),
           tools,
           stopWhen: stepCountIs(50),
-          providerOptions: { openai: { reasoningEffort: "low", store: false } },
         });
 
         return result.toUIMessageStreamResponse({ originalMessages: body.messages });
