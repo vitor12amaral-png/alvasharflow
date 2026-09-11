@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Kanban, Calendar, FolderOpen,
   Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone, Volume2, VolumeX, Sparkles, MessageCircle,
-  Wrench, ShieldCheck, ChevronDown, Sun,
+  Wrench, ShieldCheck, ChevronDown,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -30,7 +30,6 @@ type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerO
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
 const SOLO_TOP: NavItem[] = [
-  { to: "/meu-dia", label: "Meu dia", icon: Sun },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
@@ -71,25 +70,23 @@ function NavLinkRow({ item, pathname }: { item: NavItem; pathname: string }) {
     <Link
       to={item.to}
       className={cn(
-        "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-[7px] text-[13px] transition-all duration-200",
+        "group relative flex items-center gap-2.5 rounded-xl px-3 py-[9px] text-[13px] transition-all duration-200",
         active
-          ? "bg-[linear-gradient(180deg,oklch(1_0_0_/_0.09),oklch(1_0_0_/_0.03))] text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0_/_0.08),0_6px_18px_-12px_oklch(0_0_0)]"
-          : "text-muted-foreground hover:bg-sidebar-accent/40 hover:text-foreground",
+          ? "bg-[linear-gradient(180deg,oklch(1_0_0_/_0.12),oklch(1_0_0_/_0.04))] font-semibold text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0_/_0.10),0_6px_20px_-12px_oklch(0_0_0)]"
+          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
       )}
     >
       <span className={cn(
-        "absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-primary transition-opacity duration-200",
-        active ? "opacity-100 shadow-[0_0_10px_var(--primary)]" : "opacity-0",
+        "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-primary transition-all duration-200",
+        active ? "opacity-100 shadow-[0_0_14px_var(--primary)]" : "opacity-0",
       )} />
-      <item.icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-primary" : "group-hover:text-foreground")} />
-      <span className="font-medium">{item.label}</span>
+      <item.icon className={cn("h-[16px] w-[16px] transition-colors", active ? "text-primary" : "group-hover:text-sidebar-foreground")} />
+      <span>{item.label}</span>
     </Link>
   );
 }
 
 const GROUPS_KEY = "af-nav-groups";
-
-
 
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -114,7 +111,26 @@ export function AppShell({ children }: { children: ReactNode }) {
     setOpenGroupsState(next);
     try { localStorage.setItem(GROUPS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
   }
-
+  function toggleGroup(id: string, activeInGroup: boolean) {
+    const isOpen = openGroups[id] ?? activeInGroup;
+    if (isOpen) {
+      setOpenGroups({ ...openGroups, [id]: false });
+    } else {
+      // exclusivo: fecha todos os outros
+      const next: Record<string, boolean> = {};
+      NAV_GROUPS.forEach((g) => { next[g.id] = g.id === id; });
+      setOpenGroups(next);
+    }
+  }
+  // Garante que o grupo do item ativo fique aberto, sem permitir múltiplos abertos manualmente.
+  useEffect(() => {
+    const activeGroup = NAV_GROUPS.find((g) => g.items.some((i) => isActivePath(location.pathname, i.to)));
+    if (!activeGroup) return;
+    if (openGroups[activeGroup.id]) return;
+    const next: Record<string, boolean> = {};
+    NAV_GROUPS.forEach((g) => { next[g.id] = g.id === activeGroup.id; });
+    setOpenGroups(next);
+  }, [location.pathname]);
 
   // Dispara avisos pendentes por WhatsApp (respeita as preferências do usuário).
   const dispatchAlerts = useServerFn(dispatchMyWhatsappAlerts);
@@ -155,7 +171,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Teste vencido/conta suspensa: aviso claro no lugar de telas vazias.
   if (!user.isActive) return <TrialExpired user={user} onSignOut={signOut} />;
 
-
   return (
     <div className="flex min-h-screen w-full">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/60 backdrop-blur-2xl md:flex">
@@ -173,26 +188,31 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-
         <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 pb-2">
           {SOLO_TOP.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
           {NAV_GROUPS.map((group) => {
             const items = group.items.filter((i) => !i.ownerOnly || isPlatformOwner);
             if (!items.length) return null;
             const hasActive = items.some((i) => isActivePath(location.pathname, i.to));
-            const open = openGroups[group.id] ?? true;
-            const expanded = open || hasActive;
+            const open = openGroups[group.id] ?? hasActive;
             return (
-              <div key={group.id} className="pt-1">
+              <div key={group.id} className="pt-2">
                 <button
-                  onClick={() => setOpenGroups({ ...openGroups, [group.id]: !expanded })}
-                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 hover:text-foreground"
+                  onClick={() => toggleGroup(group.id, hasActive)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] transition-colors",
+                    hasActive ? "text-primary" : "text-sidebar-foreground/70 hover:text-sidebar-foreground",
+                  )}
                 >
                   {group.label}
-                  <ChevronDown className={cn("h-3 w-3 transition-transform", expanded ? "" : "-rotate-90")} />
+                  <ChevronDown className={cn(
+                    "h-4 w-4 transition-transform duration-200",
+                    open ? "rotate-0" : "-rotate-90",
+                    hasActive && "text-primary drop-shadow-[0_0_6px_var(--primary)]",
+                  )} />
                 </button>
-                {expanded && (
-                  <div className="mt-0.5 space-y-[3px]">
+                {open && (
+                  <div className="mt-1 space-y-[3px]">
                     {items.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
                   </div>
                 )}
@@ -203,7 +223,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             {SOLO_BOTTOM.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
           </div>
         </nav>
-
 
         <div className="border-t border-sidebar-border p-2.5">
           <div className="flex items-center gap-2.5 rounded-xl bg-sidebar-accent/25 px-2 py-2">
