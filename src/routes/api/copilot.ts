@@ -756,7 +756,8 @@ export const Route = createFileRoute("/api/copilot")({
           }),
         };
 
-        const gateway = createLovableAiGatewayProvider(key);
+        const initialRunId = getLovableAiGatewayRunId(request);
+        const gateway = createLovableResponsesProvider(key, initialRunId);
         const today = new Date().toISOString().slice(0, 10);
         const system = `Você é o Copiloto do AlvasharFlow — sistema de gestão para creators, filmmakers e editores de vídeo. Data de hoje: ${today}. Usuário: ${profile?.full_name ?? "editor"} (papel: ${wsRole}).
 
@@ -778,14 +779,31 @@ Lembretes armazenados pelo usuário (use como contexto, mas não cite a menos qu
 ${memoryText || "Nenhum ainda."}`;
 
         const result = streamText({
-          model: gateway("openai/gpt-5.6-sol"),
+          model: gateway.responses("openai/gpt-6-astra"),
           system,
           messages: await convertToModelMessages(body.messages),
           tools,
+          providerOptions: {
+            openai: {
+              forceReasoning: true,
+              reasoningEffort: "low",
+              reasoningSummary: "auto",
+              store: false,
+              include: ["reasoning.encrypted_content"],
+            },
+          },
           stopWhen: stepCountIs(50),
         });
 
-        return result.toUIMessageStreamResponse({ originalMessages: body.messages });
+        const response = result.toUIMessageStreamResponse({
+          originalMessages: body.messages,
+          headers: {
+            "Access-Control-Expose-Headers": LOVABLE_AIG_RUN_ID_HEADER,
+            ...(initialRunId ? { [LOVABLE_AIG_RUN_ID_HEADER]: initialRunId } : {}),
+          },
+        });
+
+        return withLovableAiGatewayRunIdHeader(response, gateway);
       },
     },
   },
