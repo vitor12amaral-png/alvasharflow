@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createLovableResponsesProvider, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader } from "@/lib/ai-gateway.server";
+import { createLovableResponsesProvider, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader, LOVABLE_AIG_RUN_ID_HEADER } from "@/lib/ai-gateway.server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
