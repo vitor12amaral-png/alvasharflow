@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RememberSchema = z.object({ content: z.string().min(1), kind: z.enum(["fact", "preference", "alias"]).default("fact") });
 const ForgetSchema = z.object({ id: z.string().uuid() });
+const UpdateSchema = z.object({ id: z.string().uuid(), content: z.string().min(1), kind: z.enum(["fact", "preference", "alias"]) });
 
 async function currentWorkspaceId(supabase: any, userId: string) {
   const { data, error } = await supabase.from("profiles").select("current_workspace_id").eq("id", userId).maybeSingle();
@@ -56,4 +57,20 @@ export const forgetCopilotMemory = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const updateCopilotMemory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => UpdateSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    const workspaceId = await currentWorkspaceId(context.supabase, context.userId);
+    const { data: updated, error } = await context.supabase
+      .from("copilot_memory")
+      .update({ content: data.content, kind: data.kind })
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId)
+      .select("id, kind, content, created_at, updated_at")
+      .single();
+    if (error) throw new Error(error.message);
+    return updated;
   });

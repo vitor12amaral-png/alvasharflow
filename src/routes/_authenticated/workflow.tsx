@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteAction } from "@/components/delete-action";
 import { useMarquee } from "@/components/marquee-select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks, Sun, AlarmClock, Inbox, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, Trash2, ExternalLink, ArrowLeft, Folder, X, Users, ChevronDown, ChevronRight, Layers, GripVertical, CalendarClock, ListChecks, Sun, AlarmClock, Inbox, CheckCircle2, EyeOff, Eye } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
@@ -243,7 +243,10 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
-  const [showDone, setShowDone] = useState(false);
+  const [showDone, setShowDone] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("alvashar-hide-completed") !== "true";
+  });
   const searchRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
   const { data: me } = useCurrentUser();
@@ -308,6 +311,19 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
         }),
     [allVideos, ym, showDone, term],
   );
+
+  const completedCount = useMemo(
+    () => (allVideos ?? []).filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym && (v.status === "aprovado" || v.status === "entregue")).length,
+    [allVideos, ym],
+  );
+
+  function toggleDone() {
+    setShowDone((current) => {
+      const next = !current;
+      localStorage.setItem("alvashar-hide-completed", next ? "false" : "true");
+      return next;
+    });
+  }
 
   const hiddenCount = (allVideos?.length ?? 0) - videos.length;
   const weekRevenue = useMemo(() => {
@@ -537,11 +553,10 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 className="h-9 w-52 rounded-full"
               />
               <MonthPicker />
-              <MoreMenu label="Filtros">
-                <MoreMenuItem active={showDone} onClick={() => setShowDone((v) => !v)}>
-                  {showDone ? "Ocultar concluídos" : "Mostrar concluídos"}
-                </MoreMenuItem>
-              </MoreMenu>
+              <Button variant="outline" onClick={toggleDone} className="h-9">
+                {showDone ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showDone ? `Ocultar concluídas (${completedCount})` : `Mostrar concluídas (${completedCount})`}
+              </Button>
               <ShortcutsHint
                 items={[
                   ["/", "Buscar"],
@@ -809,9 +824,9 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
           </div>
           <div className="divide-y divide-border/50">
             {group.rows.map((video) => (
-              <div key={video.id} className="flex w-full items-center gap-3 px-4 py-3 transition hover:bg-muted/35">
+              <div key={video.id} className={cn("flex w-full items-center gap-3 px-4 py-3 transition hover:bg-muted/35", (video.status === "entregue" || video.status === "aprovado") && "opacity-55")}>
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: STAGE_ACCENT[video.status] }} />
-                <button onClick={() => onOpen(video.id)} className="min-w-0 flex-1 truncate text-left text-sm hover:text-primary">{video.title}</button>
+                <button onClick={() => onOpen(video.id)} className={cn("min-w-0 flex-1 truncate text-left text-sm hover:text-primary", (video.status === "entregue" || video.status === "aprovado") && "line-through")}>{video.title}</button>
                 <Badge variant="outline" className="shrink-0 text-[10px]">{PRIORITY_LABEL[video.priority]}</Badge>
                 <Badge variant="outline" className="hidden shrink-0 text-[10px] sm:inline-flex">{STAGE_LABEL[video.status]}</Badge>
                 <span className={cn("shrink-0 text-xs", video.due_date && video.due_date < today ? "text-destructive" : "text-muted-foreground")}>{video.due_date ? formatDate(video.due_date) : "Sem prazo"}</span>
@@ -1024,6 +1039,7 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
       className={cn(
         "group flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 shadow-sm transition hover:border-primary/40",
         isDragging && "opacity-40",
+        (video.status === "entregue" || video.status === "aprovado") && "opacity-55",
       )}
     >
       <button
@@ -1150,7 +1166,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
             </SubclientPicker>
           )}
           <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
-          <p className="truncate text-xs font-medium">{video.title}</p>
+          <p className={cn("truncate text-xs font-medium", (video.status === "entregue" || video.status === "aprovado") && "line-through")}>{video.title}</p>
           <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
             <DueDatePopover
               table="videos"
@@ -1211,7 +1227,7 @@ function ListView({ videos, selected, onToggle, onToggleAll, onStatusChange, onD
           {videos.length === 0 ? (
             <tr><td colSpan={7} className="px-4 py-10 text-center text-xs text-muted-foreground">Nenhum vídeo</td></tr>
           ) : videos.map((v) => (
-            <tr key={v.id} className={cn("border-b border-border/60 last:border-0 hover:bg-muted/20", selected.has(v.id) && "bg-primary/5")}>
+            <tr key={v.id} className={cn("border-b border-border/60 last:border-0 hover:bg-muted/20", selected.has(v.id) && "bg-primary/5", (v.status === "entregue" || v.status === "aprovado") && "opacity-55")}>
               <td className="px-3 py-1.5">
                 <Checkbox checked={selected.has(v.id)} onCheckedChange={() => onToggle(v.id)} />
               </td>
@@ -1229,7 +1245,7 @@ function ListView({ videos, selected, onToggle, onToggleAll, onStatusChange, onD
               <td className="px-4 py-2 font-medium">
                 <span className="flex items-center gap-2">
                   <ColorPicker table="videos" id={v.id} color={v.color} invalidate={[["videos-workflow"], ["fila-videos"]]} />
-                  {v.title}
+                  <span className={cn((v.status === "entregue" || v.status === "aprovado") && "line-through")}>{v.title}</span>
                 </span>
               </td>
               <td className="px-4 py-2 text-xs text-muted-foreground">{v.clients?.name ?? "—"}</td>
