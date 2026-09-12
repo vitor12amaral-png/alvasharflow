@@ -42,7 +42,10 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
   const [qty, setQty] = useState(5);
   const [status, setStatus] = useState<VideoStatus>("recebido");
   const [priority, setPriority] = useState<VideoPriority>("media");
-  const [dueDate, setDueDate] = useState(defaultDueForMonth(month));
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const [selectedMonth, setSelectedMonth] = useState(month ?? currentMonth);
+  const [dueDate, setDueDate] = useState(defaultDueForMonth(month ?? currentMonth));
   const [saving, setSaving] = useState(false);
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
   const [templateId, setTemplateId] = useState("");
@@ -186,7 +189,7 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="space-y-1.5">
             <Label>Situação</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as VideoStatus)}>
@@ -204,6 +207,18 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Mês da leva</Label>
+            <Input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => {
+                const next = e.target.value;
+                setSelectedMonth(next);
+                setDueDate((current) => current && current.slice(0, 7) === next ? current : defaultDueForMonth(next));
+              }}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Prazo</Label>

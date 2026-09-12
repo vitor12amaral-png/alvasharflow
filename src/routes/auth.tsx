@@ -14,7 +14,7 @@ const searchSchema = z.object({ redirect: z.string().optional() });
 /** Only allow same-origin relative paths (keeps OAuth consent redirects working). */
 function safeRedirect(value?: string) {
   if (value && value.startsWith("/") && !value.startsWith("//")) return value;
-  return "/meu-dia";
+  return "/workflow";
 }
 
 export const Route = createFileRoute("/auth")({

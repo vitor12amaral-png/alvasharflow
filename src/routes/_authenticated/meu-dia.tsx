@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,9 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/meu-dia")({
+  beforeLoad: () => {
+    throw redirect({ to: "/workflow", search: { view: "kanban", client: undefined, month: undefined, video: undefined, new: undefined } });
+  },
   component: MyDayPage,
   head: () => ({
     meta: [
