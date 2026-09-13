@@ -35,7 +35,6 @@ import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 import { WeekBoard } from "@/components/week-board";
 import { suggestPerVideo } from "@/lib/pricing";
 import { ShortcutsHint } from "@/components/shortcuts-hint";
-import { MoreMenu, MoreMenuItem } from "@/components/more-menu";
 import { SubclientPicker } from "@/components/subclient-picker";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
@@ -1039,7 +1038,6 @@ function ClientStack({ stackId, name, parentName, count, expanded, onToggle, chi
       className={cn(
         "group flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 shadow-sm transition hover:border-primary/40",
         isDragging && "opacity-40",
-        (video.status === "entregue" || video.status === "aprovado") && "opacity-55",
       )}
     >
       <button
