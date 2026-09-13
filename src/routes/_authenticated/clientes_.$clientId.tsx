@@ -23,6 +23,7 @@ import type { VideoStatus, VideoPriority, PackageSize, DeliveryMethod, LibraryCa
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { AddSubClientButton } from "@/routes/_authenticated/clientes";
 import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
   component: ClientDetail,

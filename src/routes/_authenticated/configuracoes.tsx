@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LogOut, Loader2, Copy, Link2, Trash2, Plus, Pencil, X } from "lucide-react";
+import { LogOut, Loader2, Copy, Link2, Trash2, Plus, Pencil, X, Save } from "lucide-react";
 import { initials } from "@/lib/format";
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
