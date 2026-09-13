@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -23,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { STAGE_LABEL, PRIORITY_LABEL } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
+import { listCopilotMemory, rememberForCopilot, forgetCopilotMemory, updateCopilotMemory } from "@/lib/copilot-memory.functions";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: ConfigPage,
@@ -69,6 +71,7 @@ function ConfigPage() {
           <TabsTrigger value="aparencia">Acessibilidade</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+          <TabsTrigger value="copilot">Copiloto</TabsTrigger>
         </TabsList>
 
         <TabsContent value="perfil">
@@ -95,7 +98,88 @@ function ConfigPage() {
         <TabsContent value="aparencia"><PrefsTab /></TabsContent>
         <TabsContent value="templates"><TemplatesTab /></TabsContent>
         <TabsContent value="onboarding"><OnboardingTab /></TabsContent>
+        <TabsContent value="copilot"><CopilotMemoryTab /></TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+type MemoryKind = "fact" | "preference" | "alias";
+type MemoryRow = { id: string; kind: MemoryKind; content: string; created_at: string; updated_at?: string };
+
+function CopilotMemoryTab() {
+  const listMemory = useServerFn(listCopilotMemory);
+  const remember = useServerFn(rememberForCopilot);
+  const updateMemory = useServerFn(updateCopilotMemory);
+  const forget = useServerFn(forgetCopilotMemory);
+  const qc = useQueryClient();
+  const [content, setContent] = useState("");
+  const [kind, setKind] = useState<MemoryKind>("fact");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ["copilot-memory"],
+    queryFn: () => listMemory({}) as Promise<MemoryRow[]>,
+  });
+  const save = useMutation({
+    mutationFn: () => editingId
+      ? updateMemory({ data: { id: editingId, content: content.trim(), kind } })
+      : remember({ data: { content: content.trim(), kind } }),
+    onSuccess: () => {
+      toast.success(editingId ? "Memória atualizada" : "Memória adicionada");
+      setContent(""); setKind("fact"); setEditingId(null);
+      qc.invalidateQueries({ queryKey: ["copilot-memory"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => forget({ data: { id } }),
+    onSuccess: () => { toast.success("Memória removida"); qc.invalidateQueries({ queryKey: ["copilot-memory"] }); },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  function startEdit(row: MemoryRow) {
+    setEditingId(row.id); setContent(row.content); setKind(row.kind);
+  }
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+      <Card className="space-y-4 p-5">
+        <div className="flex items-center justify-between">
+          <p className="font-display text-sm font-semibold">{editingId ? "Editar aprendizado" : "Ensinar ao copiloto"}</p>
+          {editingId && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingId(null); setContent(""); setKind("fact"); }} aria-label="Cancelar edição"><X className="h-3.5 w-3.5" /></Button>}
+        </div>
+        <div className="space-y-1.5">
+          <Label>Tipo</Label>
+          <Select value={kind} onValueChange={(value) => setKind(value as MemoryKind)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="fact">Informação</SelectItem><SelectItem value="preference">Preferência</SelectItem><SelectItem value="alias">Apelido</SelectItem></SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>O que ele deve lembrar</Label>
+          <Textarea rows={5} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Ex: Floor é uma marca do cliente Roney" />
+        </div>
+        <Button onClick={() => save.mutate()} disabled={!content.trim() || save.isPending}>
+          {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{editingId ? "Salvar alteração" : "Adicionar memória"}
+        </Button>
+      </Card>
+      <Card className="p-5">
+        <p className="font-display text-sm font-semibold">O que o copiloto aprendeu</p>
+        {query.isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div> : (query.data ?? []).length === 0 ? (
+          <p className="py-10 text-center text-xs text-muted-foreground">Nenhuma memória salva ainda.</p>
+        ) : (
+          <div className="mt-3 divide-y divide-border/60 rounded-md border border-border">
+            {(query.data ?? []).map((row) => (
+              <div key={row.id} className="flex items-start gap-3 p-3">
+                <Badge variant="outline" className="mt-0.5 text-[9px] uppercase">{row.kind === "fact" ? "informação" : row.kind === "preference" ? "preferência" : "apelido"}</Badge>
+                <p className="min-w-0 flex-1 text-sm">{row.content}</p>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(row)} aria-label="Editar memória"><Pencil className="h-3.5 w-3.5" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove.mutate(row.id)} disabled={remove.isPending} aria-label="Apagar memória"><Trash2 className="h-3.5 w-3.5" /></Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

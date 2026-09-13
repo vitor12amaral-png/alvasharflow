@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DeleteAction } from "@/components/delete-action";
 import { EditClientDialog } from "@/components/edit-client-dialog";
 import { EditPackageDialog } from "@/components/edit-package-dialog";
-import { ArrowLeft, Instagram, Phone, Mail, ExternalLink, Loader2, Palette, Plus, X, Pencil, Save, Star, Link2, Upload, Copy, MessageSquare, Trash2 } from "lucide-react";
+import { ArrowLeft, Instagram, Phone, Mail, ExternalLink, Loader2, Palette, Plus, X, Pencil, Save, Star, Link2, Upload, Copy, MessageSquare, Trash2, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { initials, formatBRL, formatDate, relativeTime } from "@/lib/format";
@@ -50,6 +50,10 @@ const INTERACTION_KINDS = [
 function ClientDetail() {
   const { clientId } = Route.useParams();
   const navigate = useNavigate();
+  const [showDone, setShowDone] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("alvashar-client-hide-completed") !== "true";
+  });
 
   const qc = useQueryClient();
 
@@ -103,6 +107,16 @@ function ClientDetail() {
 
   const isParent = client.subs.length > 0;
   const isSub = !!client.parent;
+  const visibleVideos = showDone ? client.videos : client.videos.filter((video) => video.status !== "entregue" && video.status !== "aprovado");
+  const completedVideos = client.videos.filter((video) => video.status === "entregue" || video.status === "aprovado").length;
+
+  function toggleDone() {
+    setShowDone((current) => {
+      const next = !current;
+      localStorage.setItem("alvashar-client-hide-completed", next ? "false" : "true");
+      return next;
+    });
+  }
 
   return (
     <div className="p-6 md:p-8">
@@ -216,18 +230,22 @@ function ClientDetail() {
         </TabsContent>
 
         <TabsContent value="demands" className="mt-4">
-          <div className="mb-3 flex justify-end">
+          <div className="mb-3 flex flex-wrap justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={toggleDone}>
+              {showDone ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showDone ? `Ocultar concluídas (${completedVideos})` : `Mostrar concluídas (${completedVideos})`}
+            </Button>
             <NewVideoDialog clientId={clientId} packageId={activePack?.id ?? null} nextPosition={client.videos.length} />
           </div>
-          {client.videos.length === 0 ? (
+          {visibleVideos.length === 0 ? (
             <Card className="p-8 text-center text-sm text-muted-foreground">Nenhum vídeo ainda.</Card>
           ) : (
             <div className="space-y-2">
-              {client.videos.map((v) => (
-                <Card key={v.id} className="flex items-center gap-3 p-3">
+              {visibleVideos.map((v) => (
+                <Card key={v.id} className={cn("flex items-center gap-3 p-3", (v.status === "entregue" || v.status === "aprovado") && "opacity-55")}>
                   <div className="h-2 w-2 rounded-full" style={{ backgroundColor: STAGE_ACCENT[v.status as VideoStatus] }} />
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium">{v.title}</p>
+                    <p className={cn("truncate text-sm font-medium", (v.status === "entregue" || v.status === "aprovado") && "line-through")}>{v.title}</p>
                     <p className="text-[11px] text-muted-foreground">{STAGE_LABEL[v.status as VideoStatus]} · {PRIORITY_LABEL[v.priority as VideoPriority]}</p>
                   </div>
                   <span className="text-xs text-muted-foreground">{formatDate(v.due_date)}</span>

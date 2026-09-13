@@ -1,15 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Send, Plus, Loader2, Wrench, Check, AlertCircle } from "lucide-react";
+import { Sparkles, Send, Plus, Loader2, Wrench, Check, AlertCircle, Mic, Square, Volume2, VolumeX, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useDock } from "@/lib/dock";
+import { useVoice } from "@/hooks/use-voice";
 
 const STORAGE_KEY = "alvesedt-copilot-messages";
 
@@ -21,6 +22,9 @@ export function CopilotButton() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }
   });
   const [token, setToken] = useState<string | null>(null);
+  const [input, setInput] = useState("");
+  const [finalTranscript, setFinalTranscript] = useState("");
+  const speakRef = useRef<(text: string) => void>(() => {});
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -43,6 +47,11 @@ export function CopilotButton() {
       if (ranTool) {
         qc.invalidateQueries();
       }
+      const text = message.parts
+        .filter((part: any) => part.type === "text")
+        .map((part: any) => part.text)
+        .join(" ");
+      if (text) speakRef.current(text);
     },
   });
 
@@ -52,11 +61,23 @@ export function CopilotButton() {
     }
   }, [messages]);
 
-  const [input, setInput] = useState("");
+  const handleTranscript = useCallback((text: string, final: boolean) => {
+    setInput(text);
+    if (final && text) setFinalTranscript(text);
+  }, []);
+  const voice = useVoice({ onTranscript: handleTranscript });
+  speakRef.current = voice.speak;
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
 
   const busy = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    if (!finalTranscript || busy) return;
+    sendMessage({ text: finalTranscript });
+    setFinalTranscript("");
+    setInput("");
+  }, [finalTranscript, busy, sendMessage]);
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +87,7 @@ export function CopilotButton() {
   }
 
   function newConversation() {
+    window.speechSynthesis?.cancel();
     setMessages([]);
     setInitial([]);
     if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY);
@@ -119,9 +141,26 @@ export function CopilotButton() {
                       </div>
                     );
                   }
+                  if (part.type === "reasoning" && part.text) {
+                    return <details key={i} className="mb-2 text-[11px] text-muted-foreground"><summary className="cursor-pointer">Raciocínio</summary><p className="mt-1 whitespace-pre-wrap">{part.text}</p></details>;
+                  }
                   if (part.type?.startsWith("tool-")) {
                     const name = part.type.slice(5);
                     const state = part.state;
+                    if (name === "plan_video_batch" && state === "output-available" && part.output?.needs_confirmation) {
+                      const plan = part.output.plan ?? [];
+                      const first = plan[0] ?? {};
+                      return (
+                        <div key={i} className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
+                          <p className="font-semibold text-foreground">Confirmar nova leva</p>
+                          <p className="mt-1 text-muted-foreground">{plan.length} vídeos · {part.output.brand ?? part.output.client} · {first.due_date ?? "sem data"}{first.due_time ? ` às ${String(first.due_time).slice(0, 5)}` : ""} · {first.status ?? "recebido"}</p>
+                          <div className="mt-3 flex gap-2">
+                            <Button size="sm" onClick={() => sendMessage({ text: `Confirmo a criação da leva ${part.output.batch_label ?? "planejada"}.` })} disabled={busy}><Check className="h-3.5 w-3.5" />Confirmar</Button>
+                            <Button size="sm" variant="ghost" onClick={() => sendMessage({ text: "Cancelo essa criação." })} disabled={busy}><X className="h-3.5 w-3.5" />Cancelar</Button>
+                          </div>
+                        </div>
+                      );
+                    }
                     return (
                       <div key={i} className="mt-1 flex items-center gap-1.5 text-[11px] opacity-80">
                         {state === "output-available" ? <Check className="h-3 w-3 text-[oklch(0.68_0.16_150)]" /> :
@@ -154,6 +193,29 @@ export function CopilotButton() {
               disabled={busy}
               autoFocus
             />
+            {voice.supported && (
+              <Button
+                type="button"
+                size="icon"
+                variant={voice.listening ? "destructive" : "outline"}
+                onClick={voice.listening ? voice.stop : voice.start}
+                disabled={busy}
+                title={voice.listening ? "Parar gravação" : "Falar com o copiloto"}
+                aria-label={voice.listening ? "Parar gravação" : "Falar com o copiloto"}
+              >
+                {voice.listening ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => voice.setVoiceEnabled(!voice.voiceEnabled)}
+              title={voice.voiceEnabled ? "Silenciar respostas" : "Ativar respostas por voz"}
+              aria-label={voice.voiceEnabled ? "Silenciar respostas" : "Ativar respostas por voz"}
+            >
+              {voice.voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
             <Button type="submit" size="icon" disabled={busy || !input.trim()}>
               <Send className="h-4 w-4" />
             </Button>
