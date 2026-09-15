@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Instagram, Phone, Loader2, ChevronRight, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Plus, Search, Instagram, Phone, Loader2, ChevronRight, Users, Eye, EyeOff } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { initials, formatBRL, naturalCompare } from "@/lib/format";
 import { ClientWizard } from "@/components/client-wizard";
@@ -18,7 +18,16 @@ import { ColorPicker, colorValue } from "@/components/color-tag";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   component: ClientesPage,
-  head: () => ({ meta: [{ title: "Clientes — AlvasharFlow" }] }),
+  head: () => ({
+    meta: [
+      { title: "Clientes — AlvasharFlow" },
+      { name: "description", content: "Organize clientes, marcas, pacotes e demandas no AlvasharFlow." },
+      { property: "og:title", content: "Clientes — AlvasharFlow" },
+      { property: "og:description", content: "Organize clientes, marcas, pacotes e demandas no AlvasharFlow." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 type ClientRow = {
@@ -38,6 +47,16 @@ function ClientesPage() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [showDone, setShowDone] = useState(true);
+
+  useEffect(() => {
+    setShowDone(localStorage.getItem("alvashar-clientes-show-done") !== "false");
+  }, []);
+
+  const changeShowDone = (value: boolean) => {
+    setShowDone(value);
+    localStorage.setItem("alvashar-clientes-show-done", String(value));
+  };
 
   const { data: clients, isLoading } = useQuery({
     queryKey: ["clients"],
@@ -76,7 +95,20 @@ function ClientesPage() {
     (c.company ?? "").toLowerCase().includes(q.toLowerCase()) ||
     (c.email ?? "").toLowerCase().includes(q.toLowerCase());
 
-  const filteredParents = parents.filter((p) => matches(p) || (childrenByParent.get(p.id) ?? []).some(matches));
+  const isDone = (client: ClientRow) => {
+    const videos = client.videos ?? [];
+    return videos.length > 0 && videos.every((video) => video.status === "entregue" || video.status === "aprovado");
+  };
+  const isGroupDone = (parent: ClientRow) => {
+    const group = [parent, ...(childrenByParent.get(parent.id) ?? [])];
+    const videos = group.flatMap((client) => client.videos ?? []);
+    return videos.length > 0 && videos.every((video) => video.status === "entregue" || video.status === "aprovado");
+  };
+  const completedCount = parents.filter(isGroupDone).length;
+  const filteredParents = parents.filter((p) => {
+    const matchesSearch = matches(p) || (childrenByParent.get(p.id) ?? []).some(matches);
+    return matchesSearch && (showDone || !isGroupDone(p));
+  });
 
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -101,11 +133,15 @@ function ClientesPage() {
         }
       />
 
-      <div className="mt-6 flex items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         <div className="relative max-w-sm flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar cliente ou marca…" className="pl-9" />
         </div>
+        <Button variant="outline" onClick={() => changeShowDone(!showDone)}>
+          {showDone ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+          {showDone ? "Ocultar concluídos" : "Mostrar concluídos"} ({completedCount})
+        </Button>
       </div>
 
       {isLoading ? (
@@ -123,6 +159,8 @@ function ClientesPage() {
               subs={childrenByParent.get(c.id) ?? []}
               open={expanded.has(c.id)}
               onToggle={() => toggle(c.id)}
+              showDone={showDone}
+              done={isGroupDone(c)}
             />
           ))}
         </div>
@@ -131,7 +169,7 @@ function ClientesPage() {
   );
 }
 
-function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs: ClientRow[]; open: boolean; onToggle: () => void }) {
+function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: ClientRow; subs: ClientRow[]; open: boolean; onToggle: () => void; showDone: boolean; done: boolean }) {
   const pack = client.client_packages?.find((p) => p.status === "ativo");
   const allVids = [...(client.videos ?? []), ...subs.flatMap((s) => s.videos ?? [])];
   const today = new Date().toISOString().slice(0, 10);
@@ -144,7 +182,7 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
   const hasSubs = subs.length > 0;
 
   return (
-    <Card className="overflow-hidden transition hover:border-primary/40">
+    <Card className={`overflow-hidden transition hover:border-primary/40 ${done ? "opacity-60" : ""}`}>
       <div className="flex items-start gap-3 p-5">
         {hasSubs ? (
           <button
@@ -166,7 +204,7 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="truncate font-display text-base font-semibold group-hover:text-primary">{client.name}</p>
+               <p className={`truncate font-display text-base font-semibold group-hover:text-primary ${done ? "line-through" : ""}`}>{client.name}</p>
               {hasSubs && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                   <Users className="h-3 w-3" />{subs.length} marca{subs.length === 1 ? "" : "s"}
@@ -212,11 +250,12 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
 
       {open && hasSubs && (
         <div className="border-t border-border bg-muted/20">
-          {subs.map((s) => {
+           {subs.filter((s) => showDone || !isClientDone(s)).map((s) => {
             const svids = s.videos ?? [];
             const sPend = svids.filter((v) => v.status !== "entregue" && v.status !== "aprovado").length;
+             const subDone = isClientDone(s);
             return (
-              <div key={s.id} className="flex items-center gap-2 border-b border-border/60 pr-4 last:border-0 hover:bg-muted/40">
+               <div key={s.id} className={`flex items-center gap-2 border-b border-border/60 pr-4 last:border-0 hover:bg-muted/40 ${subDone ? "opacity-60" : ""}`}>
                 <Link
                   to="/clientes/$clientId"
                   params={{ clientId: s.id }}
@@ -226,7 +265,7 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
                     {initials(s.name)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{s.name}</p>
+                     <p className={`truncate text-sm font-medium ${subDone ? "line-through" : ""}`}>{s.name}</p>
                     {s.company && <p className="truncate text-[11px] text-muted-foreground">{s.company}</p>}
                   </div>
                   <span className="text-[11px] text-muted-foreground">{svids.length} vídeos · {sPend} pendentes</span>
@@ -256,6 +295,11 @@ function ParentCard({ client, subs, open, onToggle }: { client: ClientRow; subs:
       )}
     </Card>
   );
+}
+
+function isClientDone(client: ClientRow) {
+  const videos = client.videos ?? [];
+  return videos.length > 0 && videos.every((video) => video.status === "entregue" || video.status === "aprovado");
 }
 
 export function AddSubClientButton({ parentId }: { parentId: string }) {
