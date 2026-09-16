@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { naturalCompare } from "@/lib/format";
-import { CalendarClock, GripVertical, Loader2 } from "lucide-react";
+import { CalendarClock, GripVertical, Loader2, ArrowUpRight } from "lucide-react";
 import { STAGE_ACCENT } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
 import { isoDay, formatDue } from "@/components/due-date-popover";
@@ -16,8 +16,8 @@ import { isoDay, formatDue } from "@/components/due-date-popover";
 type Col = "producao" | "aguardando" | "ajustes" | "aprovado";
 
 const COLUMNS: { id: Col; label: string; hint: string; droppable: boolean }[] = [
-  { id: "producao", label: "Em produção", hint: "Nosso time está editando", droppable: false },
-  { id: "aguardando", label: "Aguardando você", hint: "Precisa da sua revisão", droppable: false },
+  { id: "producao", label: "Em produção", hint: "Clique para ver os detalhes", droppable: false },
+  { id: "aguardando", label: "Aguardando você", hint: "Clique para revisar", droppable: false },
   { id: "ajustes", label: "Pedir ajustes", hint: "Arraste aqui para solicitar mudanças", droppable: true },
   { id: "aprovado", label: "Aprovado", hint: "Arraste aqui para aprovar", droppable: true },
 ];
@@ -180,6 +180,9 @@ export function PortalBoard({
                           </span>
                         </div>
                       </div>
+                      <button type="button" onClick={(event) => { event.stopPropagation(); onOpen?.(v.id); }} className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground opacity-70 hover:bg-primary/10 hover:text-primary group-hover:opacity-100" aria-label={`Abrir ${v.title}`}>
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
                 ))}

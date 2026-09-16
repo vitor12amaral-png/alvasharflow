@@ -35,7 +35,7 @@ export const Route = createFileRoute("/portal/$token")({
 function PortalPage() {
   const { token } = Route.useParams();
   const qc = useQueryClient();
-  const [view, setView] = useState<"board" | "list">("board");
+  const [view, setView] = useState<"board" | "list">("list");
   const [focus, setFocus] = useState<string | null>(null);
   const focusRef = useRef<HTMLDivElement | null>(null);
 
@@ -103,6 +103,7 @@ function PortalPage() {
   const emAndamento = list.filter((v) => !["aprovado", "entregue"].includes(v.status)).length;
   const aguardando = list.filter((v) => v.status === "aguardando_cliente" || v.status === "revisao").length;
   const prontos = list.length - emAndamento;
+  const selectedVideo = list.find((video) => video.id === focus) ?? list[0] ?? null;
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-4 py-6 md:py-10">
@@ -168,18 +169,34 @@ function PortalPage() {
               onOpen={(id) => { setFocus(id); setView("list"); }}
             />
           ) : (
-            <div className="space-y-3">
-              {list.map((v) => (
-                <div key={v.id} ref={v.id === focus ? focusRef : undefined}>
-                  <VideoCard
-                    token={token}
-                    video={v}
-                    onChange={invalidate}
-                    clientName={client.client_name}
-                    clientId={client.client_id}
-                  />
+            <div className="grid min-h-[560px] overflow-hidden rounded-lg border border-border bg-card/20 lg:grid-cols-[minmax(0,1fr)_minmax(320px,42%)]">
+              <div className="min-w-0 border-b border-border p-4 lg:border-r lg:border-b-0">
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {[
+                    ["Todos", list.length],
+                    ["Em produção", emAndamento],
+                    ["Aguardando você", aguardando],
+                    ["Concluídos", prontos],
+                  ].map(([label, count]) => <Badge key={String(label)} variant={label === "Todos" ? "default" : "outline"}>{label} ({count})</Badge>)}
                 </div>
-              ))}
+                <div className="space-y-2">
+                  {list.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setFocus(v.id)}
+                      className={`grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border px-3 py-3 text-left transition ${selectedVideo?.id === v.id ? "border-primary/50 bg-primary/10 ring-1 ring-primary/20" : "border-border/70 bg-card/40 hover:border-primary/30"}`}
+                    >
+                      <PlayCircle className="h-5 w-5 text-primary" />
+                      <span className="min-w-0"><span className="block truncate text-sm font-medium">{v.title}</span><span className="mt-0.5 block text-[10px] text-muted-foreground">{v.due_date ? `Prazo ${formatDate(v.due_date)}` : "Sem prazo"}</span></span>
+                      <Badge variant="outline" className="text-[9px]">{statusLabelForClient(v.status as VideoStatus)}</Badge>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <aside className="min-w-0 bg-muted/10 p-4">
+                {selectedVideo && <VideoCard token={token} video={selectedVideo} onChange={invalidate} clientName={client.client_name} clientId={client.client_id} />}
+              </aside>
             </div>
           )}
         </>
