@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
@@ -717,9 +717,14 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
           {primaryView === "semana" && (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-card px-4 py-3">
-                <div><p className="text-sm font-semibold">Produção criada nesta semana</p><p className="text-xs text-muted-foreground">{weekRevenue.count} vídeo(s), calculados pela data de criação</p></div>
-                <p className="text-lg font-semibold text-primary">{formatBRL(weekRevenue.total)}</p>
+              <div className="flex justify-end">
+                <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-1.5 shadow-sm backdrop-blur-xl" title="Produção calculada pela data de criação">
+                  <span className="h-2 w-2 rounded-full bg-success shadow-[0_0_9px_var(--success)]" />
+                  <span className="text-[10px] font-semibold uppercase text-muted-foreground">Produção semanal</span>
+                  <span className="text-xs font-semibold text-foreground">{weekRevenue.count} vídeo{weekRevenue.count === 1 ? "" : "s"}</span>
+                  <span className="h-3 w-px bg-border" />
+                  <span className="text-xs font-semibold text-success">{formatBRL(weekRevenue.total)}</span>
+                </div>
               </div>
               <WeekBoard
                 items={videos}
@@ -1378,7 +1383,18 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
           <SheetTitle>{video?.title ?? "Vídeo"}</SheetTitle>
           {video?.clients?.name && <p className="text-xs text-muted-foreground">{video.clients.name}</p>}
           {videoId && (
-            <div className="pt-2">
+            <div className="flex flex-wrap items-center gap-2 pt-2">
+              {video?.client_id && (
+                <Button asChild size="sm" variant="outline">
+                  <Link
+                    to="/clientes/$clientId"
+                    params={{ clientId: video.client_id }}
+                    search={{ tab: "relationship", video: video.id }}
+                  >
+                    <ExternalLink className="mr-1 h-3.5 w-3.5" />Portal e relacionamento
+                  </Link>
+                </Button>
+              )}
               <DeleteAction
                 table="videos"
                 id={videoId}

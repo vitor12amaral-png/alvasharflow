@@ -24,3 +24,10 @@
 6. Menu lateral
    - [x] Retirar "Meu dia"; redirecionar rota `/meu-dia` para `/workflow`.
    - [x] Acordeão exclusivo, seta azul brilhante, títulos maiores/contraste, item ativo destacado.
+
+7. Refinamento de workflow e relacionamento
+   - [x] Compactar o resumo de produção semanal no canto da visão Semana.
+   - [x] Criar navegação agrupada de vídeos com painel lateral na aba Relacionamento.
+   - [x] Adicionar atalho entre o detalhe do vídeo no Workflow e Relacionamento.
+   - [x] Tornar explícita a ação de abrir vídeos no quadro do portal.
+   - [x] Aplicar lista compacta com detalhe lateral no portal do cliente.

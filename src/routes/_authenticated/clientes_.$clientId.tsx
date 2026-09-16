@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DeleteAction } from "@/components/delete-action";
 import { EditClientDialog } from "@/components/edit-client-dialog";
 import { EditPackageDialog } from "@/components/edit-package-dialog";
-import { ArrowLeft, Instagram, Phone, Mail, ExternalLink, Loader2, Palette, Plus, X, Pencil, Save, Star, Link2, Upload, Copy, MessageSquare, Trash2, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Instagram, Phone, Mail, ExternalLink, Loader2, Palette, Plus, X, Pencil, Save, Star, Link2, Upload, Copy, MessageSquare, Trash2, Eye, EyeOff, Video, CheckCircle2, Clock3 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { initials, formatBRL, formatDate, relativeTime } from "@/lib/format";
@@ -27,6 +27,10 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
   component: ClientDetail,
+  validateSearch: (search: Record<string, unknown>): { tab?: string; video?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+    video: typeof search.video === "string" ? search.video : undefined,
+  }),
   head: () => ({ meta: [{ title: "Cliente — AlvasharFlow" }] }),
 });
 
@@ -50,6 +54,7 @@ const INTERACTION_KINDS = [
 
 function ClientDetail() {
   const { clientId } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const [showDone, setShowDone] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -180,7 +185,7 @@ function ClientDetail() {
       </div>
 
 
-      <Tabs defaultValue={isParent ? "subs" : "overview"} className="mt-6">
+      <Tabs defaultValue={search.tab ?? (isParent ? "subs" : "overview")} className="mt-6">
         <TabsList className="flex-wrap h-auto gap-1 rounded-full border border-border/60 bg-muted/25 p-1 backdrop-blur-xl [&>button]:rounded-full [&>button]:px-3.5 [&>button]:text-[13px] [&>button]:transition-all [&>button[data-state=active]]:shadow-sm">
           {isParent && <TabsTrigger value="subs">Marcas ({client.subs.length})</TabsTrigger>}
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
@@ -342,6 +347,8 @@ function ClientDetail() {
         <TabsContent value="relationship" className="mt-4">
           <RelationshipTab
             clientId={clientId}
+            videos={client.videos}
+            initialVideoId={search.video}
             interactions={client.interactions}
             feedback={client.feedback}
             activeToken={client.activeToken}
@@ -805,8 +812,10 @@ function NewLinkDialog({ clientId, workspaceId, open, setOpen, onSaved }: { clie
 
 // ==================== RELATIONSHIP TAB ====================
 
-function RelationshipTab({ clientId, interactions, feedback, activeToken, onChange }: {
+function RelationshipTab({ clientId, videos, initialVideoId, interactions, feedback, activeToken, onChange }: {
   clientId: string;
+  videos: any[];
+  initialVideoId?: string;
   interactions: any[];
   feedback: any[];
   activeToken: { token: string; expires_at: string | null } | null;
@@ -819,6 +828,7 @@ function RelationshipTab({ clientId, interactions, feedback, activeToken, onChan
   const [when, setWhen] = useState(() => new Date().toISOString().slice(0, 16));
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(() => initialVideoId ?? videos[0]?.id ?? null);
 
   const portalUrl = typeof window !== "undefined" && activeToken
     ? `${window.location.origin}/portal/${activeToken.token}`
@@ -882,6 +892,12 @@ function RelationshipTab({ clientId, interactions, feedback, activeToken, onChan
   }
 
   const npsAvg = feedback.length ? (feedback.reduce((s, f) => s + (f.nps ?? 0), 0) / feedback.length).toFixed(1) : null;
+  const selectedVideo = videos.find((video) => video.id === selectedVideoId) ?? videos[0] ?? null;
+  const videoGroups = [
+    { id: "active", label: "Em produção", icon: Clock3, items: videos.filter((video) => !["aguardando_cliente", "revisao", "alteracoes", "aprovado", "entregue"].includes(video.status)) },
+    { id: "review", label: "Aguardando cliente", icon: MessageSquare, items: videos.filter((video) => ["aguardando_cliente", "revisao", "alteracoes"].includes(video.status)) },
+    { id: "done", label: "Concluídos", icon: CheckCircle2, items: videos.filter((video) => ["aprovado", "entregue"].includes(video.status)) },
+  ];
 
   return (
     <div className="space-y-4">
@@ -904,6 +920,64 @@ function RelationshipTab({ clientId, interactions, feedback, activeToken, onChan
           )}
         </div>
       </Card>
+
+      <div className="grid min-h-[420px] overflow-hidden rounded-lg border border-border bg-card/30 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 border-b border-border p-4 lg:border-r lg:border-b-0">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="font-display text-sm font-semibold">Vídeos do portal</p>
+              <p className="text-[11px] text-muted-foreground">Selecione um vídeo para ver o próximo passo.</p>
+            </div>
+            <Badge variant="outline">{videos.length}</Badge>
+          </div>
+          <div className="space-y-5">
+            {videoGroups.map((group) => (
+              <section key={group.id}>
+                <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase text-muted-foreground">
+                  <group.icon className="h-3.5 w-3.5" />{group.label}<span>{group.items.length}</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <div className="space-y-1.5">
+                  {group.items.map((video) => (
+                    <button
+                      key={video.id}
+                      type="button"
+                      onClick={() => setSelectedVideoId(video.id)}
+                      className={cn(
+                        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border px-3 py-2.5 text-left transition",
+                        selectedVideo?.id === video.id ? "border-primary/50 bg-primary/10 ring-1 ring-primary/20" : "border-border/70 bg-card/40 hover:border-primary/30 hover:bg-muted/30",
+                      )}
+                    >
+                      <span className="grid h-8 w-8 place-items-center rounded-md bg-muted/50"><Video className="h-4 w-4 text-primary" /></span>
+                      <span className="min-w-0"><span className="block truncate text-xs font-medium">{video.title}</span><span className="mt-0.5 block text-[10px] text-muted-foreground">{video.due_date ? `Prazo ${formatDate(video.due_date)}` : "Sem prazo"}</span></span>
+                      <Badge variant="outline" className="text-[9px]">{STAGE_LABEL[video.status as VideoStatus]}</Badge>
+                    </button>
+                  ))}
+                  {group.items.length === 0 && <p className="rounded-md border border-dashed border-border/70 py-3 text-center text-[10px] text-muted-foreground">Nenhum vídeo</p>}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+        <aside className="flex min-w-0 flex-col bg-muted/10 p-5">
+          {selectedVideo ? (
+            <>
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-primary/10"><Video className="h-5 w-5 text-primary" /></span>
+                <div className="min-w-0"><p className="font-display text-sm font-semibold">{selectedVideo.title}</p><p className="mt-1 text-[11px] text-muted-foreground">{STAGE_LABEL[selectedVideo.status as VideoStatus]}</p></div>
+              </div>
+              {selectedVideo.description && <p className="mt-5 text-xs leading-relaxed text-muted-foreground">{selectedVideo.description}</p>}
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <div className="rounded-md border border-border/70 p-3"><p className="text-[9px] uppercase text-muted-foreground">Prazo</p><p className="mt-1 text-xs font-medium">{selectedVideo.due_date ? formatDate(selectedVideo.due_date) : "Sem prazo"}</p></div>
+                <div className="rounded-md border border-border/70 p-3"><p className="text-[9px] uppercase text-muted-foreground">Prioridade</p><p className="mt-1 text-xs font-medium">{PRIORITY_LABEL[selectedVideo.priority as VideoPriority]}</p></div>
+              </div>
+              <Button asChild className="mt-auto w-full">
+                <Link to="/workflow" search={{ client: clientId, video: selectedVideo.id }}>Abrir no workflow<ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Link>
+              </Button>
+            </>
+          ) : <p className="m-auto text-xs text-muted-foreground">Nenhum vídeo disponível.</p>}
+        </aside>
+      </div>
 
       {npsAvg && (
         <Card className="p-4">
