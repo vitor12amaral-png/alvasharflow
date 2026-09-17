@@ -31,7 +31,14 @@ export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
     tab: typeof search.tab === "string" ? search.tab : undefined,
     video: typeof search.video === "string" ? search.video : undefined,
   }),
-  head: () => ({ meta: [{ title: "Cliente — AlvasharFlow" }] }),
+  head: () => ({ meta: [
+    { title: "Cliente e relacionamento — AlvasharFlow" },
+    { name: "description", content: "Acompanhe vídeos, informações e relacionamento de cada cliente." },
+    { property: "og:title", content: "Cliente e relacionamento — AlvasharFlow" },
+    { property: "og:description", content: "Acompanhe vídeos, informações e relacionamento de cada cliente." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 const LINK_CATEGORIES = [

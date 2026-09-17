@@ -27,6 +27,10 @@ export const Route = createFileRoute("/portal/$token")({
     meta: [
       { title: "Portal do cliente — AlvasharFlow" },
       { name: "description", content: "Acompanhe, aprove, comente e envie arquivos dos seus vídeos em produção." },
+      { property: "og:title", content: "Portal do cliente — AlvasharFlow" },
+      { property: "og:description", content: "Acompanhe, aprove, comente e envie arquivos dos seus vídeos em produção." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
