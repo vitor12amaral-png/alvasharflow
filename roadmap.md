@@ -31,3 +31,10 @@
    - [x] Adicionar atalho entre o detalhe do vídeo no Workflow e Relacionamento.
    - [x] Tornar explícita a ação de abrir vídeos no quadro do portal.
    - [x] Aplicar lista compacta com detalhe lateral no portal do cliente.
+
+8. Refinamento visual e intuitivo
+   - [ ] Aplicar a direção visual azul elétrico e DM Sans no sistema.
+   - [ ] Reforçar localização e microinterações no menu lateral e móvel.
+   - [ ] Reorganizar e refinar o formulário de nova leva de vídeos.
+   - [ ] Padronizar botões, campos, seletores, abas, janelas e cabeçalhos.
+   - [ ] Validar as telas representativas em desktop e mobile.
