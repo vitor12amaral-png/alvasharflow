@@ -33,14 +33,14 @@ export function Segmented<T extends string>({
     <div
       role="tablist"
       className={cn(
-        "relative isolate inline-flex select-none rounded-full border border-border/70 bg-muted/40 p-[3px] backdrop-blur-xl",
+        "relative isolate inline-flex select-none rounded-lg border border-border/70 bg-muted/40 p-[3px] backdrop-blur-xl",
         "shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_6%,transparent)]",
         className,
       )}
     >
       <span
         aria-hidden
-        className="absolute inset-y-[3px] left-[3px] -z-10 rounded-full bg-card shadow-sm ring-1 ring-border/70 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="absolute inset-y-[3px] left-[3px] -z-10 rounded-md bg-primary/12 shadow-[0_6px_18px_-12px_var(--primary)] ring-1 ring-primary/20 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           width: `calc(${w}% - 3px)`,
           transform: `translateX(calc(${index * 100}% + ${index * 3}px))`,
@@ -60,9 +60,9 @@ export function Segmented<T extends string>({
               }
             }}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-medium transition-colors duration-200",
+              "flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-colors duration-200",
               size === "sm" ? "px-3 py-1 text-[11px]" : "px-3.5 py-1.5 text-xs",
-              active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              active ? "font-semibold text-primary" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
             )}
           >
             {o.icon}

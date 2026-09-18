@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Rows3, Layers3 } from "lucide-react";
+import { ArrowRight, CircleCheck, Info, Loader2, Rows3, Layers3 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -147,106 +147,85 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
   }
 
   return (
-    <DialogContent className="max-h-[90vh] overflow-y-auto">
-      <DialogHeader><DialogTitle>Nova leva de vídeos</DialogTitle></DialogHeader>
-      <form onSubmit={submit} className="space-y-3">
-        {(templates ?? []).length > 0 && <div className="space-y-1.5">
-          <Label>Template de demanda</Label>
+    <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
+      <DialogHeader className="pr-14">
+        <DialogTitle className="text-2xl">Nova leva de vídeos</DialogTitle>
+        <p className="text-sm text-muted-foreground">Configure o lote e confira o resumo antes de criar.</p>
+        <div className="mt-4 grid grid-cols-4 gap-2" aria-hidden>
+          {['Cliente', 'Conteúdo', 'Organização', 'Resumo'].map((step, index) => (
+            <div key={step} className="space-y-1.5">
+              <div className={cn("h-1 rounded-full", index < 2 ? "bg-primary shadow-[0_0_10px_-3px_var(--primary)]" : "bg-muted")} />
+              <span className={cn("text-[9px] font-bold uppercase tracking-wider", index < 2 ? "text-primary" : "text-muted-foreground/55")}>{step}</span>
+            </div>
+          ))}
+        </div>
+      </DialogHeader>
+      <form onSubmit={submit}>
+        <div className="space-y-6 px-6 py-5">
+        {(templates ?? []).length > 0 && <div className="space-y-2">
+          <SectionLabel number="01">Modelo</SectionLabel>
           <Select value={templateId} onValueChange={applyTemplate}><SelectTrigger><SelectValue placeholder="Começar sem template" /></SelectTrigger><SelectContent>{templates?.map((template) => <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>)}</SelectContent></Select>
         </div>}
-        <div className="space-y-1.5">
-          <Label>Cliente *</Label>
-          <Select value={clientId} onValueChange={setClientId}>
-            <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-            <SelectContent>
-              {clients.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.parent_client_id ? `↳ ${c.name}` : c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center rounded-md border border-border p-0.5">
-          <ModeBtn active={mode === "lista"} onClick={() => setMode("lista")} icon={<Rows3 className="h-3.5 w-3.5" />} label="Lista de títulos" />
-          <ModeBtn active={mode === "quantidade"} onClick={() => setMode("quantidade")} icon={<Layers3 className="h-3.5 w-3.5" />} label="Quantidade" />
-        </div>
-
-        {mode === "lista" ? (
-          <div className="space-y-1.5">
-            <Label>Títulos (um por linha)</Label>
-            <Textarea rows={6} value={titles} onChange={(e) => setTitles(e.target.value)} placeholder={"Reels 01\nReels 02\nCorte podcast"} />
-          </div>
-        ) : (
-          <div className="grid grid-cols-[1fr_100px] gap-3">
+        <section className="space-y-3">
+          <SectionLabel number="01">Cliente e modo de entrada</SectionLabel>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Prefixo</Label>
-              <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="Ex: Reels agosto" />
+              <Label>Cliente *</Label>
+              <Select value={clientId} onValueChange={setClientId}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.parent_client_id ? `↳ ${c.name}` : c.name}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Quantidade</Label>
-              <Input type="number" min={1} max={100} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+              <Label>Tipo de entrada</Label>
+              <div className="control-surface flex h-10 items-center rounded-lg border p-1">
+                <ModeBtn active={mode === "lista"} onClick={() => setMode("lista")} icon={<Rows3 className="h-3.5 w-3.5" />} label="Lista" />
+                <ModeBtn active={mode === "quantidade"} onClick={() => setMode("quantidade")} icon={<Layers3 className="h-3.5 w-3.5" />} label="Quantidade" />
+              </div>
             </div>
           </div>
-        )}
+        </section>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="space-y-1.5">
-            <Label>Situação</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as VideoStatus)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{ALL_STATUSES.map((s) => <SelectItem key={s} value={s}>{STAGE_LABEL[s]}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Prioridade</Label>
-            <Select value={priority} onValueChange={(v) => setPriority(v as VideoPriority)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(["baixa", "media", "alta", "urgente"] as VideoPriority[]).map((p) => (
-                  <SelectItem key={p} value={p}>{PRIORITY_LABEL[p]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Mês da leva</Label>
-            <Input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => {
-                const next = e.target.value;
-                setSelectedMonth(next);
-                setDueDate((current) => current && current.slice(0, 7) === next ? current : defaultDueForMonth(next));
-              }}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Prazo</Label>
-            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-border/70 bg-muted/30 p-3 text-xs">
-          <p className="text-muted-foreground">
-            {parsed.length > 0
-              ? `${parsed.length} vídeo(s): ${parsed.slice(0, 3).join(", ")}${parsed.length > 3 ? "…" : ""}`
-              : "Nenhum vídeo definido ainda."}
-          </p>
-          {clientId && (
-            <p className="mt-1.5 font-medium">
-              {pricing && pricing.pricePerVideo > 0 ? (
-                <>Valor gerado: <span className="text-[oklch(0.72_0.17_155)]">{formatBRL(estimated)}</span>{" "}
-                  <span className="text-muted-foreground">({formatBRL(pricing.pricePerVideo)} por vídeo · {pricing.source})</span></>
-              ) : (
-                <span className="text-muted-foreground">Sem valor por vídeo definido para este cliente.</span>
-              )}
-            </p>
+        <section className="space-y-3">
+          <SectionLabel number="02">Conteúdo</SectionLabel>
+          {mode === "lista" ? (
+            <div className="space-y-1.5">
+              <Label>Títulos (um por linha)</Label>
+              <Textarea rows={5} value={titles} onChange={(e) => setTitles(e.target.value)} placeholder={"Reels 01\nReels 02\nCorte podcast"} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-3">
+              <div className="space-y-1.5"><Label>Prefixo da leva</Label><Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="Ex: Reels agosto" /></div>
+              <div className="space-y-1.5"><Label>Qtd.</Label><Input className="text-center font-semibold" type="number" min={1} max={100} value={qty} onChange={(e) => setQty(Number(e.target.value))} /></div>
+            </div>
           )}
-        </div>
+        </section>
 
+        <section className="space-y-3">
+          <SectionLabel number="03">Organização e prazos</SectionLabel>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Field label="Situação"><Select value={status} onValueChange={(v) => setStatus(v as VideoStatus)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{ALL_STATUSES.map((s) => <SelectItem key={s} value={s}>{STAGE_LABEL[s]}</SelectItem>)}</SelectContent></Select></Field>
+            <Field label="Prioridade"><Select value={priority} onValueChange={(v) => setPriority(v as VideoPriority)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(["baixa", "media", "alta", "urgente"] as VideoPriority[]).map((p) => <SelectItem key={p} value={p}>{PRIORITY_LABEL[p]}</SelectItem>)}</SelectContent></Select></Field>
+            <Field label="Mês da leva"><Input type="month" value={selectedMonth} onChange={(e) => { const next = e.target.value; setSelectedMonth(next); setDueDate((current) => current && current.slice(0, 7) === next ? current : defaultDueForMonth(next)); }} /></Field>
+            <Field label="Prazo"><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary"><Info className="h-4 w-4" /></div>
+            <div className="min-w-0">
+              <p className="text-sm leading-relaxed text-foreground/85"><span className="font-semibold text-primary">{parsed.length || 0} vídeos</span>{parsed.length > 0 ? ` serão criados como ${parsed.slice(0, 3).join(", ")}${parsed.length > 3 ? "…" : ""}` : " — defina os títulos ou a quantidade."}</p>
+              {clientId && <p className="mt-1 text-xs text-muted-foreground">{pricing && pricing.pricePerVideo > 0 ? <>Valor previsto: <span className="font-semibold text-success">{formatBRL(estimated)}</span> · {formatBRL(pricing.pricePerVideo)} por vídeo</> : "Sem valor por vídeo definido para este cliente."}</p>}
+            </div>
+          </div>
+        </section>
+        </div>
         <DialogFooter>
-          <Button type="submit" disabled={saving || parsed.length === 0}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar {parsed.length || ""} vídeos
+          <Button className="h-11 w-full sm:w-auto sm:min-w-52" type="submit" disabled={saving || parsed.length === 0}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CircleCheck className="h-4 w-4" />}
+            Criar {parsed.length || ""} vídeos agora
+            {!saving && <ArrowRight className="h-4 w-4" />}
           </Button>
         </DialogFooter>
       </form>
@@ -257,8 +236,16 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
 function ModeBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
   return (
     <button type="button" onClick={onClick} className={cn(
-      "flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs transition",
-      active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+      "flex h-full flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all",
+      active ? "bg-primary/12 font-semibold text-primary shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_20%,transparent)]" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
     )}>{icon}{label}</button>
   );
+}
+
+function SectionLabel({ number, children }: { number: string; children: React.ReactNode }) {
+  return <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground"><span className="text-primary">{number}</span><span>{children}</span><span className="h-px flex-1 bg-border/70" /></div>;
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div className="min-w-0 space-y-1.5"><Label>{label}</Label>{children}</div>;
 }
