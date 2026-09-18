@@ -147,8 +147,8 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
   }
 
   return (
-    <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
-      <DialogHeader className="pr-14">
+    <DialogContent className="max-h-[92vh] max-w-2xl gap-0 overflow-y-auto p-0">
+      <DialogHeader className="border-b border-border/70 px-6 py-5 pr-14">
         <DialogTitle className="text-2xl">Nova leva de vídeos</DialogTitle>
         <p className="text-sm text-muted-foreground">Configure o lote e confira o resumo antes de criar.</p>
         <div className="mt-4 grid grid-cols-4 gap-2" aria-hidden>
@@ -221,7 +221,7 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
           </div>
         </section>
         </div>
-        <DialogFooter>
+        <DialogFooter className="border-t border-border/70 bg-background/30 px-6 py-5">
           <Button className="h-11 w-full sm:w-auto sm:min-w-52" type="submit" disabled={saving || parsed.length === 0}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CircleCheck className="h-4 w-4" />}
             Criar {parsed.length || ""} vídeos agora
