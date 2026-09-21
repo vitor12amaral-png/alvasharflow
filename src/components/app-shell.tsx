@@ -195,20 +195,29 @@ export function AppShell({ children }: { children: ReactNode }) {
             if (!items.length) return null;
             const hasActive = items.some((i) => isActivePath(location.pathname, i.to));
             const open = openGroups[group.id] ?? hasActive;
+           const highlighted = open || hasActive;
             return (
               <div key={group.id} className="pt-2.5">
                 <button
                   onClick={() => toggleGroup(group.id, hasActive)}
+                 aria-expanded={open}
                   className={cn(
-                    "group flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition-all duration-200",
-                    hasActive ? "bg-primary/8 text-primary" : "text-sidebar-foreground/55 hover:scale-[1.02] hover:bg-sidebar-accent/45 hover:text-sidebar-foreground",
+                   "group flex w-full origin-left items-center justify-between rounded-lg px-3 py-2.5 text-sm font-bold uppercase tracking-[0.1em] transition-all duration-200 hover:scale-[1.025]",
+                   highlighted
+                     ? "active-glow scale-[1.015] bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
+                     : "text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-primary hover:shadow-[0_0_20px_-10px_var(--primary)]",
                   )}
                 >
-                  {group.label}
+                 <span className={cn(
+                   "transition-all duration-200 group-hover:drop-shadow-[0_0_8px_var(--primary)]",
+                   highlighted && "drop-shadow-[0_0_10px_var(--primary)]",
+                 )}>
+                   {group.label}
+                 </span>
                   <ChevronDown className={cn(
-                    "h-[18px] w-[18px] transition-all duration-200 group-hover:scale-110 group-hover:text-primary",
+                   "h-5 w-5 transition-all duration-200 group-hover:scale-125 group-hover:text-primary group-hover:drop-shadow-[0_0_8px_var(--primary)]",
                     open ? "rotate-0" : "-rotate-90",
-                    hasActive && "text-primary drop-shadow-[0_0_8px_var(--primary)]",
+                   highlighted && "text-primary drop-shadow-[0_0_10px_var(--primary)]",
                   )} />
                 </button>
                 {open && (
