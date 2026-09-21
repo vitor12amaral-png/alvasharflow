@@ -37,4 +37,4 @@
    - [x] Reforçar localização e microinterações no menu lateral e móvel.
    - [x] Reorganizar e refinar o formulário de nova leva de vídeos.
    - [x] Padronizar botões, campos, seletores, abas, janelas e cabeçalhos.
-   - [ ] Validar as telas representativas em desktop e mobile.
+   - [x] Validar as telas representativas em desktop e mobile.
