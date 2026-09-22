@@ -43,4 +43,4 @@
    - [x] Reduzir escala, brilho e movimento do menu lateral.
    - [x] Manter categorias abertas e páginas atuais claramente azuis.
    - [x] Suavizar botões, campos, abas, seletores e janelas em todo o sistema.
-   - [ ] Validar o acabamento em desktop e mobile.
+   - [x] Validar o acabamento em desktop e mobile.
