@@ -38,3 +38,9 @@
    - [x] Reorganizar e refinar o formulário de nova leva de vídeos.
    - [x] Padronizar botões, campos, seletores, abas, janelas e cabeçalhos.
    - [x] Validar as telas representativas em desktop e mobile.
+
+9. Simplificação minimalista
+   - [x] Reduzir escala, brilho e movimento do menu lateral.
+   - [x] Manter categorias abertas e páginas atuais claramente azuis.
+   - [x] Suavizar botões, campos, abas, seletores e janelas em todo o sistema.
+   - [ ] Validar o acabamento em desktop e mobile.
