@@ -12,7 +12,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-lg border border-border/70 bg-muted/45 p-1 text-muted-foreground shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)]",
+      "inline-flex h-10 items-center justify-center rounded-lg border border-border/70 bg-muted/35 p-1 text-muted-foreground",
       className,
     )}
     {...props}
@@ -27,7 +27,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex h-8 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-all focus-visible:outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 hover:text-foreground data-[state=active]:bg-primary/12 data-[state=active]:font-semibold data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_22%,transparent),0_6px_18px_-12px_var(--primary)]",
+      "inline-flex h-8 cursor-pointer items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 hover:text-foreground data-[state=active]:bg-primary/10 data-[state=active]:font-semibold data-[state=active]:text-primary",
       className,
     )}
     {...props}
