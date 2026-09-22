@@ -33,14 +33,13 @@ export function Segmented<T extends string>({
     <div
       role="tablist"
       className={cn(
-        "relative isolate inline-flex select-none rounded-lg border border-border/70 bg-muted/40 p-[3px] backdrop-blur-xl",
-        "shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_6%,transparent)]",
+        "relative isolate inline-flex select-none rounded-lg border border-border/70 bg-muted/35 p-[3px]",
         className,
       )}
     >
       <span
         aria-hidden
-        className="absolute inset-y-[3px] left-[3px] -z-10 rounded-md bg-primary/12 shadow-[0_6px_18px_-12px_var(--primary)] ring-1 ring-primary/20 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="absolute inset-y-[3px] left-[3px] -z-10 rounded-md bg-primary/10 transition-transform duration-200 ease-out"
         style={{
           width: `calc(${w}% - 3px)`,
           transform: `translateX(calc(${index * 100}% + ${index * 3}px))`,

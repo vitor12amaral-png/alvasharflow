@@ -70,15 +70,15 @@ function NavLinkRow({ item, pathname }: { item: NavItem; pathname: string }) {
     <Link
       to={item.to}
       className={cn(
-        "group relative flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] transition-all duration-200",
+        "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] transition-colors duration-150",
         active
-          ? "active-glow translate-x-0.5 bg-primary/10 font-semibold text-primary ring-1 ring-inset ring-primary/20"
-          : "text-sidebar-foreground/70 hover:translate-x-0.5 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground",
+          ? "bg-primary/10 font-medium text-primary"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/55 hover:text-sidebar-foreground",
       )}
     >
       <span className={cn(
-        "absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-full bg-primary transition-all duration-200",
-        active ? "h-6 opacity-100 shadow-[0_0_14px_var(--primary)]" : "h-2 opacity-0 group-hover:h-4 group-hover:opacity-50",
+        "absolute left-0 top-1/2 w-0.5 -translate-y-1/2 rounded-full bg-primary transition-all duration-150",
+        active ? "h-4 opacity-100" : "h-2 opacity-0",
       )} />
       <item.icon className={cn("h-[16px] w-[16px] transition-colors", active ? "text-primary" : "group-hover:text-sidebar-foreground")} />
       <span>{item.label}</span>
@@ -173,18 +173,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/80 backdrop-blur-2xl md:flex">
-        <div className="flex items-center gap-3 px-5 py-5">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+        <div className="flex items-center gap-3 px-5 py-4">
           {brand.logo_url ? (
             <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-8 w-8 rounded-md object-cover" />
           ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-[0_0_24px_-6px_var(--primary)]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
               <span className="font-display text-base font-bold text-primary-foreground">{brand.logo_letter || brand.brand_name.charAt(0)}</span>
             </div>
           )}
           <div className="min-w-0">
             <p className="truncate font-display text-base leading-tight font-semibold">{brand.brand_name}</p>
-            <p className="truncate text-[9px] tracking-[0.18em] text-muted-foreground uppercase">{brand.brand_tagline ?? ""}</p>
+            <p className="truncate text-[9px] tracking-[0.12em] text-muted-foreground uppercase">{brand.brand_tagline ?? ""}</p>
           </div>
         </div>
 
@@ -197,31 +197,28 @@ export function AppShell({ children }: { children: ReactNode }) {
             const open = openGroups[group.id] ?? hasActive;
            const highlighted = open || hasActive;
             return (
-              <div key={group.id} className="pt-2.5">
+              <div key={group.id} className="pt-2">
                 <button
                   onClick={() => toggleGroup(group.id, hasActive)}
                  aria-expanded={open}
                   className={cn(
-                   "group flex w-full origin-left items-center justify-between rounded-lg px-3 py-2.5 text-sm font-bold uppercase tracking-[0.1em] transition-all duration-200 hover:scale-[1.025]",
+                   "group flex w-full items-center justify-between rounded-md px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-[color,background-color,transform] duration-150 hover:-translate-y-px",
                    highlighted
-                     ? "active-glow scale-[1.015] bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
-                     : "text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-primary hover:shadow-[0_0_20px_-10px_var(--primary)]",
+                     ? "bg-primary/8 text-primary"
+                     : "text-sidebar-foreground/55 hover:bg-sidebar-accent/45 hover:text-sidebar-foreground",
                   )}
                 >
-                 <span className={cn(
-                   "transition-all duration-200 group-hover:drop-shadow-[0_0_8px_var(--primary)]",
-                   highlighted && "drop-shadow-[0_0_10px_var(--primary)]",
-                 )}>
+                 <span>
                    {group.label}
                  </span>
                   <ChevronDown className={cn(
-                   "h-5 w-5 transition-all duration-200 group-hover:scale-125 group-hover:text-primary group-hover:drop-shadow-[0_0_8px_var(--primary)]",
+                   "h-3.5 w-3.5 text-muted-foreground transition-transform duration-150",
                     open ? "rotate-0" : "-rotate-90",
-                   highlighted && "text-primary drop-shadow-[0_0_10px_var(--primary)]",
+                   highlighted && "text-primary",
                   )} />
                 </button>
                 {open && (
-                  <div className="mt-1 space-y-1 border-l border-primary/15 pl-1">
+                  <div className="mt-1 space-y-0.5 border-l border-border pl-1">
                     {items.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
                   </div>
                 )}
@@ -234,7 +231,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="border-t border-sidebar-border p-2.5">
-          <div className="flex items-center gap-2.5 rounded-lg border border-sidebar-border bg-sidebar-accent/35 px-2 py-2 shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_4%,transparent)]">
+          <div className="flex items-center gap-2.5 rounded-lg border border-sidebar-border bg-sidebar-accent/25 px-2 py-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
               {initials(user.fullName ?? user.email)}
             </div>
@@ -268,7 +265,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex flex-1 flex-col min-w-0">
         <header className="flex items-center justify-between border-b border-border bg-background/60 px-4 py-2.5 backdrop-blur md:hidden">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)]">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
               <span className="font-display text-[10px] font-bold text-primary-foreground">A</span>
             </div>
             <span className="font-display text-sm font-semibold">AlvasharFlow</span>
@@ -276,7 +273,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button onClick={signOut} className="text-xs text-muted-foreground">Sair</button>
         </header>
 
-        <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around overflow-x-auto border-t border-border bg-sidebar/90 px-1 py-1.5 backdrop-blur-2xl md:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around overflow-x-auto border-t border-border bg-sidebar/95 px-1 py-1.5 backdrop-blur-md md:hidden">
           {NAV.slice(0, 5).map((item) => {
             const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
             return (
@@ -285,7 +282,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={item.to}
                 className={cn(
                   "relative flex min-w-14 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[9px] transition-all",
-                  active ? "bg-primary/10 font-semibold text-primary shadow-[0_0_18px_-10px_var(--primary)]" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                   active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                 )}
               >
                 <item.icon className="h-4 w-4" />

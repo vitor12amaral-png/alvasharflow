@@ -88,8 +88,8 @@
   --sidebar-ring: oklch(0.72 0.19 235 / 60%);
   --surface-raised: oklch(0.195 0.022 248);
   --surface-deep: oklch(0.125 0.018 248);
-  --focus-glow: oklch(0.76 0.16 225 / 28%);
-  --active-glow: 0 0 24px -8px oklch(0.76 0.16 225 / 0.72);
+  --focus-glow: oklch(0.76 0.16 225 / 16%);
+  --active-glow: 0 4px 12px -10px oklch(0 0 0 / 0.55);
 }
 
 @layer base {
@@ -99,18 +99,15 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image:
-      radial-gradient(1200px 600px at 20% -10%, oklch(0.72 0.19 235 / 0.10), transparent 60%),
-      radial-gradient(900px 500px at 100% 100%, oklch(0.66 0.22 300 / 0.06), transparent 60%);
-    background-attachment: fixed;
+    background-image: none;
   }
-  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0; }
 }
 
 @utility glass-card {
-  background: linear-gradient(180deg, oklch(1 0 0 / 0.03), oklch(1 0 0 / 0.01));
+  background: color-mix(in oklab, var(--card) 92%, transparent);
   border: 1px solid oklch(1 0 0 / 0.08);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(4px);
 }
 
 /* ---------- Tema claro (personalização em Configurações) ---------- */
@@ -136,11 +133,7 @@
   --sidebar-accent-foreground: oklch(0.22 0.02 260);
   --sidebar-border: oklch(0.22 0.02 260 / 10%);
 }
-:root.theme-light body {
-  background-image:
-    radial-gradient(1100px 560px at 15% -10%, oklch(0.72 0.19 235 / 0.10), transparent 60%),
-    radial-gradient(800px 460px at 100% 100%, oklch(0.66 0.22 300 / 0.05), transparent 60%);
-}
+:root.theme-light body { background-image: none; }
 :root.theme-light .glass-card {
   background: linear-gradient(180deg, oklch(1 0 0 / 0.9), oklch(1 0 0 / 0.6));
   border-color: oklch(0.22 0.02 260 / 10%);
@@ -181,7 +174,7 @@
 }
 @utility lift-hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px -12px oklch(0 0 0 / 0.5);
+  box-shadow: 0 4px 12px -10px oklch(0 0 0 / 0.45);
 }
 
 /* ---------- Acabamento premium (estilo Apple) ---------- */
@@ -216,12 +209,12 @@
   &:hover { border-color: color-mix(in oklab, var(--foreground) 18%, transparent); }
   &:focus, &:focus-visible, &[data-state="open"] {
     border-color: color-mix(in oklab, var(--primary) 72%, transparent);
-    box-shadow: 0 0 0 3px var(--focus-glow), inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent);
+    box-shadow: 0 0 0 2px var(--focus-glow);
   }
 }
 
 @utility active-glow {
-  box-shadow: var(--active-glow), inset 0 1px 0 color-mix(in oklab, var(--foreground) 7%, transparent);
+  box-shadow: var(--active-glow);
 }
 
 /* Superfície de cartão translúcida com brilho superior */
@@ -229,18 +222,7 @@
   position: relative;
   border-radius: var(--radius-xl);
   border: 1px solid color-mix(in oklab, var(--foreground) 9%, transparent);
-  background: linear-gradient(180deg,
-    color-mix(in oklab, var(--card) 88%, transparent),
-    color-mix(in oklab, var(--card) 70%, transparent));
-  backdrop-filter: blur(18px) saturate(140%);
-  box-shadow: 0 24px 60px -32px oklch(0 0 0 / 0.75);
-  &::before {
-    content: "";
-    position: absolute;
-    inset-inline: 12%;
-    top: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.16), transparent);
-    pointer-events: none;
-  }
+  background: color-mix(in oklab, var(--card) 94%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 32px -28px oklch(0 0 0 / 0.7);
 }
