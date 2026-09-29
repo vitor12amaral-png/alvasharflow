@@ -1,44 +1,42 @@
-# Workflow mensal por cliente, sem perder pendências
+# Evolução mensal do Workflow e sistema de ações intuitivas
 
 ## Objetivo
 
-Organizar cada cliente por mês de produção no Workflow. A tela inicial passa a mostrar somente os números do mês selecionado; ao abrir um cliente, o mês pode ser trocado. Vídeos não concluídos de meses anteriores continuam visíveis em um bloco separado de **Pendências anteriores**, sem contaminar a leva do mês atual.
+Organizar o Workflow por competência mensal sem perder trabalhos em andamento e, em paralelo, criar um padrão de interação mais claro para ações recorrentes em todo o sistema. A primeira aplicação será a criação de levas, usando a direção visual escolhida **Apple glass interactive**.
 
-## Comportamento esperado
+## 1. Competência mensal confiável
 
-### Tela de clientes do Workflow
-- Adicionar o seletor de mês no topo, mantendo o visual Apple Minimal Glass atual.
-- Em cada cartão, mostrar os números daquele mês: quantidade da leva, concluídos e pendentes.
-- Não somar todo o histórico no cartão, como acontece hoje.
-- Em clientes-mãe, consolidar corretamente as demandas do cliente e de suas marcas.
-- Manter “Todos os clientes” como visão consolidada do mesmo mês.
+Hoje o mês do vídeo é inferido por `prazo ou data de criação`. Isso mistura dois conceitos: alterar o prazo pode deslocar uma demanda para outro mês sem intenção, e o “Mês da leva” não fica registrado de forma independente.
+
+- Adicionar em cada vídeo um mês de competência explícito, separado do prazo.
+- Preencher os vídeos existentes usando a regra atual, preservando a organização já vista no sistema.
+- Novas levas, vídeos individuais, Copiloto e MCP sempre gravam a competência escolhida.
+- Alterar o prazo não altera o mês da leva.
+- Alterar a competência será uma ação explícita no detalhe do vídeo.
+- O vínculo com pacote, preço e consumo permanece independente; trocar o mês não renova, expira ou consome novamente o pacote.
+- Clientes-mãe e marcas continuam usando a regra vigente de pacote compartilhado.
+
+## 2. Workflow mensal por cliente
+
+### Antes de abrir o cliente
+
+- Colocar o seletor de mês no topo da tela mostrada na referência.
+- Cada cartão passa a mostrar somente os números do mês selecionado: total, em andamento e concluídos.
+- Mostrar à parte a quantidade de pendências anteriores, sem somá-la à leva do mês.
+- Consolidar corretamente cliente-mãe e marcas.
+- “Todos os clientes” usa a mesma competência mensal, em visão consolidada.
 
 ### Dentro do cliente
-- Manter a troca de mês no cabeçalho e preservar o mês na URL para links e retornos.
-- O quadro principal exibe somente as demandas pertencentes ao mês escolhido.
-- Acima das visões Kanban, Fila e Semana, exibir um bloco **Pendências anteriores** quando existirem vídeos não concluídos de meses anteriores.
-- Agrupar essas pendências por mês e cliente/marca, mostrando etapa, prazo e atraso.
-- Permitir abrir e atualizar cada pendência normalmente; ao ser concluída, ela sai automaticamente do bloco.
-- Concluídos de meses anteriores não aparecem como pendência. Continuam acessíveis ao navegar para o mês original.
-- O pacote pode permanecer ativo e continuar recebendo novas levas em outubro mesmo que tenha começado em setembro; a virada do mês não encerra nem duplica o pacote.
 
-## Regra de negócio robusta
-
-Hoje o mês é inferido por `due_date ?? created_at`. Isso mistura prazo com competência: alterar o prazo pode mover o vídeo de mês sem intenção, e a escolha “Mês da leva” não fica registrada de forma independente.
-
-Será criada uma competência mensal explícita para cada vídeo:
-
-- `competence_month`: primeiro dia do mês escolhido, usado apenas para organização da leva.
-- Novos vídeos e novas levas gravam o mês selecionado no Workflow.
-- Alterar o prazo não altera a competência mensal.
-- Alterar o mês será uma ação explícita, evitando mudanças acidentais.
-- Dados existentes serão preenchidos com o comportamento atual (`due_date`, ou `created_at` quando não houver prazo), preservando a organização que o sistema já apresenta.
-- O vínculo com `package_id` permanece independente: pacote, preço e consumo continuam intactos quando a competência muda.
-- Subclientes continuam consumindo o pacote do cliente-mãe conforme a regra existente.
+- Manter a troca de mês no cabeçalho e preservar cliente, mês e visualização na URL.
+- Kanban, Lista, Fila e Semana mostram somente a leva do mês selecionado.
+- Exibir acima delas um bloco **Pendências anteriores**, agrupado por mês e cliente/marca.
+- Cada pendência mostra etapa, prazo e atraso e pode ser aberta ou atualizada normalmente.
+- Ao concluir, ela sai automaticamente do bloco e permanece no histórico do mês original.
+- Concluídos antigos nunca reaparecem como pendência.
 
 ```text
-Cliente: Roney
-Mês selecionado: Outubro 2026
+Roney — Outubro 2026
 
 Pendências anteriores (3)
   Setembro (2)  Agosto (1)
@@ -47,54 +45,87 @@ Demandas de Outubro (10)
   Kanban | Fila | Semana
 ```
 
-## Implementação
+## 3. Novo seletor Apple glass interactive
 
-1. **Base mensal confiável**
-   - Adicionar `competence_month` em `videos`, com preenchimento dos registros existentes e validação para guardar sempre o primeiro dia do mês.
-   - Criar índice por workspace, cliente e competência para manter a consulta rápida.
-   - Preservar permissões e políticas atuais; nenhuma tabela nova será criada.
-   - Atualizar os tipos gerados pelo backend após a migration.
+Criar um componente reutilizável de **mês → prazo**, seguindo a direção aprovada:
 
-2. **Criação e edição**
-   - Fazer “Nova leva” e “Novo vídeo” persistirem o mês selecionado, inclusive quando não houver prazo.
-   - Manter prazo e mês como informações independentes.
-   - Adicionar no detalhe do vídeo uma ação clara para corrigir o mês de competência quando necessário.
-   - Garantir que criações pelo Copiloto/MCP também atribuam competência, usando o mês pedido ou o mês atual como padrão.
+- Estado fechado compacto, mostrando o mês da leva e o prazo atual.
+- Ao tocar no mês, o controle cresce suavemente dentro do formulário.
+- Exibir o mês anterior, o selecionado e o próximo, com navegação rápida e faixa horizontal acessível.
+- Depois da escolha do mês, revelar o calendário visual desse mês.
+- Oferecer **Sem prazo definido** de forma sempre visível; isso limpa apenas o prazo, não a competência.
+- Incluir atalhos coerentes: Hoje, Amanhã e Próxima segunda quando fizer sentido.
+- Usar o calendário visual já disponível no projeto, em vez do campo nativo inconsistente entre navegadores.
+- Fechar a expansão após confirmar e mostrar um resumo claro: `Outubro 2026 · sem prazo` ou `Outubro 2026 · 18 out`.
+- Animação curta de expansão/recolhimento, sem brilho excessivo e respeitando redução de movimento.
+- Áreas de toque confortáveis e comportamento testado no celular.
 
-3. **Resumo mensal na escolha do cliente**
-   - Consultar contagens por competência e situação, incluindo a hierarquia cliente-mãe/marcas.
-   - Substituir os totais históricos dos cartões pelos números do mês selecionado.
-   - Indicar separadamente quantas pendências anteriores existem, sem misturá-las no total mensal.
+A primeira integração será em **Nova leva de vídeos**. O mesmo componente será reutilizado nas etapas seguintes para evitar novas versões divergentes.
 
-4. **Quadro do mês e bloco de pendências**
-   - Separar os dados em `demandas do mês`, `pendências anteriores` e `outros meses`.
-   - Alimentar Kanban, Lista, Fila e Semana somente com o mês selecionado.
-   - Criar o bloco compartilhado de pendências anteriores acima da visão escolhida, com abertura do detalhe e ações normais de situação/prazo.
-   - Recalcular corretamente concluídos, ocultos, busca e totais para que nenhum vídeo seja contado duas vezes.
+## 4. Pacotes que atravessam meses
 
-5. **Pacotes que atravessam meses**
-   - Exibir o pacote ativo como contexto, sem usar `start_date` ou `end_date` para esconder demandas.
-   - Ao criar a leva de outubro, manter o mesmo pacote ativo quando ele ainda for o pacote vigente.
-   - Não renovar, expirar ou consumir novamente o pacote durante a troca de mês.
-   - Sinalizar inconsistências de dados existentes sem bloquear o Workflow, como pacote marcado ativo com data final já vencida.
+- Um pacote ativo iniciado em setembro pode receber uma nova leva de outubro.
+- A competência organiza as demandas; `start_date` e `end_date` não escondem vídeos automaticamente.
+- Pendências de setembro continuam vinculadas ao pacote original e aparecem no bloco de pendências.
+- Ao criar outubro, usar o pacote ativo vigente sem duplicar contagem ou preço.
+- Sinalizar, sem bloquear o trabalho, pacotes marcados como ativos cuja data final já passou — há registros reais nessa situação.
 
-6. **Consistência no sistema**
-   - Usar a mesma competência nos pontos que criam ou listam vídeos, evitando divergência entre Workflow, perfil do cliente, Copiloto e MCP.
-   - Manter calendário orientado por prazo e financeiro orientado por produção/valor; competência mensal não substituirá indevidamente essas datas.
+## 5. Auditoria criteriosa de facilidade de uso
 
-## Validação
+A análise confirmou padrões bons a preservar — identidade Apple Minimal Glass, componentes reutilizáveis, atalhos e ações rápidas — e fricções que devem ser corrigidas em ondas controladas.
 
-- Confirmar que, ao trocar setembro por outubro, o quadro mostra apenas a leva de outubro.
-- Confirmar que vídeos incompletos de setembro aparecem uma única vez em **Pendências anteriores**.
-- Concluir uma pendência e verificar que ela desaparece do bloco, mas continua no histórico de setembro.
-- Alterar o prazo de um vídeo sem mudar seu mês de competência.
-- Criar vídeo e leva em mês atual, passado e futuro, com e sem prazo.
+### Onda A — ações essenciais e risco de perda de contexto
+
+- **Workflow no celular:** substituir a dependência de colunas horizontais e arrasto por uma apresentação móvel legível.
+- **Mover etapa sem arrastar:** adicionar ação clara “Mover para…” nos cartões; arrasto e atalhos continuam disponíveis.
+- **Filtros transparentes:** separar contagens de fora do mês, concluídos ocultos e busca; nunca resumir tudo como “ocultos pelos filtros”.
+- **Estados vazios úteis:** explicar o motivo e oferecer a próxima ação possível.
+- **Exclusões críticas:** exigir confirmação reforçada para cliente/marca/pacote, diferente da exclusão simples de uma tarefa.
+
+### Onda B — unificação de mês, data e filtros
+
+- Reutilizar o seletor mensal no Calendário e persistir o mês na URL.
+- Substituir gradualmente campos nativos de data nos fluxos operacionais pelo seletor expansível.
+- Padronizar “Sem prazo”, “Indeterminado”, “Limpar” e atalhos de data.
+- Criar um único controle para mostrar/ocultar concluídos, com a mesma linguagem e preferência em todas as telas.
+- Reservar o menu de reticências para ações do item; filtros recebem ícone e rótulo próprios.
+
+### Onda C — compreensão e prevenção de erro
+
+- Tornar prazos vazios claramente clicáveis.
+- Tornar “+N itens” no Calendário expansível.
+- Melhorar a descoberta de marcas/subclientes na primeira utilização.
+- Reordenar ações no cabeçalho móvel: criação e busca antes de opções secundárias.
+- Substituir cores isoladas por tokens semânticos de aviso, sucesso e atraso.
+
+## 6. Sequência de implementação
+
+1. Migration de competência mensal, preenchimento retrocompatível e índice.
+2. Tipos e gravação consistente em Nova leva, Novo vídeo, Copiloto e MCP.
+3. Seletor Apple glass interactive em Nova leva, incluindo “Sem prazo”.
+4. Resumo mensal nos cartões da entrada do Workflow.
+5. Separação entre demandas do mês e Pendências anteriores em todas as visões.
+6. Ajustes de contagem, busca, concluídos e pacote atravessando mês.
+7. Onda A da auditoria, começando por Workflow mobile e ação “Mover para…”.
+8. Ondas B e C, reutilizando os novos componentes em vez de redesenhar cada tela isoladamente.
+
+## 7. Validação
+
+- Virar setembro para outubro e confirmar que só a leva de outubro ocupa o quadro.
+- Confirmar que pendências de setembro aparecem uma única vez no bloco separado.
+- Concluir uma pendência e conferir sua saída do bloco e permanência no histórico.
+- Alterar o prazo sem alterar a competência mensal.
+- Criar levas em mês atual, passado e futuro, com data específica e sem prazo.
 - Validar cliente comum, cliente-mãe, marca e “Todos os clientes”.
-- Confirmar que pacote ativo, contagem usada e preço não mudam apenas pela virada do mês.
-- Validar desktop e celular, sem sobreposição, além de build, console e erros de execução.
+- Confirmar que pacote ativo, vídeos usados e valor não mudam apenas pela troca de mês.
+- Testar seletor fechado, expandido, troca de mês, calendário e “Sem prazo” por teclado e toque.
+- Validar Workflow e diálogos em desktop e celular, com redução de movimento.
+- Conferir build, console, erros de execução e dados reais após a migration.
 
 ## Detalhes técnicos
 
-- Áreas principais: Workflow, seletor mensal, criação em lote, criação/edição de vídeo, perfil do cliente, Copiloto e ferramentas MCP de vídeo.
-- A migration será aditiva e retrocompatível; o filtro antigo continuará representado no preenchimento inicial.
-- A competência será um campo próprio porque `due_date` é prazo e `created_at` é data de cadastro; nenhum deles representa com segurança o mês comercial da leva.
+- A alteração de dados será aditiva e retrocompatível; nenhuma tabela concorrente será criada.
+- A competência será indexada por workspace, cliente e mês.
+- Calendário continua orientado por prazo; Financeiro continua orientado por produção/valor. Competência organiza a leva e não substitui indevidamente essas datas.
+- O seletor reutilizará os componentes de calendário, popover, diálogo e tokens de vidro existentes.
+- A auditoria será implementada em ondas para manter o escopo verificável e evitar uma reforma visual indiscriminada.
