@@ -44,3 +44,8 @@
    - [x] Manter categorias abertas e páginas atuais claramente azuis.
    - [x] Suavizar botões, campos, abas, seletores e janelas em todo o sistema.
    - [x] Validar o acabamento em desktop e mobile.
+
+10. Apple Minimal Glass
+   - [x] Garantir um único destaque azul por vez no menu lateral.
+   - [x] Aplicar superfícies translúcidas e clean aos componentes compartilhados.
+   - [ ] Validar navegação, contraste e acabamento em desktop e mobile.
