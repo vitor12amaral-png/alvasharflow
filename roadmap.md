@@ -49,3 +49,11 @@
    - [x] Garantir um único destaque azul por vez no menu lateral.
    - [x] Aplicar superfícies translúcidas e clean aos componentes compartilhados.
    - [x] Validar navegação, contraste e acabamento em desktop e mobile.
+
+11. Workflow mensal e ações intuitivas
+   - [x] Criar competência mensal explícita para os vídeos existentes e novos.
+   - [ ] Aplicar seletor expansível de mês e prazo na criação de levas.
+   - [ ] Separar demandas do mês e pendências anteriores em todas as visões.
+   - [ ] Exibir resumo mensal por cliente na entrada do Workflow.
+   - [ ] Adicionar alternativa clara ao arrasto e adaptar o quadro ao celular.
+   - [ ] Unificar navegação mensal do Calendário e melhorar estados vazios/filtros.

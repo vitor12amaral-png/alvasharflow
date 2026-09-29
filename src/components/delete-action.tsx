@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -35,6 +36,7 @@ type Props = {
   variant?: "icon" | "button" | "menu";
   label?: string;
   className?: string;
+  confirmText?: string;
 };
 
 export function DeleteAction({
@@ -48,9 +50,11 @@ export function DeleteAction({
   variant = "icon",
   label = "Excluir",
   className,
+  confirmText,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
   const qc = useQueryClient();
 
   const ids = Array.isArray(id) ? id : [id];
@@ -73,7 +77,7 @@ export function DeleteAction({
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) setConfirmation(""); }}>
       <AlertDialogTrigger asChild>
         {variant === "icon" ? (
           <button
@@ -117,11 +121,12 @@ export function DeleteAction({
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
+          {confirmText && <div className="space-y-1.5 pt-2"><p className="text-xs text-muted-foreground">Digite <span className="font-semibold text-foreground">{confirmText}</span> para confirmar.</p><Input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" /></div>}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
           <AlertDialogAction
-            disabled={busy}
+            disabled={busy || (!!confirmText && confirmation.trim() !== confirmText)}
             onClick={(e) => {
               e.preventDefault();
               void run();

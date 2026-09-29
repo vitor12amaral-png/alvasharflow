@@ -89,13 +89,6 @@ export const Route = createFileRoute("/api/copilot")({
           return null;
         }
 
-        function monthFirstDay(month: string | null | undefined) {
-          if (!month) return null;
-          const today = new Date().toISOString().slice(0, 7);
-          if (month === today) return null;
-          return `${month}-01`;
-        }
-
         const { data: memoryRows } = await supabase
           .from("copilot_memory")
           .select("kind, content")
@@ -162,6 +155,7 @@ export const Route = createFileRoute("/api/copilot")({
               priority: z.enum(["baixa", "media", "alta", "urgente"]).nullable(),
               due_date: z.string().nullable().describe("YYYY-MM-DD"),
               due_time: z.string().nullable().describe("HH:MM ou HH:MM:SS"),
+              month: z.string().nullable().describe("Competência da leva em YYYY-MM"),
               status: z.enum(["recebido", "briefing", "organizacao", "fila", "editando", "revisao", "aguardando_cliente", "alteracoes", "aprovado", "entregue"]).nullable(),
             }),
             execute: async (input) => {
@@ -177,6 +171,7 @@ export const Route = createFileRoute("/api/copilot")({
                 priority: input.priority ?? "media",
                 due_date: input.due_date,
                 due_time: normalizeTime(input.due_time),
+                competence_month: `${input.month ?? input.due_date?.slice(0, 7) ?? new Date().toISOString().slice(0, 7)}-01`,
                 status: input.status ?? "recebido",
               }).select("id, title").single();
               if (error) return { error: error.message };
@@ -378,7 +373,7 @@ export const Route = createFileRoute("/api/copilot")({
               if ("needs_clarification" in resolved) return resolved;
               const qty = Math.min(Math.max(input.quantity, 1), 60);
               const clientId = resolved.brand?.id ?? resolved.client.id;
-              const effectiveDueDate = input.due_date ?? monthFirstDay(input.month);
+               const effectiveDueDate = input.due_date;
               const batchId = randomUUID();
               const plan = Array.from({ length: qty }, (_, i) => ({
                 title: `${input.title_prefix} #${i + 1}`,
@@ -389,6 +384,7 @@ export const Route = createFileRoute("/api/copilot")({
                 batch_id: batchId,
                 batch_label: input.batch_label ?? (input.month ? `Leva ${input.month}` : "Nova leva"),
                 unit_price: input.unit_price,
+                 competence_month: `${input.month ?? input.due_date?.slice(0, 7) ?? new Date().toISOString().slice(0, 7)}-01`,
               }));
               return {
                 plan,
@@ -422,7 +418,7 @@ export const Route = createFileRoute("/api/copilot")({
               if ("needs_clarification" in resolved) return resolved;
               const qty = Math.min(Math.max(input.quantity, 1), 60);
               const clientId = resolved.brand?.id ?? resolved.client.id;
-              const effectiveDueDate = input.due_date ?? monthFirstDay(input.month);
+               const effectiveDueDate = input.due_date;
               const batchId = randomUUID();
               const label = input.batch_label ?? (input.month ? `Leva ${input.month}` : "Nova leva");
               const rows = Array.from({ length: qty }, (_, i) => ({
@@ -436,6 +432,7 @@ export const Route = createFileRoute("/api/copilot")({
                 batch_id: batchId,
                 batch_label: label,
                 unit_price: input.unit_price,
+                 competence_month: `${input.month ?? input.due_date?.slice(0, 7) ?? new Date().toISOString().slice(0, 7)}-01`,
               }));
               const { data, error } = await supabase.from("videos").insert(rows).select("id");
               if (error) return { error: error.message };
@@ -765,6 +762,7 @@ Regras de interpretação (seja proativo, não pergunte o óbvio):
 - Extraia entidades automaticamente: cliente, marca/subcliente, quantidade, prefixo de título, data, horário, prioridade, etapa de workflow.
 - Números por extenso ("cinco") e algarismos ("5") devem ser interpretados. Horários como "15h", "15:00", "15 horas" vão para due_time.
 - Datas relativas: "hoje", "amanhã", "segunda", "próxima semana", "mês que vem". Converta para YYYY-MM-DD quando necessário.
+- Mês da leva e prazo são independentes. Grave month como competência YYYY-MM; se o usuário disser "sem prazo", mantenha due_date nulo.
 - Nomes aproximados: se o usuário disser "Ronei" e existir "Roney", use o mais próximo. Se houver ambiguidade, peça para escolher.
 - Se o cliente informado tiver marcas/subclientes, associe à marca mencionada (ex.: "5 vídeos do Roney da Floor" → cliente Roney, marca Floor).
 - Para criar uma leva, PRIMEIRO chame plan_video_batch, mostre o resumo e peça confirmação. Só então chame create_video_batch.

@@ -127,6 +127,10 @@
             "due_date": {
               "description": "Prazo no formato YYYY-MM-DD.",
               "type": "string"
+            },
+            "month": {
+              "description": "Mês da leva no formato YYYY-MM.",
+              "type": "string"
             }
           },
           "required": [

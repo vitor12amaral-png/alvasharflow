@@ -1083,6 +1083,7 @@ function NewVideoDialog({ clientId, packageId, nextPosition }: { clientId: strin
         priority,
         status: "recebido",
         due_date: dueDate || null,
+         competence_month: `${(dueDate || new Date().toISOString()).slice(0, 7)}-01`,
         position: nextPosition,
       });
       if (error) throw error;

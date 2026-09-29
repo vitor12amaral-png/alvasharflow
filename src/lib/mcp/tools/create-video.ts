@@ -12,9 +12,10 @@ export default defineTool({
     description: z.string().optional(),
     priority: z.enum(["baixa", "media", "alta", "urgente"]).optional(),
     due_date: z.string().optional().describe("Prazo no formato YYYY-MM-DD."),
+    month: z.string().optional().describe("Mês da leva no formato YYYY-MM."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
-  handler: async ({ client_name, title, description, priority, due_date }, ctx) => {
+  handler: async ({ client_name, title, description, priority, due_date, month }, ctx) => {
     if (!ctx.isAuthenticated()) return fail("Não autenticado.");
     const { supabase, workspaceId } = await requireWorkspace(ctx);
 
@@ -36,6 +37,7 @@ export default defineTool({
         description: description ?? null,
         priority: priority ?? "media",
         due_date: due_date ?? null,
+         competence_month: `${month ?? due_date?.slice(0, 7) ?? new Date().toISOString().slice(0, 7)}-01`,
         status: "recebido",
       })
       .select("id, title, status, due_date")
