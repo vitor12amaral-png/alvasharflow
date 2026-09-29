@@ -84,6 +84,7 @@ type VideoRow = {
   due_date: string | null;
   due_time: string | null;
   created_at: string;
+  competence_month: string;
   client_id: string;
   color: string | null;
   checklist: unknown;
@@ -121,15 +122,20 @@ function WorkflowPage() {
 
 function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: string) => void }) {
   const [q, setQ] = useState("");
+  const { ym } = useMonthFromSearch();
   const { data: counts } = useQuery({
-    queryKey: ["clients-video-counts"],
+    queryKey: ["clients-video-counts", ym],
     queryFn: async () => {
-      const { data } = await supabase.from("videos").select("client_id, status");
-      const map = new Map<string, { total: number; pendentes: number }>();
+      const { data } = await supabase.from("videos").select("client_id, status, competence_month");
+      const map = new Map<string, { total: number; pendentes: number; concluidos: number; anteriores: number }>();
       (data ?? []).forEach((v) => {
-        const c = map.get(v.client_id) ?? { total: 0, pendentes: 0 };
-        c.total++;
-        if (v.status !== "entregue" && v.status !== "aprovado") c.pendentes++;
+        const c = map.get(v.client_id) ?? { total: 0, pendentes: 0, concluidos: 0, anteriores: 0 };
+        const done = v.status === "entregue" || v.status === "aprovado";
+        const competence = v.competence_month.slice(0, 7);
+        if (competence === ym) {
+          c.total++;
+          if (done) c.concluidos++; else c.pendentes++;
+        } else if (competence < ym && !done) c.anteriores++;
         map.set(v.client_id, c);
       });
       return map;
@@ -155,16 +161,17 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
     ids.reduce(
       (acc, id) => {
         const i = counts?.get(id);
-        return { total: acc.total + (i?.total ?? 0), pendentes: acc.pendentes + (i?.pendentes ?? 0) };
+        return { total: acc.total + (i?.total ?? 0), pendentes: acc.pendentes + (i?.pendentes ?? 0), concluidos: acc.concluidos + (i?.concluidos ?? 0), anteriores: acc.anteriores + (i?.anteriores ?? 0) };
       },
-      { total: 0, pendentes: 0 },
+      { total: 0, pendentes: 0, concluidos: 0, anteriores: 0 },
     );
 
   return (
     <div className="px-6 pt-6 md:px-8 md:pt-8">
       <PageHeader title="Workflow" subtitle="Escolha o cliente para abrir o quadro de demandas" />
-      <div className="mt-6 max-w-md">
-        <Input placeholder="Buscar cliente ou marca…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <Input className="max-w-md" placeholder="Buscar cliente ou marca…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <MonthPicker />
       </div>
       <div className="mt-6 grid grid-cols-1 gap-3 pb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <button
@@ -191,9 +198,10 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{parent.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {info.total > 0 ? `${info.pendentes} pendentes · ${info.total} vídeos` : "Sem vídeos"}
+                    {info.total > 0 ? `${info.pendentes} em andamento · ${info.concluidos} concluídos · ${info.total} no mês` : "Sem vídeos neste mês"}
                     {kids.length > 0 && ` · ${kids.length} marca${kids.length > 1 ? "s" : ""}`}
                   </p>
+                  {info.anteriores > 0 && <p className="mt-1 text-[10px] font-medium text-warning">{info.anteriores} pendência{info.anteriores > 1 ? "s" : ""} anterior{info.anteriores > 1 ? "es" : ""}</p>}
                 </div>
               </button>
               {kids.length > 0 && (
@@ -208,7 +216,7 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
                       >
                         <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/60" />
                         <span className="min-w-0 flex-1 truncate text-xs">{k.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{ki?.total ?? 0}</span>
+                        <span className="text-[10px] text-muted-foreground">{ki?.total ?? 0}{(ki?.anteriores ?? 0) > 0 ? ` + ${ki?.anteriores} ant.` : ""}</span>
                       </button>
                     );
                   })}
@@ -269,7 +277,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, client_id, color, checklist, clients(name)").order("position");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, competence_month, client_id, color, checklist, clients(name)").order("position");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -292,13 +300,16 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     },
   });
 
-  // Filtro por mês é opcional: por padrão o quadro mostra todas as demandas ativas.
   const { ym } = useMonthFromSearch();
   const term = q.trim().toLowerCase();
+  const currentMonthVideos = useMemo(() => (allVideos ?? []).filter((v) => v.competence_month.slice(0, 7) === ym), [allVideos, ym]);
+  const carriedOverVideos = useMemo(
+    () => (allVideos ?? []).filter((v) => v.competence_month.slice(0, 7) < ym && v.status !== "aprovado" && v.status !== "entregue"),
+    [allVideos, ym],
+  );
   const videos = useMemo(
     () =>
-      (allVideos ?? [])
-        .filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym)
+      currentMonthVideos
         .filter((v) => showDone || (v.status !== "aprovado" && v.status !== "entregue"))
         .filter((v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term))
         .sort((a, b) => {
@@ -308,12 +319,12 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           const due = (a.due_date ?? "9999-12-31").localeCompare(b.due_date ?? "9999-12-31");
           return due || naturalCompare(a.title, b.title);
         }),
-    [allVideos, ym, showDone, term],
+    [currentMonthVideos, showDone, term],
   );
 
   const completedCount = useMemo(
-    () => (allVideos ?? []).filter((v) => (v.due_date ?? v.created_at).slice(0, 7) === ym && (v.status === "aprovado" || v.status === "entregue")).length,
-    [allVideos, ym],
+    () => currentMonthVideos.filter((v) => v.status === "aprovado" || v.status === "entregue").length,
+    [currentMonthVideos],
   );
 
   function toggleDone() {
@@ -324,7 +335,8 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     });
   }
 
-  const hiddenCount = (allVideos?.length ?? 0) - videos.length;
+  const completedHiddenCount = showDone ? 0 : completedCount;
+  const searchHiddenCount = currentMonthVideos.length - videos.length - completedHiddenCount;
   const weekRevenue = useMemo(() => {
     const now = new Date();
     const day = (now.getDay() + 6) % 7;
@@ -338,7 +350,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
 
-  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string };
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string; competence_month?: string };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
@@ -375,6 +387,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
         title,
         status,
         due_date: due_date ?? null,
+        competence_month: `${ym}-01`,
         package_id: pkg?.id ?? null,
       });
       if (error) throw error;
@@ -537,11 +550,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
         </button>
         <PageHeader
           title={clientName}
-          subtitle={
-            hiddenCount > 0
-              ? `${videos.length} vídeo(s) visíveis · ${hiddenCount} ocultos pelos filtros`
-              : "Mostrando o mês selecionado"
-          }
+          subtitle={`${currentMonthVideos.length} vídeo(s) no mês${completedHiddenCount ? ` · ${completedHiddenCount} concluído(s) oculto(s)` : ""}${searchHiddenCount > 0 ? ` · ${searchHiddenCount} fora da busca` : ""}`}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Input
@@ -613,15 +622,16 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
         <div className="flex flex-1 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (
         <div className="mt-4 flex flex-1 flex-col gap-6 px-6 pb-24 md:px-8">
+          <CarryoverPanel videos={carriedOverVideos} onOpen={setDetailId} onStatus={setStatus} />
           {primaryView === "kanban" && boardView !== "list" && (
             <DndContext sensors={sensors} onDragEnd={onDragEnd}>
               <div
                 ref={marquee.containerRef}
                 onPointerDown={marquee.onPointerDown}
-                className="relative overflow-x-auto select-none"
+                className="relative select-none md:overflow-x-auto"
               >
                 {marquee.overlay}
-                <div className="flex min-w-max gap-3">
+                <div className="grid grid-cols-1 gap-3 md:flex md:min-w-max">
 
                   {GROUPS.map((g, gi) => {
                     const vids = grouped[g.id];
@@ -675,6 +685,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                                   parentId={clients.find((c) => c.id === v.client_id)?.parent_client_id ?? v.client_id}
                                   brandName={clients.find((c) => c.id === v.client_id)?.parent_client_id ? (v.clients?.name ?? null) : null}
                                   onSetClient={(cid) => patch.mutate({ ids: [v.id], changes: { client_id: cid } })}
+                                   onSetStatus={(status) => setStatus([v.id], status)}
                                   mutedDue={g.id === "enviado"}
                                 />
                               ))}
@@ -956,7 +967,7 @@ function Column({ id, label, dot, count, shortcut, onQuickAdd, children }: {
 
   return (
     <div ref={setNodeRef} className={cn(
-      "flex w-72 shrink-0 flex-col rounded-xl border border-border/70 bg-card/40 backdrop-blur-xl transition-all duration-200",
+      "flex w-full shrink-0 flex-col rounded-xl border border-border/70 bg-card/40 backdrop-blur-xl transition-all duration-200 md:w-72",
       isOver && "border-primary/60 bg-primary/5 shadow-[0_0_0_1px_var(--primary),0_12px_32px_-18px_var(--primary)]",
     )}>
       <div className="sticky top-0 z-10 flex items-center gap-2 rounded-t-xl border-b border-border/70 bg-card/70 px-3 py-2.5 backdrop-blur-xl">
@@ -1127,7 +1138,7 @@ function ChecklistBadge({ value }: { value: unknown }) {
   );
 }
 
-function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedCount, clients, parentId, brandName, onSetClient, mutedDue }: {
+function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedCount, clients, parentId, brandName, onSetClient, onSetStatus, mutedDue }: {
   video: VideoRow;
   selected: boolean;
   onToggle: () => void;
@@ -1138,6 +1149,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
   parentId?: string | null;
   brandName?: string | null;
   onSetClient?: (clientId: string) => void;
+  onSetStatus?: (status: VideoStatus) => void;
   mutedDue?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: video.id });
@@ -1191,6 +1203,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
           </div>
         </div>
         <ColorPicker table="videos" id={video.id} color={video.color} invalidate={[["videos-workflow"], ["fila-videos"]]} className="mt-0.5" />
+        {onSetStatus && <Select value={video.status} onValueChange={(value) => onSetStatus(value as VideoStatus)}><SelectTrigger className="h-7 w-7 shrink-0 border-0 p-0 md:opacity-0 md:group-hover:opacity-100" aria-label="Mover para outra etapa"><ChevronRight className="h-3.5 w-3.5" /></SelectTrigger><SelectContent>{ALL_STATUSES.map((status) => <SelectItem key={status} value={status}>{STAGE_LABEL[status]}</SelectItem>)}</SelectContent></Select>}
         <button onClick={onExpand} className="opacity-0 transition group-hover:opacity-100" aria-label="Abrir">
           <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
         </button>
@@ -1321,6 +1334,7 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
 
   const [form, setForm] = useState({
     title: "", description: "", due_date: "",
+    competence_month: "",
     priority: "media" as VideoPriority, status: "recebido" as VideoStatus,
     raw_files_link: "", final_file_link: "",
   });
@@ -1330,6 +1344,7 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
     setForm({
       title: video.title ?? "", description: video.description ?? "",
       due_date: video.due_date ?? "", priority: video.priority, status: video.status,
+      competence_month: video.competence_month?.slice(0, 7) ?? "",
       raw_files_link: video.raw_files_link ?? "", final_file_link: video.final_file_link ?? "",
     });
   }, [video]);
@@ -1339,6 +1354,7 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
       const { error } = await supabase.from("videos").update({
         title: form.title, description: form.description || null,
         due_date: form.due_date || null, priority: form.priority, status: form.status,
+        competence_month: `${form.competence_month}-01`,
         raw_files_link: form.raw_files_link || null, final_file_link: form.final_file_link || null,
       }).eq("id", videoId!);
       if (error) throw error;
@@ -1455,6 +1471,11 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
             </div>
 
             <div className="space-y-1.5">
+              <Label>Mês da leva</Label>
+              <Input type="month" value={form.competence_month} onChange={(e) => setForm({ ...form, competence_month: e.target.value })} />
+            </div>
+
+            <div className="space-y-1.5">
               <Label>Prazo</Label>
               <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
             </div>
@@ -1555,6 +1576,7 @@ function NewVideoDialog({ onClose, clients, defaultClientId, month }: { onClose:
       workspace_id: me.workspaceId,
       title: form.title, description: form.description || null, client_id: form.client_id,
       priority: form.priority, status: form.status, due_date: form.due_date || null, package_id: pkg?.id ?? null, checklist: form.checklist,
+      competence_month: `${month ?? form.due_date.slice(0, 7) ?? new Date().toISOString().slice(0, 7)}-01`,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
