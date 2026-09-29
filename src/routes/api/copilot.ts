@@ -89,13 +89,6 @@ export const Route = createFileRoute("/api/copilot")({
           return null;
         }
 
-        function monthFirstDay(month: string | null | undefined) {
-          if (!month) return null;
-          const today = new Date().toISOString().slice(0, 7);
-          if (month === today) return null;
-          return `${month}-01`;
-        }
-
         const { data: memoryRows } = await supabase
           .from("copilot_memory")
           .select("kind, content")

@@ -241,6 +241,7 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
           table="clients"
           id={client.id}
           title={`Excluir ${client.name}?`}
+          confirmText={client.name}
           description="Todos os vídeos, pacotes, links e histórico deste cliente serão removidos permanentemente."
           successMessage="Cliente excluído"
           invalidate={[["clients"], ["dashboard"], ["clients-min"]]}

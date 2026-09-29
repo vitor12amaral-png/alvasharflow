@@ -102,6 +102,7 @@ export function ClientWizard({ onClose }: { onClose: () => void }) {
           status: "recebido" as const,
           priority: "media" as const,
           position: i,
+           competence_month: `${form.start_date.slice(0, 7)}-01`,
         }));
         const { error: vErr } = await supabase.from("videos").insert(rows);
         if (vErr) throw vErr;

@@ -4,19 +4,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ChevronLeft, ChevronRight, Film, Package } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Film, Package } from "lucide-react";
 import { STAGE_ACCENT } from "@/lib/video-workflow";
 import type { VideoStatus } from "@/lib/video-workflow";
 import { cn } from "@/lib/utils";
+import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   component: CalendarioPage,
-  head: () => ({ meta: [{ title: "Calendário — AlvasharFlow" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({ month: typeof search.month === "string" ? search.month : undefined }),
+  head: () => ({ meta: [
+    { title: "Calendário de produção — AlvasharFlow" },
+    { name: "description", content: "Visualize prazos de vídeos e vencimentos de pacotes por mês." },
+    { property: "og:title", content: "Calendário de produção — AlvasharFlow" },
+    { property: "og:description", content: "Prazos e vencimentos da operação de vídeos em um calendário mensal." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 function CalendarioPage() {
-  const [cursor, setCursor] = useState(() => new Date());
+  const { year, month } = useMonthFromSearch();
 
   const { data, isLoading } = useQuery({
     queryKey: ["calendar"],
@@ -29,8 +37,6 @@ function CalendarioPage() {
     },
   });
 
-  const year = cursor.getFullYear();
-  const month = cursor.getMonth();
   const first = new Date(year, month, 1);
   const startDay = first.getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -51,19 +57,13 @@ function CalendarioPage() {
     (eventsByDay[key] ??= []).push({ type: "package", label: `Fim do pacote — ${p.clients?.name ?? ""}`, sub: "" });
   });
 
-  const monthName = cursor.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-
   return (
     <div className="p-6 md:p-8">
       <PageHeader
         title="Calendário"
         subtitle="Prazos e vencimentos de pacote"
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setCursor(new Date(year, month - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
-            <span className="min-w-[140px] text-center font-display capitalize">{monthName}</span>
-            <Button variant="ghost" size="icon" onClick={() => setCursor(new Date(year, month + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
-          </div>
+          <MonthPicker />
         }
       />
 

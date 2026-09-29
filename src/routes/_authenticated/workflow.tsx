@@ -787,6 +787,38 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function CarryoverPanel({ videos, onOpen, onStatus }: { videos: VideoRow[]; onOpen: (id: string) => void; onStatus: (ids: string[], status: VideoStatus) => void }) {
+  const [open, setOpen] = useState(true);
+  const groups = useMemo(() => {
+    const map = new Map<string, VideoRow[]>();
+    videos.forEach((video) => {
+      const key = video.competence_month.slice(0, 7);
+      map.set(key, [...(map.get(key) ?? []), video]);
+    });
+    return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
+  }, [videos]);
+  if (!videos.length) return null;
+  return (
+    <section className="overflow-hidden rounded-lg border border-warning/25 bg-warning/5">
+      <button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-warning/5" aria-expanded={open}>
+        <CalendarClock className="h-4 w-4 text-warning" />
+        <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Pendências anteriores</span><span className="block text-[11px] text-muted-foreground">{videos.length} vídeo{videos.length > 1 ? "s" : ""} ainda precisa{videos.length === 1 ? "" : "m"} avançar</span></span>
+        <Badge variant="outline" className="border-warning/30 text-warning">{videos.length}</Badge>
+        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="border-t border-warning/15 px-3 py-2">
+        {groups.map(([month, rows]) => <div key={month} className="border-b border-border/40 py-2 last:border-0">
+          <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase capitalize text-muted-foreground">{new Date(`${month}-02T12:00:00`).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })} · {rows.length}</p>
+          <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">{rows.map((video) => <div key={video.id} className="flex min-w-0 items-center gap-2 rounded-md px-2 py-2 hover:bg-muted/35">
+            <button type="button" onClick={() => onOpen(video.id)} className="min-w-0 flex-1 text-left"><span className="block truncate text-xs font-medium">{video.title}</span><span className="block truncate text-[10px] text-muted-foreground">{video.clients?.name ?? "—"} · {video.due_date ? formatDate(video.due_date) : "Sem prazo"}</span></button>
+            <Select value={video.status} onValueChange={(value) => onStatus([video.id], value as VideoStatus)}><SelectTrigger className="h-7 w-28 text-[10px]"><SelectValue /></SelectTrigger><SelectContent>{ALL_STATUSES.map((status) => <SelectItem key={status} value={status}>{STAGE_LABEL[status]}</SelectItem>)}</SelectContent></Select>
+          </div>)}</div>
+        </div>)}
+      </div>}
+    </section>
+  );
+}
+
 function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
   videos: VideoRow[];
   mode: "hoje" | "geral";
@@ -1576,7 +1608,7 @@ function NewVideoDialog({ onClose, clients, defaultClientId, month }: { onClose:
       workspace_id: me.workspaceId,
       title: form.title, description: form.description || null, client_id: form.client_id,
       priority: form.priority, status: form.status, due_date: form.due_date || null, package_id: pkg?.id ?? null, checklist: form.checklist,
-      competence_month: `${month ?? form.due_date.slice(0, 7) ?? new Date().toISOString().slice(0, 7)}-01`,
+      competence_month: `${month || form.due_date.slice(0, 7) || new Date().toISOString().slice(0, 7)}-01`,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
