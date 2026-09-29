@@ -1465,6 +1465,7 @@ export type Database = {
           checklist: Json
           client_id: string
           color: string | null
+          competence_month: string
           created_at: string
           description: string | null
           due_date: string | null
@@ -1489,6 +1490,7 @@ export type Database = {
           checklist?: Json
           client_id: string
           color?: string | null
+          competence_month?: string
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -1513,6 +1515,7 @@ export type Database = {
           checklist?: Json
           client_id?: string
           color?: string | null
+          competence_month?: string
           created_at?: string
           description?: string | null
           due_date?: string | null
