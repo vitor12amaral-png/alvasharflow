@@ -64,11 +64,12 @@ function isActivePath(pathname: string, to: string) {
   return pathname === to || pathname.startsWith(to + "/");
 }
 
-function NavLinkRow({ item, pathname }: { item: NavItem; pathname: string }) {
-  const active = isActivePath(pathname, item.to);
+function NavLinkRow({ item, pathname, suppressActive = false, onSelect }: { item: NavItem; pathname: string; suppressActive?: boolean; onSelect?: () => void }) {
+  const active = !suppressActive && isActivePath(pathname, item.to);
   return (
     <Link
       to={item.to}
+      onClick={onSelect}
       className={cn(
         "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] transition-colors duration-150",
         active
@@ -101,6 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => installGlobalSfx(), []);
 
   const [openGroups, setOpenGroupsState] = useState<Record<string, boolean>>({});
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   useEffect(() => {
     try {
       const raw = localStorage.getItem(GROUPS_KEY);
@@ -115,15 +117,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     const isOpen = openGroups[id] ?? activeInGroup;
     if (isOpen) {
       setOpenGroups({ ...openGroups, [id]: false });
+      setSelectedGroup(null);
     } else {
       // exclusivo: fecha todos os outros
       const next: Record<string, boolean> = {};
       NAV_GROUPS.forEach((g) => { next[g.id] = g.id === id; });
       setOpenGroups(next);
+      setSelectedGroup(id);
     }
   }
   // Garante que o grupo do item ativo fique aberto, sem permitir múltiplos abertos manualmente.
   useEffect(() => {
+    setSelectedGroup(null);
     const activeGroup = NAV_GROUPS.find((g) => g.items.some((i) => isActivePath(location.pathname, i.to)));
     if (!activeGroup) return;
     if (openGroups[activeGroup.id]) return;
@@ -173,7 +178,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+      <aside className="floating-glass hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/80 md:flex">
         <div className="flex items-center gap-3 px-5 py-4">
           {brand.logo_url ? (
             <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-8 w-8 rounded-md object-cover" />
@@ -189,23 +194,23 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-3">
-          {SOLO_TOP.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
+          {SOLO_TOP.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} suppressActive={selectedGroup !== null} onSelect={() => setSelectedGroup(null)} />)}
           {NAV_GROUPS.map((group) => {
             const items = group.items.filter((i) => !i.ownerOnly || isPlatformOwner);
             if (!items.length) return null;
             const hasActive = items.some((i) => isActivePath(location.pathname, i.to));
             const open = openGroups[group.id] ?? hasActive;
-           const highlighted = open || hasActive;
+            const highlighted = selectedGroup === group.id;
             return (
               <div key={group.id} className="pt-2">
                 <button
                   onClick={() => toggleGroup(group.id, hasActive)}
                  aria-expanded={open}
                   className={cn(
-                   "group flex w-full items-center justify-between rounded-md px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-[color,background-color,transform] duration-150 hover:-translate-y-px",
+                   "group flex w-full items-center justify-between rounded-lg border border-transparent px-3 py-2.5 text-[12px] font-medium uppercase tracking-[0.08em] transition-colors duration-150",
                    highlighted
-                     ? "bg-primary/8 text-primary"
-                     : "text-sidebar-foreground/55 hover:bg-sidebar-accent/45 hover:text-sidebar-foreground",
+                     ? "border-primary/20 bg-primary/10 text-primary"
+                     : "text-sidebar-foreground/55 hover:bg-sidebar-accent/35 hover:text-sidebar-foreground",
                   )}
                 >
                  <span>
@@ -214,24 +219,24 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <ChevronDown className={cn(
                    "h-3.5 w-3.5 text-muted-foreground transition-transform duration-150",
                     open ? "rotate-0" : "-rotate-90",
-                   highlighted && "text-primary",
+                    highlighted ? "text-primary" : open && "text-sidebar-foreground/70",
                   )} />
                 </button>
                 {open && (
                   <div className="mt-1 space-y-0.5 border-l border-border pl-1">
-                    {items.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
+                    {items.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} suppressActive={selectedGroup !== null} onSelect={() => setSelectedGroup(null)} />)}
                   </div>
                 )}
               </div>
             );
           })}
           <div className="pt-2">
-            {SOLO_BOTTOM.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} />)}
+            {SOLO_BOTTOM.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} suppressActive={selectedGroup !== null} onSelect={() => setSelectedGroup(null)} />)}
           </div>
         </nav>
 
         <div className="border-t border-sidebar-border p-2.5">
-          <div className="flex items-center gap-2.5 rounded-lg border border-sidebar-border bg-sidebar-accent/25 px-2 py-2">
+          <div className="glass-surface flex items-center gap-2.5 rounded-lg border px-2 py-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
               {initials(user.fullName ?? user.email)}
             </div>
@@ -263,7 +268,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex flex-1 flex-col min-w-0">
-        <header className="flex items-center justify-between border-b border-border bg-background/60 px-4 py-2.5 backdrop-blur md:hidden">
+        <header className="floating-glass flex items-center justify-between border-b px-4 py-2.5 md:hidden">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
               <span className="font-display text-[10px] font-bold text-primary-foreground">A</span>
@@ -273,7 +278,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button onClick={signOut} className="text-xs text-muted-foreground">Sair</button>
         </header>
 
-        <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around overflow-x-auto border-t border-border bg-sidebar/95 px-1 py-1.5 backdrop-blur-md md:hidden">
+        <nav className="floating-glass fixed inset-x-0 bottom-0 z-30 flex justify-around overflow-x-auto border-t px-1 py-1.5 md:hidden">
           {NAV.slice(0, 5).map((item) => {
             const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
             return (

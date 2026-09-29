@@ -33,13 +33,13 @@ export function Segmented<T extends string>({
     <div
       role="tablist"
       className={cn(
-        "relative isolate inline-flex select-none rounded-lg border border-border/70 bg-muted/35 p-[3px]",
+        "control-surface relative isolate inline-flex select-none rounded-lg border p-[3px]",
         className,
       )}
     >
       <span
         aria-hidden
-        className="absolute inset-y-[3px] left-[3px] -z-10 rounded-md bg-primary/10 transition-transform duration-200 ease-out"
+        className="absolute inset-y-[3px] left-[3px] -z-10 rounded-md bg-primary/12 shadow-sm transition-transform duration-200 ease-out"
         style={{
           width: `calc(${w}% - 3px)`,
           transform: `translateX(calc(${index * 100}% + ${index * 3}px))`,
