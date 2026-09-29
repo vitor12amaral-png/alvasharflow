@@ -48,4 +48,4 @@
 10. Apple Minimal Glass
    - [x] Garantir um único destaque azul por vez no menu lateral.
    - [x] Aplicar superfícies translúcidas e clean aos componentes compartilhados.
-   - [ ] Validar navegação, contraste e acabamento em desktop e mobile.
+   - [x] Validar navegação, contraste e acabamento em desktop e mobile.
