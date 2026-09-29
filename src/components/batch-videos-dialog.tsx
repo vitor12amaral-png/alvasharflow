@@ -15,19 +15,11 @@ import { STAGE_LABEL, PRIORITY_LABEL } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { resolveClientPricing, type PricingInfo } from "@/lib/pricing";
 import { formatBRL, naturalCompare } from "@/lib/format";
+import { MonthDeadlinePicker } from "@/components/month-deadline-picker";
 
 export type ClientMin = { id: string; name: string; parent_client_id: string | null };
 
 const ALL_STATUSES = Object.keys(STAGE_LABEL) as VideoStatus[];
-
-function defaultDueForMonth(ym?: string) {
-  if (!ym) return "";
-  const now = new Date();
-  const current = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  if (ym === current) return "";
-  // Mês futuro/passado: sugere o primeiro dia do mês exibido.
-  return `${ym}-01`;
-}
 
 export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClientId, month }: {
   onClose: () => void;
@@ -45,7 +37,7 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [selectedMonth, setSelectedMonth] = useState(month ?? currentMonth);
-  const [dueDate, setDueDate] = useState(defaultDueForMonth(month ?? currentMonth));
+  const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
   const [templateId, setTemplateId] = useState("");
@@ -122,6 +114,7 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
       status,
       priority,
       due_date: dueDate || null,
+      competence_month: `${selectedMonth}-01`,
       package_id: info.packageId,
       checklist: templateChecklist,
       unit_price: info.pricePerVideo > 0 ? info.pricePerVideo : null,
@@ -203,12 +196,11 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
 
         <section className="space-y-3">
           <SectionLabel number="03">Organização e prazos</SectionLabel>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Situação"><Select value={status} onValueChange={(v) => setStatus(v as VideoStatus)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{ALL_STATUSES.map((s) => <SelectItem key={s} value={s}>{STAGE_LABEL[s]}</SelectItem>)}</SelectContent></Select></Field>
             <Field label="Prioridade"><Select value={priority} onValueChange={(v) => setPriority(v as VideoPriority)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(["baixa", "media", "alta", "urgente"] as VideoPriority[]).map((p) => <SelectItem key={p} value={p}>{PRIORITY_LABEL[p]}</SelectItem>)}</SelectContent></Select></Field>
-            <Field label="Mês da leva"><Input type="month" value={selectedMonth} onChange={(e) => { const next = e.target.value; setSelectedMonth(next); setDueDate((current) => current && current.slice(0, 7) === next ? current : defaultDueForMonth(next)); }} /></Field>
-            <Field label="Prazo"><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
           </div>
+          <MonthDeadlinePicker month={selectedMonth} dueDate={dueDate} onMonthChange={setSelectedMonth} onDueDateChange={setDueDate} />
         </section>
 
         <section className="rounded-xl border border-primary/20 bg-primary/5 p-4">

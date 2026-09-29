@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- O mês da leva de um vídeo é `videos.competence_month`; prazo e competência são independentes para preservar pendências entre meses.
