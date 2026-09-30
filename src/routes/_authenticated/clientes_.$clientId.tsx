@@ -24,12 +24,15 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { AddSubClientButton } from "@/routes/_authenticated/clientes";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MonthPicker } from "@/components/month-picker";
+import { BatchVideosDialog } from "@/components/batch-videos-dialog";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$clientId")({
   component: ClientDetail,
-  validateSearch: (search: Record<string, unknown>): { tab?: string; video?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { tab?: string; video?: string; month?: string } => ({
     tab: typeof search.tab === "string" ? search.tab : undefined,
     video: typeof search.video === "string" ? search.video : undefined,
+    month: typeof search.month === "string" && /^\d{4}-\d{2}$/.test(search.month) ? search.month : undefined,
   }),
   head: () => ({ meta: [
     { title: "Cliente e relacionamento — AlvasharFlow" },
@@ -67,6 +70,7 @@ function ClientDetail() {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("alvashar-client-hide-completed") !== "true";
   });
+  const [batchOpen, setBatchOpen] = useState(false);
 
   const qc = useQueryClient();
 
@@ -109,6 +113,8 @@ function ClientDetail() {
   if (!client?.client) return <div className="p-8 text-center text-muted-foreground">Cliente não encontrado</div>;
 
   const c = client.client;
+  const now = new Date();
+  const selectedMonth = search.month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const activePack = client.packages.find((p) => p.status === "ativo");
   const links = client.library.filter((i) => i.kind === "link");
   const files = client.library.filter((i) => i.kind !== "link");
@@ -243,12 +249,26 @@ function ClientDetail() {
         </TabsContent>
 
         <TabsContent value="demands" className="mt-4">
-          <div className="mb-3 flex flex-wrap justify-end gap-2">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <MonthPicker />
+            <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={toggleDone}>
               {showDone ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               {showDone ? `Ocultar concluídas (${completedVideos})` : `Mostrar concluídas (${completedVideos})`}
             </Button>
+            <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline"><Plus className="mr-1 h-4 w-4" />Nova leva</Button>
+              </DialogTrigger>
+              <BatchVideosDialog
+                onClose={() => setBatchOpen(false)}
+                clients={[{ id: clientId, name: c.name, parent_client_id: c.parent_client_id }]}
+                defaultClientId={clientId}
+                month={selectedMonth}
+              />
+            </Dialog>
             <NewVideoDialog clientId={clientId} packageId={activePack?.id ?? null} nextPosition={client.videos.length} />
+            </div>
           </div>
           {visibleVideos.length === 0 ? (
             <Card className="p-8 text-center text-sm text-muted-foreground">Nenhum vídeo ainda.</Card>
