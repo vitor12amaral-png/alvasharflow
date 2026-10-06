@@ -2144,6 +2144,7 @@ export type Database = {
         }
         Returns: string
       }
+      reorder_workflow_videos: { Args: { _items: Json }; Returns: undefined }
       safe_uuid: { Args: { _txt: string }; Returns: string }
     }
     Enums: {
