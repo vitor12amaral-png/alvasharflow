@@ -53,7 +53,15 @@
 11. Workflow mensal e ações intuitivas
    - [x] Criar competência mensal explícita para os vídeos existentes e novos.
    - [ ] Aplicar seletor expansível de mês e prazo na criação de levas.
-   - [ ] Separar demandas do mês e pendências anteriores em todas as visões.
+   - [ ] Manter foco no mês selecionado, sem painel invasivo de pendências anteriores.
    - [ ] Exibir resumo mensal por cliente na entrada do Workflow.
    - [ ] Adicionar alternativa clara ao arrasto e adaptar o quadro ao celular.
    - [ ] Unificar navegação mensal do Calendário e melhorar estados vazios/filtros.
+
+12. Fundação operacional — melhorias aprovadas
+   - [ ] Remover painel de pendências anteriores sem apagar vídeos antigos.
+   - [ ] Adicionar ação contextual de próxima etapa nos cartões.
+   - [ ] Persistir ordem do Kanban com reversão em caso de erro.
+   - [ ] Exibir e editar responsável e estimativa.
+   - [ ] Exibir histórico de alterações no detalhe do vídeo.
+   - [ ] Validar ações e persistência no Workflow.

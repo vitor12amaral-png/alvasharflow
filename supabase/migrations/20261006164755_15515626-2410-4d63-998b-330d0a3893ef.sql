@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.tg_log_video_operational_changes() FROM PUBLIC, anon, authenticated;
