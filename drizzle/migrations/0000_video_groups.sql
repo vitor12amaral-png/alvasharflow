@@ -1,0 +1,2 @@
+ALTER TABLE public.videos ADD COLUMN IF NOT EXISTS group_name text, ADD COLUMN IF NOT EXISTS group_color text;
+CREATE INDEX IF NOT EXISTS videos_client_position_idx ON public.videos (client_id, position);
