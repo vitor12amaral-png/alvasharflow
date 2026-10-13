@@ -6,7 +6,7 @@ import { groupVideoBatches, type BatchVideo } from "@/lib/video-batches";
 export function WorkflowBatches<T extends BatchVideo>({ allVideos, visibleVideos, month, renderVideos }: {
   allVideos: T[]; visibleVideos: T[]; month: string; renderVideos: (rows: T[]) => ReactNode;
 }) {
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(groupVideoBatches(allVideos, month).map(batch => batch.key)));
   const visibleIds = new Set(visibleVideos.map(v => v.id));
   const groups = groupVideoBatches(allVideos, month);
   const byClient = new Map<string, typeof groups>();

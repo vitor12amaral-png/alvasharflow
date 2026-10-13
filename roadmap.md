@@ -67,6 +67,6 @@
    - [x] Validar ações e persistência no Workflow.
 
 13. Organização das levas — etapa atual
-   - [ ] Conferir identificação já existente e organizar levas por cliente no mês selecionado.
-   - [ ] Mostrar progresso de entregas e abrir/recolher vídeos usando as ações existentes.
-   - [ ] Validar filtros, progresso e acesso autenticado.
+   - [x] Conferir identificação já existente e organizar levas por cliente no mês selecionado.
+   - [x] Mostrar progresso de entregas e abrir/recolher vídeos usando as ações existentes.
+   - [x] Validar filtros, progresso e acesso autenticado.
