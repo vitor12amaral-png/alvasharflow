@@ -13,3 +13,4 @@
 - Workflow ordering uses the existing video position field and an invoker RPC for atomic multi-row updates, so failed moves do not leave partial ordering.
 - Video history reads the existing activity log; database triggers audit operational changes across every entry point without duplicating status/assignment events.
 - Contextual next-stage actions and team lookup live in a shared operations module to keep cards and video details consistent.
+- Batch views group existing video batch IDs by client and competence month through a shared pure helper; progress uses all monthly rows, not filtered rows, to keep delivery totals accurate without a new batch entity.

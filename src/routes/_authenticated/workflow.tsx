@@ -27,6 +27,7 @@ import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
 import { StopwatchConsole, type TimerBatch } from "@/components/stopwatch-console";
 import { Segmented } from "@/components/segmented";
 import { BatchVideosDialog } from "@/components/batch-videos-dialog";
+import { WorkflowBatches } from "@/components/workflow-batches";
 
 import { NEXT_ACTION, useWorkflowTeam, VideoHistory } from "@/components/workflow-operations";
 import { sfx } from "@/lib/sfx";
@@ -86,6 +87,8 @@ type VideoRow = {
   due_time: string | null;
   created_at: string;
   competence_month: string;
+  batch_id: string | null;
+  batch_label: string | null;
   client_id: string;
   color: string | null;
   position: number;
@@ -246,7 +249,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 }) {
   const [open, setOpen] = useState(openNew);
   const [batchOpen, setBatchOpen] = useState(false);
-  const [boardView, setBoardView] = useState<"split" | "kanban" | "list">("kanban");
+  const [boardView, setBoardView] = useState<"split" | "kanban" | "list" | "batches">("kanban");
   const [queueMode, setQueueMode] = useState<"hoje" | "geral">("hoje");
   const [detailId, setDetailId] = useState<string | null>(initialVideoId ?? null);
   const [pendingDueIds, setPendingDueIds] = useState<string[]>([]);
@@ -283,7 +286,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, competence_month, client_id, color, checklist, position, editor_id, estimated_hours, clients(name)").order("position").order("created_at");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, competence_month, batch_id, batch_label, client_id, color, checklist, position, editor_id, estimated_hours, clients(name)").order("position").order("created_at");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -642,6 +645,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           {primaryView === "kanban" && (
             <Segmented value={boardView} onChange={setBoardView} options={[
               { value: "kanban", label: "Quadro", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+              { value: "batches", label: "Levas", icon: <Layers3 className="h-3.5 w-3.5" /> },
               { value: "list", label: "Lista", icon: <Rows3 className="h-3.5 w-3.5" /> },
               { value: "split", label: "Ambos", icon: <SplitSquareVertical className="h-3.5 w-3.5" /> },
             ]} />
@@ -661,7 +665,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
         <div className="flex flex-1 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (
         <div className="mt-4 flex flex-1 flex-col gap-6 px-6 pb-24 md:px-8">
-          {primaryView === "kanban" && boardView !== "list" && (
+          {primaryView === "kanban" && (boardView === "kanban" || boardView === "split") && (
             <DndContext sensors={sensors} onDragEnd={onDragEnd}>
               <div
                 ref={marquee.containerRef}
@@ -743,7 +747,29 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
             </DndContext>
           )}
 
-          {primaryView === "kanban" && boardView !== "kanban" && (
+          {primaryView === "kanban" && boardView === "batches" && (
+            <WorkflowBatches
+              key={`${clientId}::${ym}`}
+              allVideos={currentMonthVideos}
+              visibleVideos={videos}
+              month={ym}
+              renderVideos={(rows) => <ListView
+                videos={rows}
+                selected={selected}
+                onToggle={toggle}
+                onToggleAll={(ids, on) => setSelected((prev) => {
+                  const next = new Set(prev);
+                  ids.forEach((id) => { if (on) next.add(id); else next.delete(id); });
+                  return next;
+                })}
+                onStatusChange={(id, status) => setStatus([id], status)}
+                onDueChange={(id, due_date) => patch.mutate({ ids: [id], changes: { due_date } })}
+                onOpen={setDetailId}
+              />}
+            />
+          )}
+
+          {primaryView === "kanban" && (boardView === "list" || boardView === "split") && (
             <ListView
               videos={videos ?? []}
               selected={selected}
