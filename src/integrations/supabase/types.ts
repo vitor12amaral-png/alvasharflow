@@ -1473,6 +1473,8 @@ export type Database = {
           editor_id: string | null
           estimated_hours: number | null
           final_file_link: string | null
+          group_color: string | null
+          group_name: string | null
           id: string
           package_id: string | null
           position: number
@@ -1498,6 +1500,8 @@ export type Database = {
           editor_id?: string | null
           estimated_hours?: number | null
           final_file_link?: string | null
+          group_color?: string | null
+          group_name?: string | null
           id?: string
           package_id?: string | null
           position?: number
@@ -1523,6 +1527,8 @@ export type Database = {
           editor_id?: string | null
           estimated_hours?: number | null
           final_file_link?: string | null
+          group_color?: string | null
+          group_name?: string | null
           id?: string
           package_id?: string | null
           position?: number
