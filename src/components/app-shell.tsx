@@ -74,7 +74,7 @@ function NavLinkRow({ item, pathname, suppressActive = false, onSelect }: { item
         "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] transition-colors duration-150",
         active
           ? "bg-primary/10 font-medium text-primary"
-          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/55 hover:text-sidebar-foreground",
+          : "text-foreground/90 hover:bg-sidebar-accent/55 hover:text-foreground",
       )}
     >
       <span className={cn(
@@ -189,7 +189,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
           <div className="min-w-0">
             <p className="truncate font-display text-base leading-tight font-semibold">{brand.brand_name}</p>
-            <p className="truncate text-[9px] tracking-[0.12em] text-muted-foreground uppercase">{brand.brand_tagline ?? ""}</p>
+            <p className="truncate text-[9px] tracking-[0.12em] text-foreground/75 uppercase">{brand.brand_tagline ?? ""}</p>
           </div>
         </div>
 
@@ -210,16 +210,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                    "group flex w-full items-center justify-between rounded-lg border border-transparent px-3 py-2.5 text-[12px] font-medium uppercase tracking-[0.08em] transition-colors duration-150",
                    highlighted
                      ? "border-primary/20 bg-primary/10 text-primary"
-                     : "text-sidebar-foreground/55 hover:bg-sidebar-accent/35 hover:text-sidebar-foreground",
+                     : "font-semibold text-foreground hover:bg-sidebar-accent/45",
                   )}
                 >
                  <span>
                    {group.label}
                  </span>
                   <ChevronDown className={cn(
-                   "h-3.5 w-3.5 text-muted-foreground transition-transform duration-150",
+                   "h-3.5 w-3.5 text-foreground/80 transition-transform duration-150",
                     open ? "rotate-0" : "-rotate-90",
-                    highlighted ? "text-primary" : open && "text-sidebar-foreground/70",
+                    highlighted && "text-primary",
                   )} />
                 </button>
                 {open && (
