@@ -1228,63 +1228,34 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: video.id });
   const drop = useDroppable({ id: `drop::${video.id}` });
-  const next = NEXT_ACTION[video.status];
+  const tint = colorValue(video.color);
+  const done = video.status === "entregue" || video.status === "aprovado";
+  void onMove; void moving; void team; void onAssign; void onEstimate; void mutedDue; void anySelected; void clients; void parentId; void brandName; void onSetClient;
   return (
     <div ref={(node) => { setNodeRef(node); drop.setNodeRef(node); }} data-vid={video.id}
       className={cn(
-        "group rounded-md border border-border bg-card px-2.5 py-2 text-sm shadow-sm transition hover:border-primary/40",
-        selected && "border-primary/60 ring-1 ring-primary/40",
+        "group flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-2.5 py-2 text-sm backdrop-blur transition-colors hover:border-primary/40",
+        selected && "border-primary/70 ring-1 ring-primary/40",
         isDragging && "opacity-40",
         drop.isOver && "ring-1 ring-primary",
       )}
       style={{
         ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {}),
-        ...(colorValue(video.color) ? { borderLeft: `3px solid ${colorValue(video.color)}` } : {}),
+        ...(tint ? { background: `color-mix(in oklch, ${tint} 22%, var(--card))`, borderColor: `color-mix(in oklch, ${tint} 55%, transparent)` } : {}),
       }}
     >
-      <div className="flex items-start gap-2">
-        <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
-          <Checkbox checked={selected} onCheckedChange={onToggle} className="h-3.5 w-3.5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          {clients && onSetClient && parentId && (
-            <SubclientPicker clients={clients} parentId={parentId} currentId={video.client_id} onPick={onSetClient}>
-              <button
-                onClick={(e) => e.stopPropagation()}
-                className="mb-1 inline-flex max-w-full items-center gap-1 truncate rounded-full border border-border/70 bg-muted/40 px-1.5 py-[1px] text-[9px] text-muted-foreground transition hover:text-foreground"
-              >
-                {brandName ?? "Sem marca"}
-              </button>
-            </SubclientPicker>
-          )}
-          <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
-          <p className={cn("truncate text-xs font-medium", (video.status === "entregue" || video.status === "aprovado") && "line-through")}>{video.title}</p>
-          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-            <DueDatePopover
-              table="videos"
-              ids={[video.id]}
-              due={video.due_date}
-              time={video.due_time}
-              invalidate={[["videos-workflow"], ["fila-videos"], ["dashboard"]]}
-            >
-              <button onClick={(e) => e.stopPropagation()} aria-label="Prazo">
-                <DueBadge due={video.due_date} time={video.due_time} muted={mutedDue} />
-              </button>
-            </DueDatePopover>
-            <span className={cn("font-medium", PRIORITY_COLOR[video.priority])}>{PRIORITY_LABEL[video.priority]}</span>
-            <ChecklistBadge value={video.checklist} />
-            {selected && anySelected && selectedCount > 1 && (
-              <span className="text-primary">· move {selectedCount}</span>
-            )}
-          </div>
-          </div>
-        </div>
-        <ColorPicker table="videos" id={video.id} color={video.color} invalidate={[["videos-workflow"], ["fila-videos"]]} className="mt-0.5" />
-        {onSetStatus && <Select value={video.status} onValueChange={(value) => onSetStatus(value as VideoStatus)}><SelectTrigger className="h-7 w-7 shrink-0 border-0 p-0 md:opacity-0 md:group-hover:opacity-100" aria-label="Mover para outra etapa"><ChevronRight className="h-3.5 w-3.5" /></SelectTrigger><SelectContent>{ALL_STATUSES.map((status) => <SelectItem key={status} value={status}>{STAGE_LABEL[status]}</SelectItem>)}</SelectContent></Select>}
-        <button onClick={onExpand} className="opacity-0 transition group-hover:opacity-100" aria-label="Abrir">
-          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-        </button>
+      <div onClick={(e) => e.stopPropagation()}>
+        <Checkbox checked={selected} onCheckedChange={onToggle} className="h-3.5 w-3.5" />
       </div>
+      <div {...listeners} {...attributes} onDoubleClick={onExpand} className="min-w-0 flex-1 cursor-grab active:cursor-grabbing">
+        <p className={cn("truncate text-xs font-medium text-foreground", done && "line-through opacity-60")}>{video.title}</p>
+      </div>
+      {selected && selectedCount > 1 && <span className="text-[10px] text-primary">{selectedCount}</span>}
+      <ColorPicker table="videos" id={video.id} color={video.color} invalidate={[["videos-workflow"], ["fila-videos"]]} />
+      {onSetStatus && <Select value={video.status} onValueChange={(value) => onSetStatus(value as VideoStatus)}><SelectTrigger className="h-6 w-6 shrink-0 border-0 p-0 md:opacity-0 md:group-hover:opacity-100" aria-label="Mover para outra etapa"><ChevronRight className="h-3.5 w-3.5" /></SelectTrigger><SelectContent>{ALL_STATUSES.map((status) => <SelectItem key={status} value={status}>{STAGE_LABEL[status]}</SelectItem>)}</SelectContent></Select>}
+      <button onClick={onExpand} className="opacity-0 transition group-hover:opacity-100" aria-label="Abrir">
+        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+      </button>
     </div>
   );
 }
