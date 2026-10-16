@@ -716,26 +716,34 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                               ids={arr.map((v) => v.id)}
                               onSetStatus={(s) => setStatus(arr.map((v) => v.id), s)}
                             >
-                              {arr.map((v) => (
+                              {groupByName(arr).map(([gname, rows]) => {
+                                const cards = rows.map((v) => (
                                 <VideoCard key={v.id} video={v}
                                   selected={selected.has(v.id)}
                                   onToggle={() => toggle(v.id)}
                                   onExpand={() => setDetailId(v.id)}
                                   anySelected={selected.size > 0}
                                   selectedCount={selected.size}
-                                  clients={clients}
-                                  parentId={clients.find((c) => c.id === v.client_id)?.parent_client_id ?? v.client_id}
-                                  brandName={clients.find((c) => c.id === v.client_id)?.parent_client_id ? (v.clients?.name ?? null) : null}
-                                  onSetClient={(cid) => patch.mutate({ ids: [v.id], changes: { client_id: cid } })}
                                   onSetStatus={(status) => setStatus([v.id], status)}
-                                  onMove={(direction) => moveInColumn(v.id, direction)}
-                                  moving={reorder.isPending || patch.isPending}
                                   team={team}
-                                  onAssign={(editor_id) => patch.mutate({ ids: [v.id], changes: { editor_id } })}
-                                  onEstimate={(estimated_hours) => patch.mutate({ ids: [v.id], changes: { estimated_hours } })}
-                                  mutedDue={g.id === "enviado"}
+                                  onAssign={() => {}}
+                                  onEstimate={() => {}}
                                 />
-                              ))}
+                                ));
+                                if (!gname) return <div key="_none" className="space-y-1.5">{cards}</div>;
+                                const gc = colorValue(rows[0].group_color) ?? "var(--primary)";
+                                return (
+                                  <div key={gname} className="space-y-1.5 rounded-lg border p-1.5" style={{ borderColor: `color-mix(in oklch, ${gc} 50%, transparent)`, background: `color-mix(in oklch, ${gc} 10%, transparent)` }}>
+                                    <div className="flex items-center gap-1.5 px-1">
+                                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: gc }} />
+                                      <span className="truncate text-[11px] font-semibold text-foreground">{gname}</span>
+                                      <span className="ml-auto text-[10px] text-muted-foreground">{rows.length}</span>
+                                      <button className="text-[10px] text-muted-foreground hover:text-foreground" onClick={() => setSelected(new Set(rows.map((r) => r.id)))}>selecionar</button>
+                                    </div>
+                                    {cards}
+                                  </div>
+                                );
+                              })}
                             </ClientStack>
                           );
                         })}
