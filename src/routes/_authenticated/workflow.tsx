@@ -294,7 +294,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, competence_month, batch_id, batch_label, client_id, color, checklist, position, editor_id, estimated_hours, clients(name)").order("position").order("created_at");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, competence_month, batch_id, batch_label, client_id, color, checklist, position, editor_id, estimated_hours, group_name, group_color, clients(name)").order("position").order("created_at");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -357,7 +357,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
 
-  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string; competence_month?: string; editor_id?: string | null; estimated_hours?: number | null };
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string; competence_month?: string; editor_id?: string | null; estimated_hours?: number | null; group_name?: string | null; group_color?: string | null };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
