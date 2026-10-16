@@ -95,8 +95,16 @@ type VideoRow = {
   editor_id: string | null;
   estimated_hours: number | null;
   checklist: unknown;
+  group_name: string | null;
+  group_color: string | null;
   clients: { name: string } | null;
 };
+
+function groupByName(rows: VideoRow[]): [string, VideoRow[]][] {
+  const map = new Map<string, VideoRow[]>();
+  for (const v of rows) { const k = v.group_name ?? ""; map.set(k, [...(map.get(k) ?? []), v]); }
+  return Array.from(map.entries()).sort(([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b));
+}
 
 type ClientMin = { id: string; name: string; parent_client_id: string | null };
 
