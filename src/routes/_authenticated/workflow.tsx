@@ -1285,17 +1285,6 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
           <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
         </button>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-border/50 pt-2">
-        <Select value={video.editor_id ?? "none"} onValueChange={value => onAssign(value === "none" ? null : value)}>
-          <SelectTrigger aria-label="Responsável" className="h-7 min-w-0 flex-1 text-[11px]"><SelectValue placeholder="Sem responsável" /></SelectTrigger>
-          <SelectContent><SelectItem value="none">Sem responsável</SelectItem>{team.map(person => <SelectItem key={person.id} value={person.id}>{person.full_name ?? "Editor"}</SelectItem>)}</SelectContent>
-        </Select>
-        <Popover><PopoverTrigger asChild><Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" aria-label="Estimativa de horas"><Clock className="h-3 w-3" />{video.estimated_hours != null ? `${video.estimated_hours}h` : "—"}</Button></PopoverTrigger>
-          <PopoverContent className="w-48"><Label htmlFor={`estimate-${video.id}`}>Estimativa (horas)</Label><Input id={`estimate-${video.id}`} type="number" min="0" step="0.25" defaultValue={video.estimated_hours ?? ""} onBlur={e => { const value = e.target.value; const hours = value === "" ? null : Number(value); if (hours === null || (Number.isFinite(hours) && hours >= 0)) onEstimate(hours); }} /></PopoverContent>
-        </Popover>
-        {onMove && <><Button variant="ghost" size="icon" className="h-7 w-7" disabled={moving} title="Mover para cima" aria-label="Mover para cima" onClick={() => onMove(-1)}><ArrowUp className="h-3 w-3" /></Button><Button variant="ghost" size="icon" className="h-7 w-7" disabled={moving} title="Mover para baixo" aria-label="Mover para baixo" onClick={() => onMove(1)}><ArrowDown className="h-3 w-3" /></Button></>}
-      </div>
-      {next && onSetStatus && <Button variant="ghost" size="sm" disabled={moving} className="mt-1 h-auto w-full justify-start whitespace-normal px-1 py-1.5 text-[11px] text-primary" onClick={() => onSetStatus(next.status)}><ArrowRight className="h-3 w-3 shrink-0" />{next.label}</Button>}
     </div>
   );
 }
