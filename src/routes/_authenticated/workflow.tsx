@@ -31,7 +31,7 @@ import { WorkflowBatches } from "@/components/workflow-batches";
 
 import { NEXT_ACTION, useWorkflowTeam, VideoHistory } from "@/components/workflow-operations";
 import { sfx } from "@/lib/sfx";
-import { ColorPicker, colorValue } from "@/components/color-tag";
+import { ColorPicker, colorValue, TAG_COLORS } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 import { WeekBoard } from "@/components/week-board";
@@ -95,8 +95,16 @@ type VideoRow = {
   editor_id: string | null;
   estimated_hours: number | null;
   checklist: unknown;
+  group_name: string | null;
+  group_color: string | null;
   clients: { name: string } | null;
 };
+
+function groupByName(rows: VideoRow[]): [string, VideoRow[]][] {
+  const map = new Map<string, VideoRow[]>();
+  for (const v of rows) { const k = v.group_name ?? ""; map.set(k, [...(map.get(k) ?? []), v]); }
+  return Array.from(map.entries()).sort(([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b));
+}
 
 type ClientMin = { id: string; name: string; parent_client_id: string | null };
 
@@ -286,7 +294,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, competence_month, batch_id, batch_label, client_id, color, checklist, position, editor_id, estimated_hours, clients(name)").order("position").order("created_at");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, competence_month, batch_id, batch_label, client_id, color, checklist, position, editor_id, estimated_hours, group_name, group_color, clients(name)").order("position").order("created_at");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -349,7 +357,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
 
-  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string; competence_month?: string; editor_id?: string | null; estimated_hours?: number | null };
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string; competence_month?: string; editor_id?: string | null; estimated_hours?: number | null; group_name?: string | null; group_color?: string | null };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
@@ -716,26 +724,34 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                               ids={arr.map((v) => v.id)}
                               onSetStatus={(s) => setStatus(arr.map((v) => v.id), s)}
                             >
-                              {arr.map((v) => (
+                              {groupByName(arr).map(([gname, rows]) => {
+                                const cards = rows.map((v) => (
                                 <VideoCard key={v.id} video={v}
                                   selected={selected.has(v.id)}
                                   onToggle={() => toggle(v.id)}
                                   onExpand={() => setDetailId(v.id)}
                                   anySelected={selected.size > 0}
                                   selectedCount={selected.size}
-                                  clients={clients}
-                                  parentId={clients.find((c) => c.id === v.client_id)?.parent_client_id ?? v.client_id}
-                                  brandName={clients.find((c) => c.id === v.client_id)?.parent_client_id ? (v.clients?.name ?? null) : null}
-                                  onSetClient={(cid) => patch.mutate({ ids: [v.id], changes: { client_id: cid } })}
                                   onSetStatus={(status) => setStatus([v.id], status)}
-                                  onMove={(direction) => moveInColumn(v.id, direction)}
-                                  moving={reorder.isPending || patch.isPending}
                                   team={team}
-                                  onAssign={(editor_id) => patch.mutate({ ids: [v.id], changes: { editor_id } })}
-                                  onEstimate={(estimated_hours) => patch.mutate({ ids: [v.id], changes: { estimated_hours } })}
-                                  mutedDue={g.id === "enviado"}
+                                  onAssign={() => {}}
+                                  onEstimate={() => {}}
                                 />
-                              ))}
+                                ));
+                                if (!gname) return <div key="_none" className="space-y-1.5">{cards}</div>;
+                                const gc = colorValue(rows[0].group_color) ?? "var(--primary)";
+                                return (
+                                  <div key={gname} className="space-y-1.5 rounded-lg border p-1.5" style={{ borderColor: `color-mix(in oklch, ${gc} 50%, transparent)`, background: `color-mix(in oklch, ${gc} 10%, transparent)` }}>
+                                    <div className="flex items-center gap-1.5 px-1">
+                                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: gc }} />
+                                      <span className="truncate text-[11px] font-semibold text-foreground">{gname}</span>
+                                      <span className="ml-auto text-[10px] text-muted-foreground">{rows.length}</span>
+                                      <button className="text-[10px] text-muted-foreground hover:text-foreground" onClick={() => setSelected(new Set(rows.map((r) => r.id)))}>selecionar</button>
+                                    </div>
+                                    {cards}
+                                  </div>
+                                );
+                              })}
                             </ClientStack>
                           );
                         })}
@@ -831,6 +847,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           clients={clients}
           parentId={selectionParentId}
           onSetClient={(cid) => { patch.mutate({ ids: Array.from(selected), changes: { client_id: cid } }); clearSel(); }}
+          onGroup={(group_name, group_color) => { patch.mutate({ ids: Array.from(selected), changes: { group_name, group_color } }); clearSel(); }}
           onDueDone={clearSel}
           onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
@@ -928,7 +945,8 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
   );
 }
 
-function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone, clients, parentId, onSetClient }: {
+function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone, clients, parentId, onSetClient, onGroup }: {
+  onGroup: (name: string | null, color: string | null) => void;
   count: number;
   onClear: () => void;
   onSetStatus: (s: VideoStatus) => void;
@@ -984,6 +1002,7 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, o
         <SubclientPicker clients={clients} parentId={parentId} onPick={onSetClient} align="center">
           <Button size="sm" variant="outline" className="h-7 text-xs">Marca</Button>
         </SubclientPicker>
+        <GroupPopover onGroup={onGroup} />
         <DeleteAction
           table="videos"
           id={ids}
@@ -1228,74 +1247,34 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: video.id });
   const drop = useDroppable({ id: `drop::${video.id}` });
-  const next = NEXT_ACTION[video.status];
+  const tint = colorValue(video.color);
+  const done = video.status === "entregue" || video.status === "aprovado";
+  void onMove; void moving; void team; void onAssign; void onEstimate; void mutedDue; void anySelected; void clients; void parentId; void brandName; void onSetClient;
   return (
     <div ref={(node) => { setNodeRef(node); drop.setNodeRef(node); }} data-vid={video.id}
       className={cn(
-        "group rounded-md border border-border bg-card px-2.5 py-2 text-sm shadow-sm transition hover:border-primary/40",
-        selected && "border-primary/60 ring-1 ring-primary/40",
+        "group flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-2.5 py-2 text-sm backdrop-blur transition-colors hover:border-primary/40",
+        selected && "border-primary/70 ring-1 ring-primary/40",
         isDragging && "opacity-40",
         drop.isOver && "ring-1 ring-primary",
       )}
       style={{
         ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {}),
-        ...(colorValue(video.color) ? { borderLeft: `3px solid ${colorValue(video.color)}` } : {}),
+        ...(tint ? { background: `color-mix(in oklch, ${tint} 22%, var(--card))`, borderColor: `color-mix(in oklch, ${tint} 55%, transparent)` } : {}),
       }}
     >
-      <div className="flex items-start gap-2">
-        <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
-          <Checkbox checked={selected} onCheckedChange={onToggle} className="h-3.5 w-3.5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          {clients && onSetClient && parentId && (
-            <SubclientPicker clients={clients} parentId={parentId} currentId={video.client_id} onPick={onSetClient}>
-              <button
-                onClick={(e) => e.stopPropagation()}
-                className="mb-1 inline-flex max-w-full items-center gap-1 truncate rounded-full border border-border/70 bg-muted/40 px-1.5 py-[1px] text-[9px] text-muted-foreground transition hover:text-foreground"
-              >
-                {brandName ?? "Sem marca"}
-              </button>
-            </SubclientPicker>
-          )}
-          <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
-          <p className={cn("truncate text-xs font-medium", (video.status === "entregue" || video.status === "aprovado") && "line-through")}>{video.title}</p>
-          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-            <DueDatePopover
-              table="videos"
-              ids={[video.id]}
-              due={video.due_date}
-              time={video.due_time}
-              invalidate={[["videos-workflow"], ["fila-videos"], ["dashboard"]]}
-            >
-              <button onClick={(e) => e.stopPropagation()} aria-label="Prazo">
-                <DueBadge due={video.due_date} time={video.due_time} muted={mutedDue} />
-              </button>
-            </DueDatePopover>
-            <span className={cn("font-medium", PRIORITY_COLOR[video.priority])}>{PRIORITY_LABEL[video.priority]}</span>
-            <ChecklistBadge value={video.checklist} />
-            {selected && anySelected && selectedCount > 1 && (
-              <span className="text-primary">· move {selectedCount}</span>
-            )}
-          </div>
-          </div>
-        </div>
-        <ColorPicker table="videos" id={video.id} color={video.color} invalidate={[["videos-workflow"], ["fila-videos"]]} className="mt-0.5" />
-        {onSetStatus && <Select value={video.status} onValueChange={(value) => onSetStatus(value as VideoStatus)}><SelectTrigger className="h-7 w-7 shrink-0 border-0 p-0 md:opacity-0 md:group-hover:opacity-100" aria-label="Mover para outra etapa"><ChevronRight className="h-3.5 w-3.5" /></SelectTrigger><SelectContent>{ALL_STATUSES.map((status) => <SelectItem key={status} value={status}>{STAGE_LABEL[status]}</SelectItem>)}</SelectContent></Select>}
-        <button onClick={onExpand} className="opacity-0 transition group-hover:opacity-100" aria-label="Abrir">
-          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-        </button>
+      <div onClick={(e) => e.stopPropagation()}>
+        <Checkbox checked={selected} onCheckedChange={onToggle} className="h-3.5 w-3.5" />
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-border/50 pt-2">
-        <Select value={video.editor_id ?? "none"} onValueChange={value => onAssign(value === "none" ? null : value)}>
-          <SelectTrigger aria-label="Responsável" className="h-7 min-w-0 flex-1 text-[11px]"><SelectValue placeholder="Sem responsável" /></SelectTrigger>
-          <SelectContent><SelectItem value="none">Sem responsável</SelectItem>{team.map(person => <SelectItem key={person.id} value={person.id}>{person.full_name ?? "Editor"}</SelectItem>)}</SelectContent>
-        </Select>
-        <Popover><PopoverTrigger asChild><Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" aria-label="Estimativa de horas"><Clock className="h-3 w-3" />{video.estimated_hours != null ? `${video.estimated_hours}h` : "—"}</Button></PopoverTrigger>
-          <PopoverContent className="w-48"><Label htmlFor={`estimate-${video.id}`}>Estimativa (horas)</Label><Input id={`estimate-${video.id}`} type="number" min="0" step="0.25" defaultValue={video.estimated_hours ?? ""} onBlur={e => { const value = e.target.value; const hours = value === "" ? null : Number(value); if (hours === null || (Number.isFinite(hours) && hours >= 0)) onEstimate(hours); }} /></PopoverContent>
-        </Popover>
-        {onMove && <><Button variant="ghost" size="icon" className="h-7 w-7" disabled={moving} title="Mover para cima" aria-label="Mover para cima" onClick={() => onMove(-1)}><ArrowUp className="h-3 w-3" /></Button><Button variant="ghost" size="icon" className="h-7 w-7" disabled={moving} title="Mover para baixo" aria-label="Mover para baixo" onClick={() => onMove(1)}><ArrowDown className="h-3 w-3" /></Button></>}
+      <div {...listeners} {...attributes} onDoubleClick={onExpand} className="min-w-0 flex-1 cursor-grab active:cursor-grabbing">
+        <p className={cn("truncate text-xs font-medium text-foreground", done && "line-through opacity-60")}>{video.title}</p>
       </div>
-      {next && onSetStatus && <Button variant="ghost" size="sm" disabled={moving} className="mt-1 h-auto w-full justify-start whitespace-normal px-1 py-1.5 text-[11px] text-primary" onClick={() => onSetStatus(next.status)}><ArrowRight className="h-3 w-3 shrink-0" />{next.label}</Button>}
+      {selected && selectedCount > 1 && <span className="text-[10px] text-primary">{selectedCount}</span>}
+      <ColorPicker table="videos" id={video.id} color={video.color} invalidate={[["videos-workflow"], ["fila-videos"]]} />
+      {onSetStatus && <Select value={video.status} onValueChange={(value) => onSetStatus(value as VideoStatus)}><SelectTrigger className="h-6 w-6 shrink-0 border-0 p-0 md:opacity-0 md:group-hover:opacity-100" aria-label="Mover para outra etapa"><ChevronRight className="h-3.5 w-3.5" /></SelectTrigger><SelectContent>{ALL_STATUSES.map((status) => <SelectItem key={status} value={status}>{STAGE_LABEL[status]}</SelectItem>)}</SelectContent></Select>}
+      <button onClick={onExpand} className="opacity-0 transition group-hover:opacity-100" aria-label="Abrir">
+        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+      </button>
     </div>
   );
 }
@@ -1721,3 +1700,24 @@ function NewVideoDialog({ onClose, clients, defaultClientId, month }: { onClose:
 
 
 export const _fmt = formatDate;
+
+function GroupPopover({ onGroup }: { onGroup: (name: string | null, color: string | null) => void }) {
+  const [name, setName] = useState("");
+  const [color, setColor] = useState<string>("azul");
+  return (
+    <Popover>
+      <PopoverTrigger asChild><Button size="sm" className="h-7 text-xs"><Layers className="mr-1 h-3.5 w-3.5" />Agrupar</Button></PopoverTrigger>
+      <PopoverContent className="w-64 space-y-3" align="center">
+        <div className="space-y-1"><Label htmlFor="group-name">Nome do grupo / subcliente</Label>
+          <Input id="group-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Loja Centro" onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) onGroup(name.trim(), color); }} /></div>
+        <div className="flex flex-wrap gap-1.5">{TAG_COLORS.map((c) => (
+          <button key={c.id} type="button" aria-label={c.label} onClick={() => setColor(c.id)} className={cn("h-6 w-6 rounded-full border-2 transition", color === c.id ? "border-foreground scale-110" : "border-transparent")} style={{ backgroundColor: c.value }} />
+        ))}</div>
+        <div className="flex gap-2">
+          <Button size="sm" className="flex-1" disabled={!name.trim()} onClick={() => onGroup(name.trim(), color)}>Agrupar</Button>
+          <Button size="sm" variant="outline" onClick={() => onGroup(null, null)}>Desagrupar</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
