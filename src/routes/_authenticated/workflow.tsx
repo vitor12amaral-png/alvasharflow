@@ -31,7 +31,7 @@ import { WorkflowBatches } from "@/components/workflow-batches";
 
 import { NEXT_ACTION, useWorkflowTeam, VideoHistory } from "@/components/workflow-operations";
 import { sfx } from "@/lib/sfx";
-import { ColorPicker, colorValue } from "@/components/color-tag";
+import { ColorPicker, colorValue, TAG_COLORS } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
 import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 import { WeekBoard } from "@/components/week-board";
@@ -847,6 +847,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           clients={clients}
           parentId={selectionParentId}
           onSetClient={(cid) => { patch.mutate({ ids: Array.from(selected), changes: { client_id: cid } }); clearSel(); }}
+          onGroup={(group_name, group_color) => { patch.mutate({ ids: Array.from(selected), changes: { group_name, group_color } }); clearSel(); }}
           onDueDone={clearSel}
           onDeleted={() => { clearSel(); qc.invalidateQueries({ queryKey: ["videos-workflow"] }); }}
         />
@@ -944,7 +945,8 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
   );
 }
 
-function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone, clients, parentId, onSetClient }: {
+function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, onDueDone, clients, parentId, onSetClient, onGroup }: {
+  onGroup: (name: string | null, color: string | null) => void;
   count: number;
   onClear: () => void;
   onSetStatus: (s: VideoStatus) => void;
@@ -1000,6 +1002,7 @@ function BulkBar({ count, onClear, onSetStatus, onSetPriority, ids, onDeleted, o
         <SubclientPicker clients={clients} parentId={parentId} onPick={onSetClient} align="center">
           <Button size="sm" variant="outline" className="h-7 text-xs">Marca</Button>
         </SubclientPicker>
+        <GroupPopover onGroup={onGroup} />
         <DeleteAction
           table="videos"
           id={ids}
@@ -1697,3 +1700,24 @@ function NewVideoDialog({ onClose, clients, defaultClientId, month }: { onClose:
 
 
 export const _fmt = formatDate;
+
+function GroupPopover({ onGroup }: { onGroup: (name: string | null, color: string | null) => void }) {
+  const [name, setName] = useState("");
+  const [color, setColor] = useState<string>("azul");
+  return (
+    <Popover>
+      <PopoverTrigger asChild><Button size="sm" className="h-7 text-xs"><Layers className="mr-1 h-3.5 w-3.5" />Agrupar</Button></PopoverTrigger>
+      <PopoverContent className="w-64 space-y-3" align="center">
+        <div className="space-y-1"><Label htmlFor="group-name">Nome do grupo / subcliente</Label>
+          <Input id="group-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Loja Centro" onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) onGroup(name.trim(), color); }} /></div>
+        <div className="flex flex-wrap gap-1.5">{TAG_COLORS.map((c) => (
+          <button key={c.id} type="button" aria-label={c.label} onClick={() => setColor(c.id)} className={cn("h-6 w-6 rounded-full border-2 transition", color === c.id ? "border-foreground scale-110" : "border-transparent")} style={{ backgroundColor: c.value }} />
+        ))}</div>
+        <div className="flex gap-2">
+          <Button size="sm" className="flex-1" disabled={!name.trim()} onClick={() => onGroup(name.trim(), color)}>Agrupar</Button>
+          <Button size="sm" variant="outline" onClick={() => onGroup(null, null)}>Desagrupar</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
