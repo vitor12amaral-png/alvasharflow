@@ -100,6 +100,24 @@ type VideoRow = {
   clients: { name: string } | null;
 };
 
+type QuickFilter = "atrasados" | "hoje" | "sem_prazo" | "sem_resp" | "revisao";
+const QUICK_FILTERS: { id: QuickFilter; label: string }[] = [
+  { id: "atrasados", label: "Atrasados" },
+  { id: "hoje", label: "Para hoje" },
+  { id: "sem_prazo", label: "Sem prazo" },
+  { id: "sem_resp", label: "Sem responsável" },
+  { id: "revisao", label: "Em revisão" },
+];
+function matchQuick(f: QuickFilter, v: VideoRow): boolean {
+  const open = v.status !== "aprovado" && v.status !== "entregue";
+  const today = new Date().toISOString().slice(0, 10);
+  if (f === "atrasados") return open && !!v.due_date && v.due_date < today;
+  if (f === "hoje") return open && v.due_date === today;
+  if (f === "sem_prazo") return open && !v.due_date;
+  if (f === "sem_resp") return open && !v.editor_id;
+  return v.status === "revisao" || v.status === "alteracoes" || v.status === "aguardando_cliente";
+}
+
 function groupByName(rows: VideoRow[]): [string, VideoRow[]][] {
   const map = new Map<string, VideoRow[]>();
   for (const v of rows) { const k = v.group_name ?? ""; map.set(k, [...(map.get(k) ?? []), v]); }
