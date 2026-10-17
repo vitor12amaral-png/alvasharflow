@@ -100,6 +100,24 @@ type VideoRow = {
   clients: { name: string } | null;
 };
 
+type QuickFilter = "atrasados" | "hoje" | "sem_prazo" | "sem_resp" | "revisao";
+const QUICK_FILTERS: { id: QuickFilter; label: string }[] = [
+  { id: "atrasados", label: "Atrasados" },
+  { id: "hoje", label: "Para hoje" },
+  { id: "sem_prazo", label: "Sem prazo" },
+  { id: "sem_resp", label: "Sem responsável" },
+  { id: "revisao", label: "Em revisão" },
+];
+function matchQuick(f: QuickFilter, v: VideoRow): boolean {
+  const open = v.status !== "aprovado" && v.status !== "entregue";
+  const today = new Date().toISOString().slice(0, 10);
+  if (f === "atrasados") return open && !!v.due_date && v.due_date < today;
+  if (f === "hoje") return open && v.due_date === today;
+  if (f === "sem_prazo") return open && !v.due_date;
+  if (f === "sem_resp") return open && !v.editor_id;
+  return v.status === "revisao" || v.status === "alteracoes" || v.status === "aguardando_cliente";
+}
+
 function groupByName(rows: VideoRow[]): [string, VideoRow[]][] {
   const map = new Map<string, VideoRow[]>();
   for (const v of rows) { const k = v.group_name ?? ""; map.set(k, [...(map.get(k) ?? []), v]); }
@@ -320,13 +338,15 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
   const { ym } = useMonthFromSearch();
   const term = q.trim().toLowerCase();
   const currentMonthVideos = useMemo(() => (allVideos ?? []).filter((v) => v.competence_month.slice(0, 7) === ym), [allVideos, ym]);
+  const [quick, setQuick] = useState<QuickFilter | null>(null);
   const videos = useMemo(
     () =>
       currentMonthVideos
         .filter((v) => showDone || (v.status !== "aprovado" && v.status !== "entregue"))
+        .filter((v) => !quick || matchQuick(quick, v))
         .filter((v) => !term || v.title.toLowerCase().includes(term) || (v.clients?.name ?? "").toLowerCase().includes(term))
         .sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at) || naturalCompare(a.title, b.title)),
-    [currentMonthVideos, showDone, term],
+    [currentMonthVideos, showDone, term, quick],
   );
 
   const completedCount = useMemo(
@@ -615,6 +635,23 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 {showDone ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 {showDone ? `Ocultar concluídas (${completedCount})` : `Mostrar concluídas (${completedCount})`}
               </Button>
+              {QUICK_FILTERS.map((f) => {
+                const count = currentMonthVideos.filter((v) => matchQuick(f.id, v)).length;
+                const on = quick === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setQuick(on ? null : f.id)}
+                    className={`h-8 rounded-full border px-3 text-xs transition ${on ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {f.label} <span className="opacity-70">{count}</span>
+                  </button>
+                );
+              })}
+              <span className="text-[11px] text-muted-foreground">
+                {currentMonthVideos.filter((v) => v.status === "aprovado").length} aprovados aguardando entrega · {currentMonthVideos.filter((v) => v.status === "entregue").length} entregues
+              </span>
               <ShortcutsHint
                 items={[
                   ["/", "Buscar"],

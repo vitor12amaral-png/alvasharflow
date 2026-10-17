@@ -23,7 +23,7 @@ function DashboardPage() {
     queryFn: async () => {
       const [clients, videos, packages, activity, leads] = await Promise.all([
         supabase.from("clients").select("id, name, status, parent_client_id, videos(id, status)"),
-        supabase.from("videos").select("id, title, status, due_date, priority, client_id, created_at, clients(name)"),
+        supabase.from("videos").select("id, title, status, due_date, priority, client_id, created_at, competence_month, clients(name)"),
         supabase.from("client_packages").select("id, client_id, size, total_videos, videos_used, end_date, status, clients(name)").eq("status", "ativo"),
         supabase.from("activity_log").select("*, profiles(full_name)").order("created_at", { ascending: false }).limit(20),
         supabase.from("leads").select("id, name, company, stage, estimated_value, next_follow_up, last_contact_at, created_at"),
@@ -53,8 +53,10 @@ function DashboardPage() {
   const editando = byStatus("editando") + byStatus("revisao") + byStatus("alteracoes");
   const aguardando = byStatus("aguardando_cliente");
   const aprovados = byStatus("aprovado");
-  const entregues = byStatus("entregue");
-  const totalMes = data.videos.filter((v) => new Date(v.created_at) >= monthStart).length;
+  const monthKey = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`;
+  const monthVideos = data.videos.filter((v) => (v.competence_month ?? v.created_at ?? "").slice(0, 7) === monthKey);
+  const entregues = monthVideos.filter((v) => v.status === "entregue").length;
+  const totalMes = monthVideos.length;
 
   const atrasados = data.videos.filter((v) => {
     if (!v.due_date || v.status === "entregue" || v.status === "aprovado") return false;

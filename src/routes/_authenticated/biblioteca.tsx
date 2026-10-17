@@ -24,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/biblioteca")({
 
 function BibliotecaPage() {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -49,7 +50,7 @@ function BibliotecaPage() {
 
   const grouped = data.clients.map((c) => ({
     client: c,
-    items: data.items.filter((i) => i.client_id === c.id),
+    items: data.items.filter((i) => i.client_id === c.id && (!search.trim() || `${i.name} ${i.notes ?? ""} ${c.name}`.toLowerCase().includes(search.trim().toLowerCase()))),
   })).filter((g) => g.items.length > 0);
 
   return (
@@ -64,6 +65,8 @@ function BibliotecaPage() {
           </Dialog>
         }
       />
+
+      <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar arquivo ou cliente…" className="mt-6 max-w-sm" />
 
       {grouped.length === 0 ? (
         <Card className="mt-6 p-10 text-center text-sm text-muted-foreground">Biblioteca vazia.</Card>

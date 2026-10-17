@@ -71,6 +71,7 @@ function TarefasPage() {
   const [filterCat, setFilterCat] = useState<TaskCategory | "all">("all");
   const [filterPrio, setFilterPrio] = useState<TaskPriority | "all">("all");
   const [filterMine, setFilterMine] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: currentUser } = useCurrentUser();
   const qc = useQueryClient();
 
@@ -90,6 +91,7 @@ function TarefasPage() {
     if (filterCat !== "all") list = list.filter((t) => t.category === filterCat);
     if (filterPrio !== "all") list = list.filter((t) => t.priority === filterPrio);
     if (filterMine && currentUser) list = list.filter((t) => t.assignee_id === currentUser.id);
+    if (search.trim()) { const q = search.trim().toLowerCase(); list = list.filter((t) => `${t.title} ${t.description ?? ""}`.toLowerCase().includes(q)); }
     list = [...list].sort((a, b) => {
       const p = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
       if (p !== 0) return p;
@@ -98,7 +100,7 @@ function TarefasPage() {
       return ad - bd;
     });
     return list;
-  }, [tasks, filterCat, filterPrio, filterMine, currentUser]);
+  }, [tasks, filterCat, filterPrio, filterMine, currentUser, search]);
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
@@ -133,6 +135,7 @@ function TarefasPage() {
           </TabsList>
         </Tabs>
         <div className="ml-auto flex items-center gap-2">
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tarefa…" className="h-9 w-44" />
           {(filterCat !== "all" || filterPrio !== "all" || filterMine) && (
             <button onClick={() => { setFilterCat("all"); setFilterPrio("all"); setFilterMine(false); }} className="text-[11px] text-muted-foreground underline">
               Limpar filtros

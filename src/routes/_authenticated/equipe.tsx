@@ -38,7 +38,7 @@ export const Route = createFileRoute("/_authenticated/equipe")({
 });
 
 const ALL_STATUSES = Object.keys(STAGE_LABEL) as VideoStatus[];
-const DONE: VideoStatus[] = ["aprovado", "entregue"];
+const DONE: VideoStatus[] = ["entregue"];
 
 type VideoRow = {
   id: string;

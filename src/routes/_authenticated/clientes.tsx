@@ -176,9 +176,11 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
   const entregues = allVids.filter((v) => v.status === "entregue").length;
   const pendentes = allVids.filter((v) => v.status !== "entregue" && v.status !== "aprovado").length;
   const atrasados = allVids.filter((v) => v.due_date && v.due_date < today && v.status !== "entregue" && v.status !== "aprovado").length;
-  const alocados = pack?.videos_used ?? 0;
+  const alocados = allVids.length;
   const total = pack?.total_videos ?? 0;
-  const pct = total > 0 ? Math.min(100, (alocados / total) * 100) : 0;
+  // A barra mede entregas reais, nunca apenas vídeos cadastrados.
+  const base = Math.max(total, alocados);
+  const pct = base > 0 ? Math.min(100, (entregues / base) * 100) : 0;
   const hasSubs = subs.length > 0;
 
   return (
@@ -218,17 +220,15 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
             </div>
           </div>
           <div className="hidden sm:block min-w-[220px]">
-            {pack && (
-              <>
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground">{alocados}/{total} do pacote</span>
-                  <span className="font-medium">{formatBRL(pack.price)}</span>
-                </div>
-                <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full bg-gradient-to-r from-primary to-[oklch(0.55_0.22_260)]" style={{ width: `${pct}%` }} />
-                </div>
-              </>
-            )}
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">
+                {pack ? `${entregues}/${base} entregues · ${alocados}/${total} cadastrados` : alocados > 0 ? `${entregues}/${alocados} entregues · sem pacote` : "Sem pacote ativo"}
+              </span>
+              {pack && <span className="font-medium">{formatBRL(pack.price)}</span>}
+            </div>
+            <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
+              <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+            </div>
             <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
               <MiniStat label="Pendentes" value={pendentes} />
               <MiniStat label="Entregues" value={entregues} />
