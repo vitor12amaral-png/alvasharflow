@@ -100,7 +100,7 @@ function TarefasPage() {
       return ad - bd;
     });
     return list;
-  }, [tasks, filterCat, filterPrio, filterMine, currentUser]);
+  }, [tasks, filterCat, filterPrio, filterMine, currentUser, search]);
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
@@ -135,6 +135,7 @@ function TarefasPage() {
           </TabsList>
         </Tabs>
         <div className="ml-auto flex items-center gap-2">
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tarefa…" className="h-9 w-44" />
           {(filterCat !== "all" || filterPrio !== "all" || filterMine) && (
             <button onClick={() => { setFilterCat("all"); setFilterPrio("all"); setFilterMine(false); }} className="text-[11px] text-muted-foreground underline">
               Limpar filtros

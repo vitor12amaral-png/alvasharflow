@@ -50,6 +50,7 @@ function LeadsPage() {
   const [editing, setEditing] = useState<Lead | null>(null);
   const [creating, setCreating] = useState(false);
   const [detail, setDetail] = useState<Lead | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: leads, isLoading } = useQuery({
     queryKey: ["leads"],
@@ -107,9 +108,11 @@ function LeadsPage() {
         </Card>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar lead por nome, empresa ou e-mail…" className="mt-5 max-w-sm" />
+
+      <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {LEAD_STAGES.map((col) => {
-          const items = list.filter((l) => l.stage === col.id).sort((a, b) => naturalCompare(a.name, b.name));
+          const items = list.filter((l) => l.stage === col.id && (!search.trim() || `${l.name} ${l.company ?? ""} ${l.email ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()))).sort((a, b) => naturalCompare(a.name, b.name));
           return (
             <div
               key={col.id}
