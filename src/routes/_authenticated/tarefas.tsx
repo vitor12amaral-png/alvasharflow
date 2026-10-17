@@ -71,6 +71,7 @@ function TarefasPage() {
   const [filterCat, setFilterCat] = useState<TaskCategory | "all">("all");
   const [filterPrio, setFilterPrio] = useState<TaskPriority | "all">("all");
   const [filterMine, setFilterMine] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: currentUser } = useCurrentUser();
   const qc = useQueryClient();
 
@@ -90,6 +91,7 @@ function TarefasPage() {
     if (filterCat !== "all") list = list.filter((t) => t.category === filterCat);
     if (filterPrio !== "all") list = list.filter((t) => t.priority === filterPrio);
     if (filterMine && currentUser) list = list.filter((t) => t.assignee_id === currentUser.id);
+    if (search.trim()) { const q = search.trim().toLowerCase(); list = list.filter((t) => `${t.title} ${t.description ?? ""}`.toLowerCase().includes(q)); }
     list = [...list].sort((a, b) => {
       const p = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
       if (p !== 0) return p;

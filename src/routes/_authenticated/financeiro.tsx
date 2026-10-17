@@ -21,7 +21,7 @@ function FinanceiroPage() {
     queryFn: async () => {
       const [packages, videos, clients] = await Promise.all([
         supabase.from("client_packages").select("*, clients(name)").order("end_date", { ascending: true }),
-        supabase.from("videos").select("id, client_id, created_at"),
+        supabase.from("videos").select("id, client_id, created_at, status"),
         supabase.from("clients").select("id, parent_client_id, price_per_video"),
       ]);
       if (packages.error) throw packages.error;
@@ -36,6 +36,8 @@ function FinanceiroPage() {
   const packages = data.packages;
 
   const active = packages.filter((p) => p.status === "ativo");
+  const delivered = new Map<string, number>();
+  for (const v of data.videos as { client_id: string; status?: string }[]) if (v.status === "entregue") delivered.set(v.client_id, (delivered.get(v.client_id) ?? 0) + 1);
   const total = active.reduce((s, p) => s + Number(p.price ?? 0), 0);
   const month = new Date().toISOString().slice(0, 7);
   const activeByClient = new Map(active.map((p) => [p.client_id, suggestPerVideo(p.price_per_video, p.price, p.total_videos)]));
@@ -87,7 +89,7 @@ function FinanceiroPage() {
               {upcoming.map((p) => {
                 const d = daysUntil(p.end_date);
                 return (
-                  <PackageRow key={p.id} p={p} highlight={(d ?? 999) <= 7} />
+                  <PackageRow key={p.id} p={p} delivered={delivered.get(p.client_id) ?? 0} highlight={(d ?? 999) <= 7} />
                 );
               })}
             </div>
@@ -97,7 +99,7 @@ function FinanceiroPage() {
         <Card className="p-5">
           <p className="mb-3 font-display text-sm font-semibold">Todos os pacotes ({packages.length})</p>
           <div className="divide-y divide-border">
-            {packages.map((p) => <PackageRow key={p.id} p={p} />)}
+            {packages.map((p) => <PackageRow key={p.id} p={p} delivered={delivered.get(p.client_id) ?? 0} />)}
           </div>
         </Card>
       </div>
@@ -105,7 +107,7 @@ function FinanceiroPage() {
   );
 }
 
-function PackageRow({ p, highlight }: { p: { id: string; client_id: string; size: string; total_videos: number; videos_used: number; price: number | string; start_date: string; end_date: string | null; payment_day: number | null; status: string; clients?: { name: string } | null }; highlight?: boolean }) {
+function PackageRow({ p, highlight, delivered = 0 }: { delivered?: number; p: { id: string; client_id: string; size: string; total_videos: number; videos_used: number; price: number | string; start_date: string; end_date: string | null; payment_day: number | null; status: string; clients?: { name: string } | null }; highlight?: boolean }) {
   const d = daysUntil(p.end_date);
   return (
     <div className={`flex flex-wrap items-center gap-3 py-3 ${highlight ? "-mx-2 rounded-md bg-destructive/5 px-2" : ""}`}>
@@ -114,7 +116,7 @@ function PackageRow({ p, highlight }: { p: { id: string; client_id: string; size
           {p.clients?.name ?? "—"}
         </Link>
         <p className="text-[11px] text-muted-foreground">
-          {PACKAGE_LABEL[p.size as PackageSize]} · {p.videos_used}/{p.total_videos} usados · dia {p.payment_day ?? "—"}
+          {PACKAGE_LABEL[p.size as PackageSize]} · {delivered}/{p.total_videos} entregues · {p.videos_used} usados · dia {p.payment_day ?? "—"}
         </p>
       </div>
       <div className="text-right">
