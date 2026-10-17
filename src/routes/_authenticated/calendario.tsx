@@ -30,10 +30,11 @@ function CalendarioPage() {
     queryKey: ["calendar"],
     queryFn: async () => {
       const [vids, packs] = await Promise.all([
-        supabase.from("videos").select("id, title, due_date, status, clients(name)").not("due_date", "is", null),
+        supabase.from("videos").select("id, title, due_date, status, competence_month, clients(name)"),
         supabase.from("client_packages").select("id, end_date, clients(name)").not("end_date", "is", null),
       ]);
-      return { videos: vids.data ?? [], packages: packs.data ?? [] };
+      const all = vids.data ?? [];
+      return { videos: all.filter((v) => v.due_date), undated: all.filter((v) => !v.due_date), packages: packs.data ?? [] };
     },
   });
 
@@ -109,6 +110,25 @@ function CalendarioPage() {
           </div>
         </Card>
       )}
+
+      {(() => {
+        const key = `${year}-${String(month + 1).padStart(2, "0")}`;
+        const undated = (data?.undated ?? []).filter((v) => (v.competence_month ?? "").slice(0, 7) === key && v.status !== "entregue");
+        if (undated.length === 0) return null;
+        return (
+          <Card className="mt-4 p-4">
+            <p className="font-display text-sm font-semibold">Sem prazo definido neste mês ({undated.length})</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {undated.map((v) => (
+                <span key={v.id} className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px]">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: STAGE_ACCENT[v.status as VideoStatus] }} />
+                  {v.title}<span className="text-muted-foreground">· {v.clients?.name ?? ""}</span>
+                </span>
+              ))}
+            </div>
+          </Card>
+        );
+      })()}
     </div>
   );
 }
