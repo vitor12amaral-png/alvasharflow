@@ -159,16 +159,18 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
   const { data: counts } = useQuery({
     queryKey: ["clients-video-counts", ym],
     queryFn: async () => {
-      const { data } = await supabase.from("videos").select("client_id, status, competence_month");
-      const map = new Map<string, { total: number; pendentes: number; concluidos: number; anteriores: number }>();
+      const today = new Date().toISOString().slice(0, 10);
+      const { data } = await supabase.from("videos").select("client_id, status, competence_month, due_date");
+      const map = new Map<string, { total: number; pendentes: number; concluidos: number; anteriores: number; atrasados: number }>();
       (data ?? []).forEach((v) => {
-        const c = map.get(v.client_id) ?? { total: 0, pendentes: 0, concluidos: 0, anteriores: 0 };
-        const done = v.status === "entregue" || v.status === "aprovado";
-        const competence = v.competence_month.slice(0, 7);
-        if (competence === ym) {
-          c.total++;
-          if (done) c.concluidos++; else c.pendentes++;
-        } else if (competence < ym && !done) c.anteriores++;
+        if (v.competence_month.slice(0, 7) !== ym) return;
+        const c = map.get(v.client_id) ?? { total: 0, pendentes: 0, concluidos: 0, anteriores: 0, atrasados: 0 };
+        c.total++;
+        if (v.status === "entregue") c.concluidos++;
+        else {
+          c.pendentes++;
+          if (v.status !== "aprovado" && v.due_date && v.due_date < today) c.atrasados++;
+        }
         map.set(v.client_id, c);
       });
       return map;
@@ -194,9 +196,9 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
     ids.reduce(
       (acc, id) => {
         const i = counts?.get(id);
-        return { total: acc.total + (i?.total ?? 0), pendentes: acc.pendentes + (i?.pendentes ?? 0), concluidos: acc.concluidos + (i?.concluidos ?? 0), anteriores: acc.anteriores + (i?.anteriores ?? 0) };
+        return { total: acc.total + (i?.total ?? 0), pendentes: acc.pendentes + (i?.pendentes ?? 0), concluidos: acc.concluidos + (i?.concluidos ?? 0), anteriores: 0, atrasados: acc.atrasados + (i?.atrasados ?? 0) };
       },
-      { total: 0, pendentes: 0, concluidos: 0, anteriores: 0 },
+      { total: 0, pendentes: 0, concluidos: 0, anteriores: 0, atrasados: 0 },
     );
 
   return (
@@ -231,10 +233,15 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{parent.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {info.total > 0 ? `${info.pendentes} em andamento · ${info.concluidos} concluídos · ${info.total} no mês` : "Sem vídeos neste mês"}
+                    {info.total > 0 ? `${info.concluidos}/${info.total} entregues · ${info.pendentes} em andamento` : "Sem vídeos neste mês"}
                     {kids.length > 0 && ` · ${kids.length} marca${kids.length > 1 ? "s" : ""}`}
                   </p>
-                  {info.anteriores > 0 && <p className="mt-1 text-[10px] font-medium text-warning">{info.anteriores} pendência{info.anteriores > 1 ? "s" : ""} anterior{info.anteriores > 1 ? "es" : ""}</p>}
+                  {info.total > 0 && (
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.round((info.concluidos / info.total) * 100)}%` }} />
+                    </div>
+                  )}
+                  {info.atrasados > 0 && <p className="mt-1 text-[10px] font-medium text-destructive">{info.atrasados} atrasado{info.atrasados > 1 ? "s" : ""}</p>}
                 </div>
               </button>
               {kids.length > 0 && (
@@ -249,7 +256,7 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
                       >
                         <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/60" />
                         <span className="min-w-0 flex-1 truncate text-xs">{k.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{ki?.total ?? 0}{(ki?.anteriores ?? 0) > 0 ? ` + ${ki?.anteriores} ant.` : ""}</span>
+                        <span className="text-[10px] text-muted-foreground">{ki?.concluidos ?? 0}/{ki?.total ?? 0}</span>
                       </button>
                     );
                   })}
@@ -715,10 +722,10 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
               <div
                 ref={marquee.containerRef}
                 onPointerDown={marquee.onPointerDown}
-                className="relative select-none md:overflow-x-auto"
+                className="relative select-none overflow-x-auto snap-x snap-mandatory md:snap-none"
               >
                 {marquee.overlay}
-                <div className="grid grid-cols-1 gap-3 md:flex md:min-w-max">
+                <div className="flex gap-3 md:min-w-max [&>*]:w-[85vw] [&>*]:snap-start md:[&>*]:w-72">
 
                   {GROUPS.map((g, gi) => {
                     const vids = grouped[g.id];

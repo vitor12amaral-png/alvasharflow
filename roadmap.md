@@ -52,10 +52,10 @@
 
 11. Workflow mensal e ações intuitivas
    - [x] Criar competência mensal explícita para os vídeos existentes e novos.
-   - [ ] Aplicar seletor expansível de mês e prazo na criação de levas.
+   - [x] Aplicar seletor expansível de mês e prazo na criação de levas.
    - [x] Manter foco no mês selecionado, sem painel invasivo de pendências anteriores.
-   - [ ] Exibir resumo mensal por cliente na entrada do Workflow.
-   - [ ] Adicionar alternativa clara ao arrasto e adaptar o quadro ao celular.
+   - [x] Exibir resumo mensal por cliente na entrada do Workflow.
+   - [x] Adicionar alternativa clara ao arrasto e adaptar o quadro ao celular.
    - [ ] Unificar navegação mensal do Calendário e melhorar estados vazios/filtros.
 
 12. Fundação operacional — melhorias aprovadas
