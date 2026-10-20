@@ -38,6 +38,7 @@ import { WeekBoard } from "@/components/week-board";
 import { suggestPerVideo } from "@/lib/pricing";
 import { ShortcutsHint } from "@/components/shortcuts-hint";
 import { SubclientPicker } from "@/components/subclient-picker";
+import { BLOCK_REASONS, blockLabel, editorLoad, overloadedDays } from "@/lib/editor-load";
 
 export const Route = createFileRoute("/_authenticated/workflow")({
   component: WorkflowPage,
@@ -97,16 +98,20 @@ type VideoRow = {
   checklist: unknown;
   group_name: string | null;
   group_color: string | null;
+  block_reason?: string | null;
+  block_note?: string | null;
+  revision_count?: number;
   clients: { name: string } | null;
 };
 
-type QuickFilter = "atrasados" | "hoje" | "sem_prazo" | "sem_resp" | "revisao";
+type QuickFilter = "atrasados" | "hoje" | "sem_prazo" | "sem_resp" | "revisao" | "parados";
 const QUICK_FILTERS: { id: QuickFilter; label: string }[] = [
   { id: "atrasados", label: "Atrasados" },
   { id: "hoje", label: "Para hoje" },
   { id: "sem_prazo", label: "Sem prazo" },
   { id: "sem_resp", label: "Sem responsável" },
   { id: "revisao", label: "Em revisão" },
+  { id: "parados", label: "Parados" },
 ];
 function matchQuick(f: QuickFilter, v: VideoRow): boolean {
   const open = v.status !== "aprovado" && v.status !== "entregue";
@@ -115,6 +120,7 @@ function matchQuick(f: QuickFilter, v: VideoRow): boolean {
   if (f === "hoje") return open && v.due_date === today;
   if (f === "sem_prazo") return open && !v.due_date;
   if (f === "sem_resp") return open && !v.editor_id;
+  if (f === "parados") return open && !!v.block_reason;
   return v.status === "revisao" || v.status === "alteracoes" || v.status === "aguardando_cliente";
 }
 
@@ -319,7 +325,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, competence_month, batch_id, batch_label, client_id, color, checklist, position, editor_id, estimated_hours, group_name, group_color, clients(name)").order("position").order("created_at");
+      let q = supabase.from("videos").select("id, title, status, priority, due_date, due_time, created_at, competence_month, batch_id, batch_label, client_id, color, checklist, position, editor_id, estimated_hours, group_name, group_color, block_reason, block_note, revision_count, clients(name)").order("position").order("created_at");
       if (clientId !== "all") q = q.in("client_id", scopeIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -384,7 +390,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
   const qkey = useMemo(() => ["videos-workflow", clientId, scopeIds.join(",")], [clientId, scopeIds]);
 
-  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string; competence_month?: string; editor_id?: string | null; estimated_hours?: number | null; group_name?: string | null; group_color?: string | null };
+  type VideoPatch = { status?: VideoStatus; due_date?: string | null; due_time?: string | null; priority?: VideoPriority; title?: string; client_id?: string; competence_month?: string; editor_id?: string | null; estimated_hours?: number | null; group_name?: string | null; group_color?: string | null; block_reason?: string | null; block_note?: string | null };
   const patch = useMutation({
     mutationFn: async ({ ids, changes }: { ids: string[]; changes: VideoPatch }) => {
       const { error } = await supabase.from("videos").update(changes).in("id", ids);
@@ -659,6 +665,11 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
               <span className="text-[11px] text-muted-foreground">
                 {currentMonthVideos.filter((v) => v.status === "aprovado").length} aprovados aguardando entrega · {currentMonthVideos.filter((v) => v.status === "entregue").length} entregues
               </span>
+              {overloadedDays(currentMonthVideos).slice(0, 3).map((o) => (
+                <span key={o.editorId + o.date} className="rounded-full border border-destructive/50 bg-destructive/10 px-2.5 py-1 text-[11px] text-destructive">
+                  {team.find((p) => p.id === o.editorId)?.full_name ?? "Editor"} tem {o.hours}h para {new Date(o.date + "T12:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" })}
+                </span>
+              ))}
               <ShortcutsHint
                 items={[
                   ["/", "Buscar"],
@@ -1298,6 +1309,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
     <div ref={(node) => { setNodeRef(node); drop.setNodeRef(node); }} data-vid={video.id}
       className={cn(
         "group flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-2.5 py-2 text-sm backdrop-blur transition-colors hover:border-primary/40",
+        video.block_reason && !done && "border-l-2 border-l-[oklch(0.78_0.16_75)]",
         selected && "border-primary/70 ring-1 ring-primary/40",
         isDragging && "opacity-40",
         drop.isOver && "ring-1 ring-primary",
@@ -1312,7 +1324,13 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
       </div>
       <div {...listeners} {...attributes} onDoubleClick={onExpand} className="min-w-0 flex-1 cursor-grab active:cursor-grabbing">
         <p className={cn("truncate text-xs font-medium text-foreground", done && "line-through opacity-60")}>{video.title}</p>
+        {video.block_reason && !done && (
+          <p className="mt-0.5 truncate text-[10px] text-[oklch(0.78_0.16_75)]" title={video.block_note ?? undefined}>⏸ {blockLabel(video.block_reason)}</p>
+        )}
       </div>
+      {(video.revision_count ?? 0) > 0 && (
+        <span className={cn("shrink-0 rounded px-1 text-[10px] font-semibold", (video.revision_count ?? 0) >= 3 ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground")} title="Rodadas de revisão">v{(video.revision_count ?? 0) + 1}</span>
+      )}
       {selected && selectedCount > 1 && <span className="text-[10px] text-primary">{selectedCount}</span>}
       <ColorPicker table="videos" id={video.id} color={video.color} invalidate={[["videos-workflow"], ["fila-videos"]]} />
       {onSetStatus && <Select value={video.status} onValueChange={(value) => onSetStatus(value as VideoStatus)}><SelectTrigger className="h-6 w-6 shrink-0 border-0 p-0 md:opacity-0 md:group-hover:opacity-100" aria-label="Mover para outra etapa"><ChevronRight className="h-3.5 w-3.5" /></SelectTrigger><SelectContent>{ALL_STATUSES.map((status) => <SelectItem key={status} value={status}>{STAGE_LABEL[status]}</SelectItem>)}</SelectContent></Select>}
@@ -1449,6 +1467,7 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
     competence_month: "", editor_id: "", estimated_hours: "",
     priority: "media" as VideoPriority, status: "recebido" as VideoStatus,
     raw_files_link: "", final_file_link: "",
+    block_reason: "", block_note: "",
   });
 
   useEffect(() => {
@@ -1459,6 +1478,7 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
       competence_month: video.competence_month?.slice(0, 7) ?? "",
       editor_id: video.editor_id ?? "", estimated_hours: video.estimated_hours?.toString() ?? "",
       raw_files_link: video.raw_files_link ?? "", final_file_link: video.final_file_link ?? "",
+      block_reason: video.block_reason ?? "", block_note: video.block_note ?? "",
     });
   }, [video]);
 
@@ -1472,6 +1492,7 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
         competence_month: `${form.competence_month}-01`,
         editor_id: form.editor_id || null, estimated_hours: form.estimated_hours === "" ? null : Number(form.estimated_hours),
         raw_files_link: form.raw_files_link || null, final_file_link: form.final_file_link || null,
+        block_reason: form.block_reason || null, block_note: form.block_reason ? (form.block_note || null) : null,
       }).eq("id", videoId);
       if (error) throw error;
     },
@@ -1588,9 +1609,14 @@ function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClos
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5"><Label>Responsável</Label><Select value={form.editor_id || "none"} onValueChange={value => setForm({ ...form, editor_id: value === "none" ? "" : value })}><SelectTrigger aria-label="Responsável do vídeo"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem responsável</SelectItem>{team.map(person => <SelectItem key={person.id} value={person.id}>{person.full_name ?? "Editor"}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-1.5"><Label>Responsável</Label><Select value={form.editor_id || "none"} onValueChange={value => setForm({ ...form, editor_id: value === "none" ? "" : value })}><SelectTrigger aria-label="Responsável do vídeo"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem responsável</SelectItem>{team.map(person => { const l = load.get(person.id); return <SelectItem key={person.id} value={person.id}>{person.full_name ?? "Editor"}{l ? ` · ${l.active} ativos · ${l.hours}h` : " · livre"}</SelectItem>; })}</SelectContent></Select></div>
               <div className="space-y-1.5"><Label htmlFor="detail-estimate">Estimativa (horas)</Label><Input id="detail-estimate" type="number" min="0" step="0.25" value={form.estimated_hours} onChange={e => setForm({ ...form, estimated_hours: e.target.value })} /></div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>Motivo de parada</Label><Select value={form.block_reason || "none"} onValueChange={value => setForm({ ...form, block_reason: value === "none" ? "" : value })}><SelectTrigger aria-label="Motivo de parada"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Não está parado</SelectItem>{BLOCK_REASONS.map(b => <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-1.5"><Label htmlFor="detail-block-note">Nota</Label><Input id="detail-block-note" disabled={!form.block_reason} value={form.block_note} onChange={e => setForm({ ...form, block_note: e.target.value })} placeholder="Ex.: falta o áudio" /></div>
+            </div>
+            {(video?.revision_count ?? 0) > 0 && <p className="text-xs text-muted-foreground">Rodadas de revisão: <span className="font-semibold text-foreground">{video?.revision_count}</span> (versão atual v{(video?.revision_count ?? 0) + 1})</p>}
             <div className="space-y-1.5">
               <Label>Mês da leva</Label>
               <Input type="month" value={form.competence_month} onChange={(e) => setForm({ ...form, competence_month: e.target.value })} />
