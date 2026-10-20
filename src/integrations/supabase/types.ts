@@ -1462,6 +1462,8 @@ export type Database = {
         Row: {
           batch_id: string | null
           batch_label: string | null
+          block_note: string | null
+          block_reason: string | null
           checklist: Json
           client_id: string
           color: string | null
@@ -1480,6 +1482,7 @@ export type Database = {
           position: number
           priority: Database["public"]["Enums"]["video_priority"]
           raw_files_link: string | null
+          revision_count: number
           status: Database["public"]["Enums"]["video_status"]
           title: string
           unit_price: number | null
@@ -1489,6 +1492,8 @@ export type Database = {
         Insert: {
           batch_id?: string | null
           batch_label?: string | null
+          block_note?: string | null
+          block_reason?: string | null
           checklist?: Json
           client_id: string
           color?: string | null
@@ -1507,6 +1512,7 @@ export type Database = {
           position?: number
           priority?: Database["public"]["Enums"]["video_priority"]
           raw_files_link?: string | null
+          revision_count?: number
           status?: Database["public"]["Enums"]["video_status"]
           title: string
           unit_price?: number | null
@@ -1516,6 +1522,8 @@ export type Database = {
         Update: {
           batch_id?: string | null
           batch_label?: string | null
+          block_note?: string | null
+          block_reason?: string | null
           checklist?: Json
           client_id?: string
           color?: string | null
@@ -1534,6 +1542,7 @@ export type Database = {
           position?: number
           priority?: Database["public"]["Enums"]["video_priority"]
           raw_files_link?: string | null
+          revision_count?: number
           status?: Database["public"]["Enums"]["video_status"]
           title?: string
           unit_price?: number | null
@@ -1849,6 +1858,7 @@ export type Database = {
           joined_at: string
           role: Database["public"]["Enums"]["workspace_role"]
           user_id: string
+          weekly_capacity_hours: number
           workspace_id: string
         }
         Insert: {
@@ -1857,6 +1867,7 @@ export type Database = {
           joined_at?: string
           role?: Database["public"]["Enums"]["workspace_role"]
           user_id: string
+          weekly_capacity_hours?: number
           workspace_id: string
         }
         Update: {
@@ -1865,6 +1876,7 @@ export type Database = {
           joined_at?: string
           role?: Database["public"]["Enums"]["workspace_role"]
           user_id?: string
+          weekly_capacity_hours?: number
           workspace_id?: string
         }
         Relationships: [
