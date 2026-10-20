@@ -172,9 +172,22 @@ function ClientDetail() {
           <Card className="p-4 min-w-[220px]">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pacote ativo</p>
             <p className="font-display text-lg font-semibold">{PACKAGE_LABEL[activePack.size as PackageSize]}</p>
-            <p className="text-xs text-muted-foreground">
-              {activePack.videos_used}/{activePack.total_videos} usados · {formatBRL(activePack.price)}
-            </p>
+            {(() => {
+              const monthVids = client.videos.filter((v) => (v.competence_month ?? "").slice(0, 7) === selectedMonth);
+              const done = monthVids.filter((v) => v.status === "entregue").length;
+              const base = Math.max(activePack.total_videos, monthVids.length) || 1;
+              return (
+                <>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, (done / base) * 100)}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-xs text-foreground">{done}/{activePack.total_videos} entregues neste mês</p>
+                  <p className="text-xs text-muted-foreground">
+                    {monthVids.length} na leva · {activePack.videos_used} usados · {formatBRL(activePack.price)}
+                  </p>
+                </>
+              );
+            })()}
           </Card>
         )}
         {isSub && client.parent && (
