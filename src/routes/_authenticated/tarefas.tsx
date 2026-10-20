@@ -72,6 +72,7 @@ function TarefasPage() {
   const [filterPrio, setFilterPrio] = useState<TaskPriority | "all">("all");
   const [filterMine, setFilterMine] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterClient, setFilterClient] = useState<string>("all");
   const { data: currentUser } = useCurrentUser();
   const qc = useQueryClient();
 
@@ -92,6 +93,7 @@ function TarefasPage() {
     if (filterPrio !== "all") list = list.filter((t) => t.priority === filterPrio);
     if (filterMine && currentUser) list = list.filter((t) => t.assignee_id === currentUser.id);
     if (search.trim()) { const q = search.trim().toLowerCase(); list = list.filter((t) => `${t.title} ${t.description ?? ""}`.toLowerCase().includes(q)); }
+    if (filterClient !== "all") list = list.filter((t) => t.client_id === filterClient);
     list = [...list].sort((a, b) => {
       const p = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
       if (p !== 0) return p;
@@ -100,7 +102,13 @@ function TarefasPage() {
       return ad - bd;
     });
     return list;
-  }, [tasks, filterCat, filterPrio, filterMine, currentUser, search]);
+  }, [tasks, filterCat, filterPrio, filterMine, currentUser, search, filterClient]);
+
+  const clientOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const t of tasks ?? []) if (t.client_id && t.clients) m.set(t.client_id, t.clients.name);
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [tasks]);
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
@@ -136,8 +144,12 @@ function TarefasPage() {
         </Tabs>
         <div className="ml-auto flex items-center gap-2">
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tarefa…" className="h-9 w-44" />
-          {(filterCat !== "all" || filterPrio !== "all" || filterMine) && (
-            <button onClick={() => { setFilterCat("all"); setFilterPrio("all"); setFilterMine(false); }} className="text-[11px] text-muted-foreground underline">
+          <select value={filterClient} onChange={(e) => setFilterClient(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground" aria-label="Filtrar por cliente">
+            <option value="all">Todos os clientes</option>
+            {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+          {(filterCat !== "all" || filterPrio !== "all" || filterMine || filterClient !== "all") && (
+            <button onClick={() => { setFilterCat("all"); setFilterPrio("all"); setFilterMine(false); setFilterClient("all"); }} className="text-[11px] text-muted-foreground underline">
               Limpar filtros
             </button>
           )}
