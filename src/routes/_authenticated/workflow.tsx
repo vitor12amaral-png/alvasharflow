@@ -1438,6 +1438,11 @@ function StatusBadge({ status, onChange }: { status: VideoStatus; onChange: (s: 
 }
 
 function VideoDetailSheet({ videoId, onClose }: { videoId: string | null; onClose: () => void }) {
+  const { data: loadRows = [] } = useQuery({
+    queryKey: ["editor-load"], staleTime: 60_000,
+    queryFn: async () => (await supabase.from("videos").select("editor_id, status, estimated_hours, due_date").not("editor_id", "is", null)).data ?? [],
+  });
+  const load = useMemo(() => editorLoad(loadRows), [loadRows]);
   const qc = useQueryClient();
   const { data: team = [] } = useWorkflowTeam();
   const { data: video } = useQuery({
