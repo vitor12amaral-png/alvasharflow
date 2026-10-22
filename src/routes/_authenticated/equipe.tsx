@@ -1,3 +1,4 @@
+import { editorLoad, overloadedDays, DEFAULT_WEEKLY_CAPACITY_HOURS } from "@/lib/editor-load";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +48,7 @@ type VideoRow = {
   editor_id: string | null;
   due_date: string | null;
   due_time: string | null;
+  estimated_hours: number | null;
   clients: { name: string } | null;
 };
 
@@ -67,9 +69,9 @@ function EquipePage() {
     enabled: !!me?.workspaceId,
     queryFn: async () => {
       const [{ data: members }, { data: profiles }, { data: videos }, { data: invites }] = await Promise.all([
-        supabase.from("workspace_members").select("user_id, role, joined_at").eq("workspace_id", me!.workspaceId!),
+        supabase.from("workspace_members").select("user_id, role, joined_at, weekly_capacity_hours").eq("workspace_id", me!.workspaceId!),
         supabase.from("profiles").select("id, full_name, email, avatar_url"),
-        supabase.from("videos").select("id, title, status, editor_id, due_date, due_time, clients(name)"),
+        supabase.from("videos").select("id, title, status, editor_id, due_date, due_time, estimated_hours, clients(name)"),
         supabase.from("workspace_invites").select("id, email, role, token, expires_at, accepted_at").eq("workspace_id", me!.workspaceId!).order("created_at", { ascending: false }),
       ]);
       return {
@@ -135,6 +137,9 @@ function EquipePage() {
       avatar: p?.avatar_url ?? null,
       videos: vids,
       ativos: vids.filter((v) => !DONE.includes(v.status)).length,
+      capacity: Number((m as { weekly_capacity_hours?: number }).weekly_capacity_hours ?? DEFAULT_WEEKLY_CAPACITY_HOURS),
+      hours: editorLoad(vids).get(m.user_id)?.hours ?? 0,
+      overDays: overloadedDays(vids),
       entregues: vids.filter((v) => v.status === "entregue").length,
     };
   });
@@ -224,6 +229,36 @@ function EquipePage() {
               <Stat label="Ativos" value={String(m.ativos)} accent="text-primary" />
               <Stat label="Entregues" value={String(m.entregues)} accent="text-[oklch(0.72_0.17_155)]" />
               <Stat label="Carga" value={avg > 0 ? fmtEstimate(avg * m.ativos) : "—"} accent="text-muted-foreground" />
+            </div>
+            <div className="mt-3">
+              <div className="flex justify-between text-[11px] text-muted-foreground">
+                <span>Horas em aberto</span>
+                <span className={m.hours > m.capacity ? "font-semibold text-destructive" : ""}>{m.hours.toFixed(0)}h / {m.capacity}h semana</span>
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                <div className={cn("h-full rounded-full", m.hours > m.capacity ? "bg-destructive" : "bg-primary")} style={{ width: `${Math.min(100, (m.hours / Math.max(1, m.capacity)) * 100)}%` }} />
+              </div>
+              {m.overDays.length > 0 && (
+                <p className="mt-2 text-[11px] text-destructive">
+                  Prazo apertado: {m.overDays.slice(0, 3).map((d) => `${d.date.slice(8, 10)}/${d.date.slice(5, 7)} (${d.hours.toFixed(0)}h)`).join(", ")}
+                </p>
+              )}
+              {canManage && (
+                <button
+                  type="button"
+                  className="mt-2 text-[11px] text-primary hover:underline"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const v = window.prompt("Horas disponíveis por semana", String(m.capacity));
+                    const n = Number(v);
+                    if (!v || !Number.isFinite(n) || n <= 0) return;
+                    const { error } = await supabase.from("workspace_members").update({ weekly_capacity_hours: n }).eq("workspace_id", me!.workspaceId!).eq("user_id", m.id);
+                    if (error) toast.error(error.message); else { toast.success("Capacidade atualizada"); qc.invalidateQueries({ queryKey: ["team"] }); }
+                  }}
+                >
+                  Alterar horas semanais
+                </button>
+              )}
             </div>
           </Card>
         ))}
