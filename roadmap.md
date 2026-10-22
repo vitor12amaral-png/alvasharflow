@@ -56,7 +56,7 @@
    - [x] Manter foco no mês selecionado, sem painel invasivo de pendências anteriores.
    - [x] Exibir resumo mensal por cliente na entrada do Workflow.
    - [x] Adicionar alternativa clara ao arrasto e adaptar o quadro ao celular.
-   - [ ] Unificar navegação mensal do Calendário e melhorar estados vazios/filtros.
+   - [x] Unificar navegação mensal do Calendário e melhorar estados vazios/filtros (filtro por cliente).
 
 12. Fundação operacional — melhorias aprovadas
    - [x] Remover painel de pendências anteriores sem apagar vídeos antigos.
@@ -70,3 +70,7 @@
    - [x] Conferir identificação já existente e organizar levas por cliente no mês selecionado.
    - [x] Mostrar progresso de entregas e abrir/recolher vídeos usando as ações existentes.
    - [x] Validar filtros, progresso e acesso autenticado.
+
+14. Etapas C e D
+   - [x] Motivo de parada, rodadas de revisão, filtro "Parados".
+   - [x] Carga por editor na Equipe e no seletor de responsável, aviso de dia acima de 8h.
