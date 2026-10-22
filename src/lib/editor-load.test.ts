@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, test as it } from "node:test";
+import { strict as assert } from "node:assert";
 import { editorLoad, overloadedDays } from "./editor-load";
 
 describe("editor load", () => {
@@ -8,7 +9,7 @@ describe("editor load", () => {
       { editor_id: "a", status: "aprovado", estimated_hours: 5, due_date: null },
       { editor_id: "a", status: "entregue", estimated_hours: 5, due_date: null },
     ]);
-    expect(m.get("a")).toEqual({ hours: 3, active: 1 });
+    assert.deepEqual(m.get("a"), { hours: 3, active: 1 });
   });
 
   it("flags a day above 8 hours", () => {
@@ -17,6 +18,6 @@ describe("editor load", () => {
       { editor_id: "a", status: "fila", estimated_hours: 5, due_date: "2026-10-22" },
       { editor_id: "a", status: "fila", estimated_hours: 8, due_date: "2026-10-23" },
     ]);
-    expect(r).toEqual([{ editorId: "a", date: "2026-10-22", hours: 11 }]);
+    assert.deepEqual(r, [{ editorId: "a", date: "2026-10-22", hours: 11 }]);
   });
 });
