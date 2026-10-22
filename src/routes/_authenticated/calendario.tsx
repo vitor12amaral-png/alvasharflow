@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
@@ -25,18 +27,24 @@ export const Route = createFileRoute("/_authenticated/calendario")({
 
 function CalendarioPage() {
   const { year, month } = useMonthFromSearch();
+  const [clientId, setClientId] = useState("all");
 
   const { data, isLoading } = useQuery({
     queryKey: ["calendar"],
     queryFn: async () => {
       const [vids, packs] = await Promise.all([
-        supabase.from("videos").select("id, title, due_date, status, competence_month, clients(name)"),
-        supabase.from("client_packages").select("id, end_date, clients(name)").not("end_date", "is", null),
+        supabase.from("videos").select("id, title, due_date, status, competence_month, client_id, clients(name)"),
+        supabase.from("client_packages").select("id, end_date, client_id, clients(name)").not("end_date", "is", null),
       ]);
-      const all = vids.data ?? [];
-      return { videos: all.filter((v) => v.due_date), undated: all.filter((v) => !v.due_date), packages: packs.data ?? [] };
+      return { all: vids.data ?? [], packages: packs.data ?? [] };
     },
   });
+
+  const clientOptions = Array.from(new Map((data?.all ?? []).filter((v) => v.client_id).map((v) => [v.client_id!, v.clients?.name ?? "Cliente"])).entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  const scoped = (data?.all ?? []).filter((v) => clientId === "all" || v.client_id === clientId);
+  const dated = scoped.filter((v) => v.due_date);
+  const undatedAll = scoped.filter((v) => !v.due_date);
+  const packages = (data?.packages ?? []).filter((p) => clientId === "all" || p.client_id === clientId);
 
   const first = new Date(year, month, 1);
   const startDay = first.getDay();
@@ -46,14 +54,14 @@ function CalendarioPage() {
   for (let d = 1; d <= daysInMonth; d++) cells.push({ date: new Date(year, month, d) });
 
   const eventsByDay: Record<string, { type: "video" | "package"; label: string; sub: string; accent?: string }[]> = {};
-  data?.videos.forEach((v) => {
+  dated.forEach((v) => {
     const key = v.due_date!.slice(0, 10);
     (eventsByDay[key] ??= []).push({
       type: "video", label: v.title, sub: v.clients?.name ?? "",
       accent: STAGE_ACCENT[v.status as VideoStatus],
     });
   });
-  data?.packages.forEach((p) => {
+  packages.forEach((p) => {
     const key = p.end_date!.slice(0, 10);
     (eventsByDay[key] ??= []).push({ type: "package", label: `Fim do pacote — ${p.clients?.name ?? ""}`, sub: "" });
   });
@@ -64,7 +72,16 @@ function CalendarioPage() {
         title="Calendário"
         subtitle="Prazos e vencimentos de pacote"
         actions={
-          <MonthPicker />
+          <div className="flex items-center gap-2">
+            <Select value={clientId} onValueChange={setClientId}>
+              <SelectTrigger className="h-9 w-48" aria-label="Filtrar por cliente"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os clientes</SelectItem>
+                {clientOptions.map(([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <MonthPicker />
+          </div>
         }
       />
 
@@ -113,7 +130,7 @@ function CalendarioPage() {
 
       {(() => {
         const key = `${year}-${String(month + 1).padStart(2, "0")}`;
-        const undated = (data?.undated ?? []).filter((v) => (v.competence_month ?? "").slice(0, 7) === key && v.status !== "entregue");
+        const undated = undatedAll.filter((v) => (v.competence_month ?? "").slice(0, 7) === key && v.status !== "entregue");
         if (undated.length === 0) return null;
         return (
           <Card className="mt-4 p-4">
