@@ -81,9 +81,9 @@
    - [x] Páginas pré-carregadas ao passar o mouse nos links.
 
 16. Reforma geral (out/2026)
-   - [ ] Contagem: aprovado + entregue contam como concluídos (Clientes, Workflow, detalhe).
-   - [ ] Nova leva com 4 etapas reais (Avançar/Voltar).
-   - [ ] Remover Dashboard; Workflow vira início.
-   - [ ] SFX táteis estilo Apple.
-   - [ ] Identidade visual Arctic Depths.
-   - [ ] Nova página de vendas estilo REDSUN com planos.
+   - [x] Contagem: aprovado + entregue contam como concluídos (Clientes, Workflow, detalhe).
+   - [x] Nova leva com 4 etapas reais (Avançar/Voltar).
+   - [x] Remover Dashboard; Workflow vira início.
+   - [x] SFX táteis estilo Apple.
+   - [x] Identidade visual Arctic Depths.
+   - [x] Nova página de vendas estilo REDSUN com planos.
