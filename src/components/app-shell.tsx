@@ -30,7 +30,6 @@ type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerO
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
 const SOLO_TOP: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 const NAV_GROUPS: NavGroup[] = [

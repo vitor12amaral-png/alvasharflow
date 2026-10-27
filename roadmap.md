@@ -79,3 +79,11 @@
    - [x] Calendário com filtro por cliente e aviso de dia acima de 8h no detalhe do vídeo.
    - [x] Financeiro por mês: previsto, entregue, falta entregar, vídeos sem valor e uso real de cada pacote.
    - [x] Páginas pré-carregadas ao passar o mouse nos links.
+
+16. Reforma geral (out/2026)
+   - [x] Contagem: aprovado + entregue contam como concluídos (Clientes, Workflow, detalhe).
+   - [x] Nova leva com 4 etapas reais (Avançar/Voltar).
+   - [x] Remover Dashboard; Workflow vira início.
+   - [x] SFX táteis estilo Apple.
+   - [x] Identidade visual Arctic Depths.
+   - [x] Nova página de vendas estilo REDSUN com planos.

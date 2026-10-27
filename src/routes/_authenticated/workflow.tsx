@@ -172,10 +172,10 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
         if (v.competence_month.slice(0, 7) !== ym) return;
         const c = map.get(v.client_id) ?? { total: 0, pendentes: 0, concluidos: 0, anteriores: 0, atrasados: 0 };
         c.total++;
-        if (v.status === "entregue") c.concluidos++;
+        if (v.status === "entregue" || v.status === "aprovado") c.concluidos++;
         else {
           c.pendentes++;
-          if (v.status !== "aprovado" && v.due_date && v.due_date < today) c.atrasados++;
+          if (v.due_date && v.due_date < today) c.atrasados++;
         }
         map.set(v.client_id, c);
       });
@@ -239,7 +239,7 @@ function ClientPicker({ clients, onPick }: { clients: ClientMin[]; onPick: (id: 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{parent.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {info.total > 0 ? `${info.concluidos}/${info.total} entregues · ${info.pendentes} em andamento` : "Sem vídeos neste mês"}
+                    {info.total > 0 ? `${info.concluidos}/${info.total} concluídos · ${info.pendentes} em andamento` : "Sem vídeos neste mês"}
                     {kids.length > 0 && ` · ${kids.length} marca${kids.length > 1 ? "s" : ""}`}
                   </p>
                   {info.total > 0 && (

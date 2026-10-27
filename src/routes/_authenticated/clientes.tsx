@@ -173,7 +173,7 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
   const pack = client.client_packages?.find((p) => p.status === "ativo");
   const allVids = [...(client.videos ?? []), ...subs.flatMap((s) => s.videos ?? [])];
   const today = new Date().toISOString().slice(0, 10);
-  const entregues = allVids.filter((v) => v.status === "entregue").length;
+  const entregues = allVids.filter((v) => v.status === "entregue" || v.status === "aprovado").length;
   const pendentes = allVids.filter((v) => v.status !== "entregue" && v.status !== "aprovado").length;
   const atrasados = allVids.filter((v) => v.due_date && v.due_date < today && v.status !== "entregue" && v.status !== "aprovado").length;
   const alocados = allVids.length;
@@ -222,7 +222,7 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
           <div className="hidden sm:block min-w-[220px]">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">
-                {pack ? `${entregues}/${base} entregues · ${alocados}/${total} cadastrados` : alocados > 0 ? `${entregues}/${alocados} entregues · sem pacote` : "Sem pacote ativo"}
+                {pack ? `${entregues}/${base} concluídos · ${alocados}/${total} cadastrados` : alocados > 0 ? `${entregues}/${alocados} concluídos · sem pacote` : "Sem pacote ativo"}
               </span>
               {pack && <span className="font-medium">{formatBRL(pack.price)}</span>}
             </div>
@@ -231,7 +231,7 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
               <MiniStat label="Pendentes" value={pendentes} />
-              <MiniStat label="Entregues" value={entregues} />
+              <MiniStat label="Concluídos" value={entregues} />
               <MiniStat label="Atrasados" value={atrasados} tone={atrasados > 0 ? "danger" : undefined} />
             </div>
           </div>

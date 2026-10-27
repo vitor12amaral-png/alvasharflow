@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 
 const PAGES = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/leads", label: "Leads", icon: Sparkles },
   { to: "/workflow", label: "Workflow", icon: Kanban },
