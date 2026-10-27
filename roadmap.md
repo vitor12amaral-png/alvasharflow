@@ -74,3 +74,8 @@
 14. Etapas C e D
    - [x] Motivo de parada, rodadas de revisão, filtro "Parados".
    - [x] Carga por editor na Equipe e no seletor de responsável, aviso de dia acima de 8h.
+
+15. Outras áreas e velocidade
+   - [x] Calendário com filtro por cliente e aviso de dia acima de 8h no detalhe do vídeo.
+   - [x] Financeiro por mês: previsto, entregue, falta entregar, vídeos sem valor e uso real de cada pacote.
+   - [x] Páginas pré-carregadas ao passar o mouse nos links.

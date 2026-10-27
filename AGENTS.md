@@ -14,3 +14,4 @@
 - Video history reads the existing activity log; database triggers audit operational changes across every entry point without duplicating status/assignment events.
 - Contextual next-stage actions and team lookup live in a shared operations module to keep cards and video details consistent.
 - Batch views group existing video batch IDs by client and competence month through a shared pure helper; progress uses all monthly rows, not filtered rows, to keep delivery totals accurate without a new batch entity.
+- Finance figures come from a shared pure helper: month value follows competence month, package usage counts linked videos (legacy unlinked ones by client family and creation date within the package period), so finance never depends on the old quota counter.
