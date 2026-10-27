@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2 } from "lucide-react";
+import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2, Film } from "lucide-react";
 import { DueDatePopover, formatDue } from "@/components/due-date-popover";
 import { DeleteAction } from "@/components/delete-action";
 import { MoreMenu } from "@/components/more-menu";
@@ -246,6 +246,7 @@ function TaskCard({ task, onStatus, onDelete }: { task: Task; onStatus: (s: Task
             </DueDatePopover>
           </div>
           <div className="mt-2 flex items-center gap-2">
+            {task.client_id && task.status !== "concluida" && <ConvertToVideo task={task} />}
             <div className="ml-auto">
               <DeleteAction
                 table="tasks"
@@ -389,5 +390,31 @@ function NewTaskDialog() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ConvertToVideo({ task }: { task: Task }) {
+  const { data: me } = useCurrentUser();
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  async function run() {
+    if (!me?.workspaceId || !task.client_id) return;
+    setBusy(true);
+    const ym = (task.due_date ?? new Date().toISOString()).slice(0, 7);
+    const { error } = await supabase.from("videos").insert({
+      workspace_id: me.workspaceId, client_id: task.client_id, title: task.title,
+      description: task.description, status: "recebido", priority: "media",
+      due_date: task.due_date, competence_month: `${ym}-01`,
+    });
+    if (!error) await supabase.from("tasks").update({ status: "concluida" }).eq("id", task.id);
+    setBusy(false);
+    if (error) { toast.error("Não foi possível criar o vídeo"); return; }
+    toast.success("Tarefa virou vídeo no Workflow");
+    qc.invalidateQueries();
+  }
+  return (
+    <button onClick={run} disabled={busy} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-primary transition hover:bg-primary/10 disabled:opacity-50">
+      {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Film className="h-3 w-3" />} Virar vídeo
+    </button>
   );
 }
