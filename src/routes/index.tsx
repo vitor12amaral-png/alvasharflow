@@ -113,7 +113,7 @@ function Hero() {
       </div>
 
       {/* planet horizon */}
-      <div className="relative mx-auto -mt-4 h-[300px] max-w-6xl overflow-hidden md:h-[380px]">
+      <div className="relative mx-auto -mt-4 h-[300px] max-w-6xl overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_70px)] md:h-[380px]">
         <div aria-hidden className="absolute left-1/2 top-20 aspect-square w-[min(820px,120vw)] -translate-x-1/2 rounded-full p-[2px] [background:var(--gradient-rim)] shadow-[0_-30px_120px_-20px_var(--primary-glow)]">
           <div className="h-full w-full rounded-full bg-landing" />
         </div>
