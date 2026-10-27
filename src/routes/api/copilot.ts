@@ -398,7 +398,7 @@ export const Route = createFileRoute("/api/copilot")({
             },
           }),
           create_video_batch: tool({
-            description: "Cria uma leva de vídeos numerados para um cliente. Só chame após o usuário confirmar o plano.",
+            description: "Cria uma leva de vídeos numerados para um cliente. Chame direto quando o usuário pedir uma leva.",
             inputSchema: z.object({
               client_name: z.string(),
               brand_name: z.string().nullable(),
@@ -765,13 +765,13 @@ Regras de interpretação (seja proativo, não pergunte o óbvio):
 - Mês da leva e prazo são independentes. Grave month como competência YYYY-MM; se o usuário disser "sem prazo", mantenha due_date nulo.
 - Nomes aproximados: se o usuário disser "Ronei" e existir "Roney", use o mais próximo. Se houver ambiguidade, peça para escolher.
 - Se o cliente informado tiver marcas/subclientes, associe à marca mencionada (ex.: "5 vídeos do Roney da Floor" → cliente Roney, marca Floor).
-- Para criar uma leva, PRIMEIRO chame plan_video_batch, mostre o resumo e peça confirmação. Só então chame create_video_batch.
+- Para criar uma leva, chame create_video_batch DIRETO, sem pedir confirmação. Depois responda em uma frase curta o que foi criado (falada em voz).
 - Sempre confirme ações APÓS executar, resumindo o que foi criado/atualizado.
 - Se faltar informação obrigatória (título, nome do cliente), pergunte antes de chamar a tool.
 - Para EXCLUIR qualquer coisa, pergunte antes e só chame a tool com confirmed=true depois do "sim" explícito.
 - Antes de atualizar algo, use a tool de listagem correspondente para achar o id certo; se houver mais de um candidato, pergunte qual.
 - Se uma tool retornar needs_clarification, mostre as opções e peça para o usuário escolher.
-- Responda em português brasileiro, tom direto e curto.
+- Responda em português brasileiro, tom direto e curto (1-2 frases, sem markdown, pois a resposta é falada).
 
 Lembretes armazenados pelo usuário (use como contexto, mas não cite a menos que relevante):
 ${memoryText || "Nenhum ainda."}`;
