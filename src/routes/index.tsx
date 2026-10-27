@@ -26,9 +26,9 @@ const FEATURES = [
 ];
 
 const PLANS = [
-  { name: "Solo", price: "R$ 49", desc: "Para o editor que trabalha sozinho.", items: ["Até 10 clientes", "Levas e quadro de etapas", "Portal do cliente", "Copiloto por voz"] },
-  { name: "Estúdio", price: "R$ 97", desc: "Para quem já tem uma pequena equipe.", items: ["Clientes ilimitados", "Até 5 editores", "Carga por editor", "Financeiro do mês", "Tudo do Solo"], featured: true },
-  { name: "Agência", price: "R$ 197", desc: "Para operações com alto volume.", items: ["Editores ilimitados", "Marcas e subclientes", "Relatórios de entrega", "Suporte prioritário", "Tudo do Estúdio"] },
+  { name: "Mensal", price: "R$ 69,90", desc: "Sem fidelidade. Cancele quando quiser.", items: ["Acesso completo", "Clientes e editores ilimitados", "Copiloto por voz", "Portal do cliente"] },
+  { name: "Trimestral", price: "R$ 59,90", desc: "Cobrado R$ 179,70 a cada 3 meses.", items: ["Acesso completo", "Economia de 14%", "Copiloto por voz", "Portal do cliente"], featured: true },
+  { name: "Anual", price: "R$ 44,90", desc: "Cobrado R$ 538,80 por ano.", items: ["Acesso completo", "Economia de 36%", "Copiloto por voz", "Portal do cliente"] },
 ];
 
 function Landing() {
