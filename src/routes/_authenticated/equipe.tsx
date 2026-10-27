@@ -64,6 +64,7 @@ function EquipePage() {
   const { data: me } = useCurrentUser();
   const [openMember, setOpenMember] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [batchFor, setBatchFor] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["team", me?.workspaceId],

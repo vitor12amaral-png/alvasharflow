@@ -18,8 +18,8 @@ export const Route = createFileRoute("/")({
 
 const PLANS = [
   { name: "Mensal", price: "R$ 69,90", note: "Sem fidelidade. Cancele quando quiser.", items: ["Acesso completo", "Clientes e editores ilimitados", "Copiloto por voz", "Portal do cliente"] },
-  { name: "Trimestral", price: "R$ 59,90", note: "Cobrado R$ 179,70 a cada 3 meses.", items: ["Acesso completo", "Economia de 14%", "Copiloto por voz", "Portal do cliente", "Prioridade em novidades"], featured: true },
-  { name: "Anual", price: "R$ 44,90", note: "Cobrado R$ 538,80 por ano.", items: ["Acesso completo", "Economia de 36%", "Copiloto por voz", "Portal do cliente"] },
+  { name: "Trimestral", price: "R$ 54,90", note: "Cobrado R$ 164,70 a cada 3 meses · ~21% OFF.", items: ["Acesso completo", "Economia de 21%", "Copiloto por voz", "Portal do cliente", "Prioridade em novidades"] },
+  { name: "Anual · Mais vantajoso", price: "R$ 39,90", note: "Cobrado R$ 478,80 por ano · ~43% OFF.", items: ["Acesso completo", "Economia de 43%", "Copiloto por voz", "Portal do cliente"], featured: true },
 ];
 
 const NICHES = ["Reels", "VSL", "Podcast", "YouTube", "Shorts", "TikTok", "Anúncios", "Lançamentos", "Cortes", "Motion"];
