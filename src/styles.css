@@ -34,6 +34,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-primary-glow: var(--primary-glow);
+  --color-primary-deep: var(--primary-deep);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -52,48 +54,51 @@
 /* Dark by default — this is a management suite */
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.16 0.02 260);
+  --background: oklch(0.145 0.03 242);
   --foreground: oklch(0.98 0.005 260);
-  --card: oklch(0.20 0.022 260);
+  --card: oklch(0.19 0.035 240);
   --card-foreground: oklch(0.98 0.005 260);
-  --popover: oklch(0.20 0.022 260);
+  --popover: oklch(0.19 0.035 240);
   --popover-foreground: oklch(0.98 0.005 260);
-  --primary: oklch(0.72 0.19 235);
-  --primary-foreground: oklch(0.14 0.02 260);
-  --secondary: oklch(0.26 0.03 260);
+  --primary: oklch(0.72 0.13 212);
+  --primary-foreground: oklch(0.15 0.03 240);
+  --secondary: oklch(0.25 0.045 240);
   --secondary-foreground: oklch(0.98 0.005 260);
-  --muted: oklch(0.24 0.025 260);
-  --muted-foreground: oklch(0.68 0.02 260);
-  --accent: oklch(0.30 0.04 250);
+  --muted: oklch(0.235 0.04 240);
+  --muted-foreground: oklch(0.76 0.03 230);
+  --accent: oklch(0.31 0.07 245);
   --accent-foreground: oklch(0.98 0.005 260);
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0.005 260);
   --success: oklch(0.72 0.17 155);
   --warning: oklch(0.78 0.16 75);
-  --border: oklch(1 0 0 / 8%);
+  --border: oklch(0.80 0.08 220 / 12%);
   --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.72 0.19 235 / 60%);
-  --chart-1: oklch(0.72 0.19 235);
+  --ring: oklch(0.72 0.13 212 / 60%);
+  --chart-1: oklch(0.72 0.13 212);
+  --primary-glow: oklch(0.59 0.17 252);
+  --primary-deep: oklch(0.46 0.13 250);
+  --gradient-arctic: linear-gradient(135deg, oklch(0.72 0.13 212), oklch(0.59 0.17 252) 55%, oklch(0.46 0.13 250));
   --chart-2: oklch(0.72 0.17 155);
   --chart-3: oklch(0.78 0.16 75);
   --chart-4: oklch(0.66 0.22 300);
   --chart-5: oklch(0.62 0.22 25);
-  --sidebar: oklch(0.14 0.02 260);
+  --sidebar: oklch(0.13 0.03 242 / 92%);
   --sidebar-foreground: oklch(0.85 0.01 260);
-  --sidebar-primary: oklch(0.72 0.19 235);
+  --sidebar-primary: oklch(0.72 0.13 212);
   --sidebar-primary-foreground: oklch(0.14 0.02 260);
-  --sidebar-accent: oklch(0.22 0.025 260);
+  --sidebar-accent: oklch(0.23 0.045 240);
   --sidebar-accent-foreground: oklch(0.98 0.005 260);
-  --sidebar-border: oklch(1 0 0 / 6%);
-  --sidebar-ring: oklch(0.72 0.19 235 / 60%);
+  --sidebar-border: oklch(0.80 0.08 220 / 10%);
+  --sidebar-ring: oklch(0.72 0.13 212 / 60%);
   --surface-raised: oklch(0.195 0.022 248);
   --surface-deep: oklch(0.125 0.018 248);
   --focus-glow: oklch(0.76 0.16 225 / 16%);
   --active-glow: 0 4px 12px -10px oklch(0 0 0 / 0.55);
-  --glass-surface: oklch(0.235 0.018 255 / 68%);
-  --glass-surface-strong: oklch(0.205 0.018 255 / 86%);
+  --glass-surface: oklch(0.22 0.04 240 / 62%);
+  --glass-surface-strong: oklch(0.19 0.035 240 / 88%);
   --glass-control: oklch(0.26 0.016 255 / 48%);
-  --glass-border: oklch(1 0 0 / 10%);
+  --glass-border: oklch(0.82 0.09 215 / 14%);
   --glass-highlight: oklch(1 0 0 / 5%);
   --glass-shadow: 0 18px 46px -34px oklch(0 0 0 / 0.72), inset 0 1px 0 oklch(1 0 0 / 0.04);
   --floating-shadow: 0 24px 70px -34px oklch(0 0 0 / 0.88), inset 0 1px 0 oklch(1 0 0 / 0.06);
@@ -106,7 +111,13 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image: none;
+    background-image:
+      radial-gradient(60rem 40rem at 85% -10%, oklch(0.59 0.17 252 / 0.22), transparent 70%),
+      radial-gradient(50rem 36rem at -10% 110%, oklch(0.72 0.13 212 / 0.14), transparent 70%),
+      linear-gradient(oklch(0.80 0.08 220 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.80 0.08 220 / 0.035) 1px, transparent 1px);
+    background-size: auto, auto, 56px 56px, 56px 56px;
+    background-attachment: fixed;
   }
   h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0; }
 }
@@ -254,4 +265,13 @@
   background: var(--glass-surface-strong);
   backdrop-filter: blur(28px) saturate(135%);
   box-shadow: var(--floating-shadow);
+}
+
+@utility bg-arctic {
+  background-image: var(--gradient-arctic);
+}
+@utility text-arctic {
+  background-image: linear-gradient(180deg, oklch(0.97 0.02 220), oklch(0.82 0.08 220));
+  background-clip: text;
+  color: transparent;
 }
