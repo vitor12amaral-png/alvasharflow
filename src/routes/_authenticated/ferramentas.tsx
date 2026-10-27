@@ -16,6 +16,7 @@ import { DeleteAction } from "@/components/delete-action";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Copy, FileText, FolderTree, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { ContractGenerator, PriceCalculator, HookGenerator, QualityChecklist } from "@/components/agency-tools";
 
 export const Route = createFileRoute("/_authenticated/ferramentas")({
   component: FerramentasPage,
@@ -32,24 +33,28 @@ export const Route = createFileRoute("/_authenticated/ferramentas")({
 });
 
 function FerramentasPage() {
-  const [tab, setTab] = useState<"propostas" | "pastas">("propostas");
+  const [tab, setTab] = useState<"propostas" | "pastas" | "contrato" | "preco" | "ganchos" | "cq">("contrato");
   return (
     <div className="p-6 md:p-8">
       <PageHeader
         title="Ferramentas"
-        subtitle="Propostas prontas e organização de pastas"
+        subtitle="Contratos, preços, ganchos, qualidade, propostas e pastas"
         actions={
           <Segmented
             value={tab}
             onChange={setTab}
             options={[
+              { value: "contrato", label: "Contrato" },
+              { value: "preco", label: "Preço" },
+              { value: "ganchos", label: "Ganchos IA" },
+              { value: "cq", label: "Qualidade" },
               { value: "propostas", label: "Propostas", icon: <FileText className="h-3.5 w-3.5" /> },
               { value: "pastas", label: "Pastas", icon: <FolderTree className="h-3.5 w-3.5" /> },
             ]}
           />
         }
       />
-      <div className="mt-6">{tab === "propostas" ? <Proposals /> : <DriveOrganizer />}</div>
+      <div className="mt-6">{tab === "contrato" ? <ContractGenerator /> : tab === "preco" ? <PriceCalculator /> : tab === "ganchos" ? <HookGenerator /> : tab === "cq" ? <QualityChecklist /> : tab === "propostas" ? <Proposals /> : <DriveOrganizer />}</div>
     </div>
   );
 }
