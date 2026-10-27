@@ -181,7 +181,7 @@ function ClientDetail() {
                   <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                     <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, (done / base) * 100)}%` }} />
                   </div>
-                  <p className="mt-1.5 text-xs text-foreground">{done}/{activePack.total_videos} entregues neste mês</p>
+                  <p className="mt-1.5 text-xs text-foreground">{done}/{activePack.total_videos} concluídos neste mês</p>
                   <p className="text-xs text-muted-foreground">
                     {monthVids.length} na leva · {activePack.videos_used} usados · {formatBRL(activePack.price)}
                   </p>
