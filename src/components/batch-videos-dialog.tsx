@@ -21,11 +21,12 @@ export type ClientMin = { id: string; name: string; parent_client_id: string | n
 
 const ALL_STATUSES = Object.keys(STAGE_LABEL) as VideoStatus[];
 
-export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClientId, month }: {
+export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClientId, month, editorId }: {
   onClose: () => void;
   clients?: ClientMin[];
   defaultClientId?: string;
   month?: string;
+  editorId?: string;
 }) {
   const [clientId, setClientId] = useState(defaultClientId ?? "");
   const [mode, setMode] = useState<"lista" | "quantidade">("lista");
@@ -121,6 +122,7 @@ export function BatchVideosDialog({ onClose, clients: clientsProp, defaultClient
       unit_price: info.pricePerVideo > 0 ? info.pricePerVideo : null,
       batch_id: batchId,
       batch_label: label,
+      editor_id: editorId ?? null,
     }));
 
     const { error } = await supabase.from("videos").insert(rows);

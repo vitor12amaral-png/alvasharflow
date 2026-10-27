@@ -644,42 +644,52 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                 className="h-9 w-52 rounded-full"
               />
               <MonthPicker />
-              <Button variant="outline" onClick={toggleDone} className="h-9">
-                {showDone ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                {showDone ? `Ocultar concluídas (${completedCount})` : `Mostrar concluídas (${completedCount})`}
-              </Button>
-              {QUICK_FILTERS.map((f) => {
-                const count = currentMonthVideos.filter((v) => matchQuick(f.id, v)).length;
-                const on = quick === f.id;
-                return (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => setQuick(on ? null : f.id)}
-                    className={`h-8 rounded-full border px-3 text-xs transition ${on ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {f.label} <span className="opacity-70">{count}</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="h-9">
+                    <ListChecks className="h-4 w-4" />Filtros
+                    {(quick || !showDone) && <span className="ml-1 h-1.5 w-1.5 rounded-full bg-primary" />}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-2">
+                  <p className="px-2 pb-1 pt-1 text-[11px] uppercase tracking-wider text-muted-foreground">Filtros rápidos</p>
+                  {QUICK_FILTERS.map((f) => {
+                    const count = currentMonthVideos.filter((v) => matchQuick(f.id, v)).length;
+                    const on = quick === f.id;
+                    return (
+                      <button key={f.id} type="button" onClick={() => setQuick(on ? null : f.id)}
+                        className={cn("flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm transition", on ? "bg-primary/15 text-primary" : "hover:bg-muted")}>
+                        {f.label}<span className="text-xs opacity-70">{count}</span>
+                      </button>
+                    );
+                  })}
+                  <div className="my-2 h-px bg-border" />
+                  <button type="button" onClick={toggleDone} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted">
+                    {showDone ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showDone ? `Ocultar concluídas (${completedCount})` : `Mostrar concluídas (${completedCount})`}
                   </button>
-                );
-              })}
-              <span className="text-[11px] text-muted-foreground">
-                {currentMonthVideos.filter((v) => v.status === "aprovado").length} aprovados aguardando entrega · {currentMonthVideos.filter((v) => v.status === "entregue").length} entregues
-              </span>
-              {overloadedDays(currentMonthVideos).slice(0, 3).map((o) => (
-                <span key={o.editorId + o.date} className="rounded-full border border-destructive/50 bg-destructive/10 px-2.5 py-1 text-[11px] text-destructive">
-                  {team.find((p) => p.id === o.editorId)?.full_name ?? "Editor"} tem {o.hours}h para {new Date(o.date + "T12:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" })}
-                </span>
-              ))}
-              <ShortcutsHint
-                items={[
-                  ["/", "Buscar"],
-                  ["N", "Novo vídeo"],
-                  ["1–5", "Mover seleção"],
-                  ["T", "Prazo hoje"],
-                  ["⌘A", "Selecionar tudo"],
-                  ["Esc", "Limpar seleção"],
-                ]}
-              />
+                  <p className="px-2 pt-2 text-[11px] text-muted-foreground">
+                    {currentMonthVideos.filter((v) => v.status === "aprovado").length} aprovados · {currentMonthVideos.filter((v) => v.status === "entregue").length} entregues
+                  </p>
+                </PopoverContent>
+              </Popover>
+              {overloadedDays(currentMonthVideos).length > 0 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="h-9 rounded-full border border-destructive/50 bg-destructive/10 px-3 text-xs text-destructive">
+                      {overloadedDays(currentMonthVideos).length} alerta(s)
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-72 space-y-1 p-3 text-sm">
+                    {overloadedDays(currentMonthVideos).slice(0, 8).map((o) => (
+                      <p key={o.editorId + o.date}>
+                        {team.find((p) => p.id === o.editorId)?.full_name ?? "Editor"} tem {o.hours}h para {new Date(o.date + "T12:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" })}
+                      </p>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+              )}
+
 
 
               <Dialog open={batchOpen} onOpenChange={setBatchOpen}>

@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, Link2, Copy, Trash2, UserPlus, ChevronRight, Users } from "lucide-react";
+import { Loader2, Link2, Copy, Trash2, UserPlus, ChevronRight, Users, Layers3 } from "lucide-react";
+import { BatchVideosDialog } from "@/components/batch-videos-dialog";
 import { initials } from "@/lib/format";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useVideoPace, fmtEstimate } from "@/hooks/use-timer";
@@ -63,6 +64,7 @@ function EquipePage() {
   const { data: me } = useCurrentUser();
   const [openMember, setOpenMember] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [batchFor, setBatchFor] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["team", me?.workspaceId],
@@ -271,6 +273,16 @@ function EquipePage() {
             <span className="text-xs text-muted-foreground">
               {selected.ativos} em aberto{avg > 0 ? ` · ≈ ${fmtEstimate(avg * selected.ativos)} de trabalho` : ""}
             </span>
+            <div className="ml-auto">
+              <Dialog open={batchFor === selected.id} onOpenChange={(o) => setBatchFor(o ? selected.id : null)}>
+                <DialogTrigger asChild>
+                  <Button size="sm"><Layers3 className="mr-1 h-4 w-4" />Adicionar leva para {selected.name.split(" ")[0]}</Button>
+                </DialogTrigger>
+                {batchFor === selected.id && (
+                  <BatchVideosDialog editorId={selected.id} onClose={() => { setBatchFor(null); qc.invalidateQueries({ queryKey: ["team"] }); }} />
+                )}
+              </Dialog>
+            </div>
           </div>
 
           <div className="mt-3 divide-y divide-border/60 rounded-md border border-border">

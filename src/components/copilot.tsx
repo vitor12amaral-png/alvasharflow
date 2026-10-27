@@ -26,6 +26,9 @@ export function CopilotButton() {
   const [finalTranscript, setFinalTranscript] = useState("");
   const speakRef = useRef<(text: string) => void>(() => {});
   const qc = useQueryClient();
+  const [orbHidden, setOrbHiddenState] = useState(false);
+  useEffect(() => { setOrbHiddenState(localStorage.getItem("copilot-orb-hidden") === "1"); }, []);
+  const setOrbHidden = (v: boolean) => { setOrbHiddenState(v); localStorage.setItem("copilot-orb-hidden", v ? "1" : "0"); };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setToken(data.session?.access_token ?? null));
@@ -95,15 +98,32 @@ export function CopilotButton() {
 
   return (
     <Sheet open={open} onOpenChange={(v) => (v ? toggleDock("copilot") : closeDock())}>
-      {showLauncher && (
-        <SheetTrigger asChild>
+      {showLauncher && !orbHidden && (
+        <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2">
+          {(voice.listening || busy || input) && (
+            <div className="max-w-xs truncate rounded-full border border-border bg-popover/80 px-3 py-1.5 text-xs text-foreground backdrop-blur-xl">
+              {voice.listening ? (input || "Ouvindo…") : busy ? "Pensando…" : input}
+            </div>
+          )}
           <button
-            className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-primary to-[oklch(0.55_0.22_260)] text-primary-foreground shadow-[0_12px_36px_-10px_color-mix(in_oklab,var(--primary)_80%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_44px_-10px_color-mix(in_oklab,var(--primary)_90%,transparent)] active:scale-95"
-            aria-label="Copiloto"
+            onClick={() => { if (voice.supported && !busy) { voice.listening ? voice.stop() : voice.start(); } else toggleDock("copilot"); }}
+            onContextMenu={(e) => { e.preventDefault(); toggleDock("copilot"); }}
+            className={cn(
+              "relative h-12 w-12 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_30%,var(--primary-glow),var(--primary)_45%,var(--primary-deep))] shadow-[0_10px_40px_-8px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition duration-300 hover:scale-105 active:scale-95",
+              voice.listening && "animate-pulse scale-110",
+              busy && "animate-spin [animation-duration:3s]",
+            )}
+            aria-label="Falar com o copiloto"
+            title="Clique para falar · botão direito abre a conversa"
           >
-            <Sparkles className="h-5 w-5" />
+            <span className="absolute inset-1 rounded-full bg-[radial-gradient(circle_at_35%_25%,color-mix(in_oklab,var(--foreground)_55%,transparent),transparent_55%)]" />
           </button>
-        </SheetTrigger>
+          <button onClick={() => toggleDock("copilot")} className="rounded-full p-1.5 text-muted-foreground hover:text-foreground" aria-label="Abrir conversa"><Sparkles className="h-3.5 w-3.5" /></button>
+          <button onClick={() => setOrbHidden(true)} className="rounded-full p-1.5 text-muted-foreground hover:text-foreground" aria-label="Ocultar bolinha"><X className="h-3.5 w-3.5" /></button>
+        </div>
+      )}
+      {showLauncher && orbHidden && (
+        <button onClick={() => setOrbHidden(false)} className="fixed bottom-3 left-1/2 z-40 h-1.5 w-10 -translate-x-1/2 rounded-full bg-primary/60 hover:bg-primary" aria-label="Mostrar copiloto" />
       )}
       <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border p-4">
