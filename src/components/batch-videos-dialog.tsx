@@ -259,10 +259,6 @@ function ModeBtn({ active, onClick, icon, label }: { active: boolean; onClick: (
   );
 }
 
-function SectionLabel({ number, children }: { number: string; children: React.ReactNode }) {
-  return <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground"><span className="text-primary">{number}</span><span>{children}</span><span className="h-px flex-1 bg-border/70" /></div>;
-}
-
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="min-w-0 space-y-1.5"><Label>{label}</Label>{children}</div>;
 }
