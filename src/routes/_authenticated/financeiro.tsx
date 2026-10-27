@@ -29,7 +29,7 @@ type PkgRow = FinPackage & { size: string; videos_used: number; payment_day: num
 function FinanceiroPage() {
   const { ym, year, month } = useMonthFromSearch();
   const { data, isLoading } = useQuery({
-    queryKey: ["finance"],
+    queryKey: ["packages"],
     queryFn: async () => {
       const [packages, videos, clients] = await Promise.all([
         supabase.from("client_packages").select("*, clients(name)").order("end_date", { ascending: true }),
