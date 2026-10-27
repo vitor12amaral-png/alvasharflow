@@ -113,7 +113,7 @@ function Hero() {
       </div>
 
       {/* planet horizon */}
-      <div className="relative mx-auto mt-16 h-[220px] max-w-5xl md:h-[300px]">
+      <div className="relative mx-auto mt-16 h-[220px] max-w-5xl overflow-hidden md:h-[300px]">
         <div aria-hidden className="absolute left-1/2 top-0 aspect-square w-[min(820px,120vw)] -translate-x-1/2 rounded-full p-[2px] [background:var(--gradient-rim)] shadow-[0_-30px_120px_-20px_var(--primary-glow)]">
           <div className="h-full w-full rounded-full bg-landing" />
         </div>
@@ -319,7 +319,7 @@ function TeamVisual() {
       </div>
       <div className="mt-6 flex h-40 items-end gap-6">
         {team.map(([n, h]) => (
-          <div key={n} className="flex flex-1 flex-col items-center gap-2">
+          <div key={n} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
             <div className={cn("w-full rounded-t-lg", h > 40 ? "bg-destructive/80" : "bg-arctic shadow-[0_0_24px_-6px_var(--primary)]")} style={{ height: `${(h / 45) * 100}%` }} />
             <span className="text-xs text-muted-foreground">{n} · {h}h</span>
           </div>
