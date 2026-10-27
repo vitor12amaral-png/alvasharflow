@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -13,6 +13,9 @@ import { isLeadOverdue, type Lead } from "@/lib/leads";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  beforeLoad: () => {
+    throw redirect({ to: "/workflow", search: { view: "kanban", client: undefined, month: undefined, video: undefined, new: undefined } });
+  },
   component: DashboardPage,
   head: () => ({ meta: [{ title: "Dashboard — AlvasharFlow" }] }),
 });
