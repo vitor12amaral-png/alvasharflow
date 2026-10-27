@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +29,17 @@ export const Route = createFileRoute("/_authenticated/calendario")({
 function CalendarioPage() {
   const { year, month } = useMonthFromSearch();
   const [clientId, setClientId] = useState("all");
+  const qc = useQueryClient();
+  const [dragOver, setDragOver] = useState<string | null>(null);
+  const moveVideo = async (id: string, day: string) => {
+    const v = (data?.all ?? []).find((x) => x.id === id);
+    if (!v || v.due_date?.slice(0, 10) === day) return;
+    const time = v.due_date && v.due_date.length > 10 ? v.due_date.slice(10) : "";
+    const { error } = await supabase.from("videos").update({ due_date: day + time }).eq("id", id);
+    if (error) { toast.error("Não foi possível mudar o prazo"); return; }
+    toast.success(`Prazo movido para ${day.split("-").reverse().join("/")}`);
+    qc.invalidateQueries();
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["calendar"],
@@ -53,11 +65,11 @@ function CalendarioPage() {
   for (let i = 0; i < startDay; i++) cells.push({ date: null });
   for (let d = 1; d <= daysInMonth; d++) cells.push({ date: new Date(year, month, d) });
 
-  const eventsByDay: Record<string, { type: "video" | "package"; label: string; sub: string; accent?: string }[]> = {};
+  const eventsByDay: Record<string, { id?: string; type: "video" | "package"; label: string; sub: string; accent?: string }[]> = {};
   dated.forEach((v) => {
     const key = v.due_date!.slice(0, 10);
     (eventsByDay[key] ??= []).push({
-      type: "video", label: v.title, sub: v.clients?.name ?? "",
+      id: v.id, type: "video", label: v.title, sub: v.clients?.name ?? "",
       accent: STAGE_ACCENT[v.status as VideoStatus],
     });
   });
@@ -70,7 +82,7 @@ function CalendarioPage() {
     <div className="p-6 md:p-8">
       <PageHeader
         title="Calendário"
-        subtitle="Prazos e vencimentos de pacote"
+        subtitle="Arraste um vídeo para outro dia para mudar o prazo"
         actions={
           <div className="flex items-center gap-2">
             <Select value={clientId} onValueChange={setClientId}>
@@ -96,13 +108,18 @@ function CalendarioPage() {
           </div>
           <div className="grid grid-cols-7">
             {cells.map((c, i) => {
-              const key = c.date?.toISOString().slice(0, 10) ?? "";
+              const key = c.date ? `${c.date.getFullYear()}-${String(c.date.getMonth() + 1).padStart(2, "0")}-${String(c.date.getDate()).padStart(2, "0")}` : "";
               const evts = eventsByDay[key] ?? [];
               const isToday = c.date && c.date.toDateString() === new Date().toDateString();
               return (
-                <div key={i} className={cn(
-                  "min-h-[92px] border-r border-b border-border p-1.5",
+                <div key={i}
+                  onDragOver={(e) => { if (c.date) { e.preventDefault(); setDragOver(key); } }}
+                  onDragLeave={() => setDragOver((d) => (d === key ? null : d))}
+                  onDrop={(e) => { e.preventDefault(); setDragOver(null); const id = e.dataTransfer.getData("text/video-id"); if (id && c.date) moveVideo(id, key); }}
+                  className={cn(
+                  "min-h-[92px] border-r border-b border-border p-1.5 transition-colors",
                   !c.date && "bg-muted/20",
+                  dragOver === key && "bg-primary/10 ring-1 ring-inset ring-primary/50",
                 )}>
                   {c.date && (
                     <>
@@ -111,7 +128,10 @@ function CalendarioPage() {
                       </div>
                       <div className="mt-1 space-y-0.5">
                         {evts.slice(0, 3).map((e, idx) => (
-                          <div key={idx} className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[9px]"
+                          <div key={idx} draggable={e.type === "video"}
+                            onDragStart={(ev) => e.id && ev.dataTransfer.setData("text/video-id", e.id)}
+                            title={e.type === "video" ? "Arraste para outro dia para mudar o prazo" : undefined}
+                            className={cn("flex items-center gap-1 truncate rounded px-1 py-0.5 text-[9px]", e.type === "video" && "cursor-grab active:cursor-grabbing")}
                             style={{ backgroundColor: (e.accent ?? "oklch(0.78 0.16 75)") + "22", color: e.accent ?? "oklch(0.78 0.16 75)" }}>
                             {e.type === "video" ? <Film className="h-2.5 w-2.5 shrink-0" /> : <Package className="h-2.5 w-2.5 shrink-0" />}
                             <span className="truncate">{e.label}</span>
