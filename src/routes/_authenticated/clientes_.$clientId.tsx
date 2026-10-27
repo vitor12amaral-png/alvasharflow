@@ -174,7 +174,7 @@ function ClientDetail() {
             <p className="font-display text-lg font-semibold">{PACKAGE_LABEL[activePack.size as PackageSize]}</p>
             {(() => {
               const monthVids = client.videos.filter((v) => (v.competence_month ?? "").slice(0, 7) === selectedMonth);
-              const done = monthVids.filter((v) => v.status === "entregue").length;
+              const done = monthVids.filter((v) => v.status === "entregue" || v.status === "aprovado").length;
               const base = Math.max(activePack.total_videos, monthVids.length) || 1;
               return (
                 <>
@@ -235,7 +235,7 @@ function ClientDetail() {
         <TabsContent value="overview" className="mt-4 grid gap-3 md:grid-cols-3">
           <Card className="p-4"><Stat label="Vídeos totais" value={String(client.videos.length)} /></Card>
           <Card className="p-4"><Stat label="Em produção" value={String(client.videos.filter((v) => v.status !== "entregue" && v.status !== "aprovado").length)} /></Card>
-          <Card className="p-4"><Stat label="Entregues" value={String(client.videos.filter((v) => v.status === "entregue").length)} /></Card>
+          <Card className="p-4"><Stat label="Concluídos" value={String(completedVideos)} /></Card>
           {npsAvg && (
             <Card className="p-4 md:col-span-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Satisfação (NPS)</p>
