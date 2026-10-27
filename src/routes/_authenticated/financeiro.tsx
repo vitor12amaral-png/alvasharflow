@@ -67,6 +67,7 @@ function FinanceiroPage() {
           <TrendingUp className="h-4 w-4 text-primary" />
           <p className="mt-2 font-display text-2xl font-bold">{formatBRL(fin.forecast)}</p>
           <p className="text-xs text-muted-foreground">Previsto em {monthLabel} · {fin.total} vídeos</p>
+          {fin.unpriced > 0 && <p className="mt-1 text-[11px] text-[oklch(0.78_0.16_75)]">{fin.unpriced} vídeos sem valor definido (cliente sem pacote ou preço)</p>}
         </Card>
         <Card className="p-4">
           <CheckCircle2 className="h-4 w-4 text-[oklch(0.72_0.17_155)]" />

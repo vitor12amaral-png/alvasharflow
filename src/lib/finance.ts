@@ -35,15 +35,16 @@ export function videoValue(v: FinVideo, packages: FinPackage[], clients: FinClie
 
 /** Valor previsto (todos os vídeos da competência) e já entregue no mês "YYYY-MM". */
 export function monthFinance(videos: FinVideo[], month: string, packages: FinPackage[], clients: FinClient[]) {
-  let forecast = 0, deliveredValue = 0, total = 0, delivered = 0;
+  let forecast = 0, deliveredValue = 0, total = 0, delivered = 0, unpriced = 0;
   for (const v of videos) {
     if (v.competence_month.slice(0, 7) !== month) continue;
     const value = videoValue(v, packages, clients);
     total += 1;
+    if (value <= 0) unpriced += 1;
     forecast += value;
     if (v.status === "entregue") { delivered += 1; deliveredValue += value; }
   }
-  return { forecast, deliveredValue, pendingValue: forecast - deliveredValue, total, delivered };
+  return { forecast, deliveredValue, pendingValue: forecast - deliveredValue, total, delivered, unpriced };
 }
 
 /**

@@ -31,4 +31,7 @@ describe("financeiro", () => {
   test("preço próprio do vídeo tem prioridade sobre o pacote", () => {
     assert.equal(monthFinance([v("a", { unit_price: 250 })], "2026-10", [pkg], clients).forecast, 250);
   });
+  test("vídeo de cliente sem pacote nem preço conta como sem valor", () => {
+    assert.equal(monthFinance([v("a", { client_id: "x", package_id: null })], "2026-10", [pkg], [...clients, { id: "x", parent_client_id: null, price_per_video: null }]).unpriced, 1);
+  });
 });
