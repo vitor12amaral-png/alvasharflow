@@ -54,9 +54,9 @@
 /* Dark by default — this is a management suite */
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.155 0.018 260);
+  --background: oklch(0.13 0.016 258);
   --foreground: oklch(0.98 0.005 260);
-  --card: oklch(0.2 0.025 255 / 72%);
+  --card: oklch(0.19 0.022 252 / 62%);
   --card-foreground: oklch(0.98 0.005 260);
   --popover: oklch(0.19 0.025 255);
   --popover-foreground: oklch(0.98 0.005 260);
@@ -125,7 +125,8 @@
 @utility glass-card {
   background: color-mix(in oklab, var(--card) 92%, transparent);
   border: 1px solid oklch(1 0 0 / 0.08);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: var(--glass-shadow);
 }
 
 /* ---------- Tema claro (personalização em Configurações) ---------- */

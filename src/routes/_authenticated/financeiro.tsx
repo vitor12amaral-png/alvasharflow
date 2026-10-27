@@ -1,10 +1,12 @@
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TrendingUp, CalendarClock, AlertCircle, DollarSign, CheckCircle2, Hourglass } from "lucide-react";
+import { Loader2, TrendingUp, CalendarClock, AlertCircle, DollarSign, CheckCircle2, Hourglass, Users } from "lucide-react";
 import { formatBRL, formatDate, daysUntil } from "@/lib/format";
 import { PACKAGE_LABEL } from "@/lib/video-workflow";
 import type { PackageSize } from "@/lib/video-workflow";
@@ -28,6 +30,9 @@ type PkgRow = FinPackage & { size: string; videos_used: number; payment_day: num
 
 function FinanceiroPage() {
   const { ym, year, month } = useMonthFromSearch();
+  const [share, setShare] = useState(40);
+  useEffect(() => { const v = Number(localStorage.getItem("fin-editor-share")); if (v >= 0 && v <= 100 && localStorage.getItem("fin-editor-share")) setShare(v); }, []);
+  const updateShare = (v: number) => { const n = Math.max(0, Math.min(100, v || 0)); setShare(n); localStorage.setItem("fin-editor-share", String(n)); };
   const { data, isLoading } = useQuery({
     queryKey: ["packages"],
     queryFn: async () => {
@@ -88,6 +93,17 @@ function FinanceiroPage() {
           <p className="text-xs text-muted-foreground">Receita dos {active.length} pacotes ativos</p>
         </Card>
       </div>
+
+      <Card className="mt-3 flex flex-wrap items-center gap-x-8 gap-y-3 p-4">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-primary" />
+          <span className="text-sm">Repasse aos editores</span>
+          <Input type="number" min={0} max={100} value={share} onChange={(e) => updateShare(Number(e.target.value))} className="h-8 w-16 text-center" aria-label="Porcentagem de repasse" />
+          <span className="text-sm text-muted-foreground">%</span>
+        </div>
+        <div><p className="font-display text-lg font-bold">{formatBRL(fin.forecast * share / 100)}</p><p className="text-[11px] text-muted-foreground">Repasse previsto em {monthLabel}</p></div>
+        <div><p className="font-display text-lg font-bold text-success">{formatBRL(fin.forecast * (100 - share) / 100)}</p><p className="text-[11px] text-muted-foreground">Lucro líquido estimado</p></div>
+      </Card>
 
       <div className="mt-6 space-y-4">
         {upcoming.length > 0 && (
