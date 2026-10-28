@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { VoiceOrb } from "@/components/voice-orb";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Send, Plus, Loader2, Wrench, Check, AlertCircle, Mic, Square, Volume2, VolumeX, X } from "lucide-react";
+import { Sparkles, Send, Plus, Loader2, Wrench, Check, AlertCircle, Mic, Square, Volume2, VolumeX, X, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,6 @@ export function CopilotButton() {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }
   });
-  const [token, setToken] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [finalTranscript, setFinalTranscript] = useState("");
   const speakRef = useRef<(text: string) => void>(() => {});
@@ -30,18 +30,17 @@ export function CopilotButton() {
   useEffect(() => { setOrbHiddenState(localStorage.getItem("copilot-orb-hidden") === "1"); }, []);
   const setOrbHidden = (v: boolean) => { setOrbHiddenState(v); localStorage.setItem("copilot-orb-hidden", v ? "1" : "0"); };
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setToken(data.session?.access_token ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setToken(session?.access_token ?? null));
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
-  const transport = new DefaultChatTransport({
+  // Token is read at request time — a token captured at first render was null and every command failed with 401.
+  const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/copilot",
-    headers: () => (token ? { Authorization: `Bearer ${token}` } : {}) as Record<string, string>,
-  });
+    headers: async (): Promise<Record<string, string>> => {
+      const { data } = await supabase.auth.getSession();
+      const t = data.session?.access_token;
+      return t ? { Authorization: `Bearer ${t}` } : {};
+    },
+  }), []);
 
-  const { messages, sendMessage, status, setMessages } = useChat({
+  const { messages, sendMessage, status, setMessages, error: chatError } = useChat({
     messages: initial,
     transport,
     onFinish: ({ message }) => {
@@ -74,6 +73,7 @@ export function CopilotButton() {
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
 
   const busy = status === "submitted" || status === "streaming";
+  const orbState = voice.state === "listening" || voice.state === "transcribing" ? voice.state : busy ? "thinking" : voice.state;
 
   useEffect(() => {
     if (!finalTranscript || busy) return;
@@ -99,31 +99,38 @@ export function CopilotButton() {
   return (
     <Sheet open={open} onOpenChange={(v) => (v ? toggleDock("copilot") : closeDock())}>
       {showLauncher && !orbHidden && (
-        <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2">
-          {(voice.listening || busy || input) && (
-            <div className="max-w-xs truncate rounded-full border border-border bg-popover/80 px-3 py-1.5 text-xs text-foreground backdrop-blur-xl">
-              {voice.listening ? (input || "Ouvindo…") : busy ? "Pensando…" : input}
+        <div className="fixed bottom-5 left-1/2 z-40 flex -translate-x-1/2 flex-col items-center gap-2">
+          {(orbState !== "idle" || voice.error) && (
+            <div className="animate-rise max-w-sm truncate rounded-full border border-primary/25 bg-popover/80 px-4 py-1.5 text-xs text-foreground shadow-[var(--floating-shadow)] backdrop-blur-xl">
+              {voice.error && orbState === "idle" ? <span className="text-destructive">{voice.error}</span>
+                : orbState === "listening" ? "Ouvindo… fale naturalmente"
+                : orbState === "transcribing" ? "Entendendo o que você disse…"
+                : orbState === "thinking" ? (input ? `“${input}”` : "Executando…")
+                : "Respondendo…"}
             </div>
           )}
-          <button
-            onClick={() => { if (voice.supported && !busy) { voice.listening ? voice.stop() : voice.start(); } else toggleDock("copilot"); }}
-            onContextMenu={(e) => { e.preventDefault(); toggleDock("copilot"); }}
-            className={cn(
-              "relative h-12 w-12 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_30%,var(--primary-glow),var(--primary)_45%,var(--primary-deep))] shadow-[0_10px_40px_-8px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition duration-300 hover:scale-105 active:scale-95",
-              voice.listening && "animate-pulse scale-110",
-              busy && "animate-spin [animation-duration:3s]",
-            )}
-            aria-label="Falar com o copiloto"
-            title="Clique para falar · botão direito abre a conversa"
-          >
-            <span className="absolute inset-1 rounded-full bg-[radial-gradient(circle_at_35%_25%,color-mix(in_oklab,var(--foreground)_55%,transparent),transparent_55%)]" />
-          </button>
-          <button onClick={() => toggleDock("copilot")} className="rounded-full p-1.5 text-muted-foreground hover:text-foreground" aria-label="Abrir conversa"><Sparkles className="h-3.5 w-3.5" /></button>
-          <button onClick={() => setOrbHidden(true)} className="rounded-full p-1.5 text-muted-foreground hover:text-foreground" aria-label="Ocultar bolinha"><X className="h-3.5 w-3.5" /></button>
+          <div className="group flex items-center gap-1 rounded-full border border-border/60 bg-popover/50 p-1 pl-1 pr-2 shadow-[var(--floating-shadow)] backdrop-blur-xl">
+            <button
+              onClick={() => {
+                if (orbState === "listening") voice.stop();
+                else if (orbState === "speaking") voice.stopSpeaking();
+                else if (!voice.supported) toggleDock("copilot");
+                else if (orbState === "idle") void voice.start();
+              }}
+              onContextMenu={(e) => { e.preventDefault(); toggleDock("copilot"); }}
+              className="relative flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-300 hover:scale-105 active:scale-95"
+              aria-label={orbState === "listening" ? "Parar de ouvir" : "Falar com o copiloto"}
+              title="Clique para falar · botão direito abre a conversa"
+            >
+              <VoiceOrb state={orbState} levelRef={voice.levelRef} size={48} />
+            </button>
+            <button onClick={() => toggleDock("copilot")} className="rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground" aria-label="Abrir conversa"><MessageSquare className="h-3.5 w-3.5" /></button>
+            <button onClick={() => setOrbHidden(true)} className="rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground" aria-label="Ocultar bolinha"><X className="h-3.5 w-3.5" /></button>
+          </div>
         </div>
       )}
       {showLauncher && orbHidden && (
-        <button onClick={() => setOrbHidden(false)} className="fixed bottom-3 left-1/2 z-40 h-1.5 w-10 -translate-x-1/2 rounded-full bg-primary/60 hover:bg-primary" aria-label="Mostrar copiloto" />
+        <button onClick={() => setOrbHidden(false)} className="fixed bottom-3 left-1/2 z-40 h-1.5 w-12 -translate-x-1/2 rounded-full bg-primary/60 shadow-[0_0_16px_var(--primary)] transition hover:bg-primary" aria-label="Mostrar copiloto" />
       )}
       <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border p-4">
@@ -195,6 +202,11 @@ export function CopilotButton() {
               </div>
             </div>
           ))}
+          {chatError && !busy && (
+            <div className="flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />{/402|cr[eé]dit/i.test(chatError.message) ? "Créditos de IA esgotados." : /401/.test(chatError.message) ? "Sessão expirada, entre novamente." : "Não consegui executar agora. Tente de novo."}
+            </div>
+          )}
           {busy && (
             <div className="flex gap-2">
               <div className="rounded-2xl bg-muted/60 px-3 py-2">

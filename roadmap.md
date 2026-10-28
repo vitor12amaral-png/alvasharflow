@@ -87,3 +87,9 @@
    - [x] SFX táteis estilo Apple.
    - [x] Identidade visual Arctic Depths.
    - [x] Nova página de vendas estilo REDSUN com planos.
+
+9. Identidade da landing no app + copiloto
+   - [x] Fundo, cartões e menu com a atmosfera da página de vendas.
+   - [x] Bolinha do copiloto viva com ondas reagindo à voz; microfone gravado e transcrito no servidor.
+   - [x] Corrigir comandos do copiloto (sessão era enviada vazia).
+   - [ ] Ferramentas: refazer de ponta a ponta com acabamento completo (deixado por último, a pedido).
