@@ -1,74 +1,109 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-type RecognitionEvent = Event & {
-  results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
-  resultIndex: number;
-};
-
-type RecognitionErrorEvent = Event & { error: string };
-
-type Recognition = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: ((event: RecognitionEvent) => void) | null;
-  onerror: ((event: RecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
-};
-
-type RecognitionConstructor = new () => Recognition;
-
-declare global {
-  interface Window {
-    SpeechRecognition?: RecognitionConstructor;
-    webkitSpeechRecognition?: RecognitionConstructor;
-  }
-}
+export type VoiceState = "idle" | "listening" | "transcribing" | "speaking";
 
 const VOICE_KEY = "alvashar-copilot-voice";
 
+/**
+ * Captures the microphone with MediaRecorder (works in every modern browser),
+ * exposes a live audio level for the orb waves, auto-stops after silence and
+ * transcribes the clip on the server.
+ */
 export function useVoice({ onTranscript }: { onTranscript: (text: string, final: boolean) => void }) {
-  const recognitionRef = useRef<Recognition | null>(null);
   const [supported, setSupported] = useState(false);
-  const [listening, setListening] = useState(false);
+  const [state, setState] = useState<VoiceState>("idle");
+  const [error, setError] = useState<string | null>(null);
   const [voiceEnabled, setVoiceEnabledState] = useState(true);
+  const levelRef = useRef(0);
+  const cleanupRef = useRef<() => void>(() => {});
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const cbRef = useRef(onTranscript);
+  cbRef.current = onTranscript;
 
   useEffect(() => {
-    setSupported(Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition));
+    setSupported(Boolean(navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== "undefined"));
     setVoiceEnabledState(localStorage.getItem(VOICE_KEY) !== "off");
-    return () => recognitionRef.current?.abort();
+    return () => cleanupRef.current();
   }, []);
 
-  const stop = useCallback(() => recognitionRef.current?.stop(), []);
+  const stop = useCallback(() => {
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+  }, []);
 
-  const start = useCallback(() => {
-    const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
-    if (!Constructor || listening) return;
+  const transcribe = useCallback(async (blob: Blob) => {
+    setState("transcribing");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      const form = new FormData();
+      form.append("file", new File([blob], "fala.webm", { type: blob.type || "audio/webm" }));
+      const res = await fetch("/api/transcribe", { method: "POST", body: form, headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      if (!res.ok) throw new Error(res.status === 402 ? "Créditos de IA esgotados." : res.status === 429 ? "Muitas solicitações, aguarde um instante." : "Não consegui entender o áudio.");
+      const json = await res.json();
+      const text = String(json.text ?? "").trim();
+      if (text) cbRef.current(text, true);
+      else setError("Não ouvi nada. Tente de novo.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha na transcrição.");
+    } finally {
+      setState((s) => (s === "transcribing" ? "idle" : s));
+    }
+  }, []);
+
+  const start = useCallback(async () => {
+    if (recorderRef.current?.state === "recording") return;
+    setError(null);
     window.speechSynthesis?.cancel();
-    const recognition = new Constructor();
-    recognition.lang = "pt-BR";
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.onresult = (event) => {
-      let finalText = "";
-      let interimText = "";
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const result = event.results[i];
-        const text = result?.[0]?.transcript ?? "";
-        if (result?.isFinal) finalText += text;
-        else interimText += text;
-      }
-      onTranscript((finalText || interimText).trim(), Boolean(finalText));
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    } catch {
+      setError("Permita o acesso ao microfone no navegador.");
+      return;
+    }
+    const ctx = new AudioContext();
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    ctx.createMediaStreamSource(stream).connect(analyser);
+    const buf = new Uint8Array(analyser.fftSize);
+    const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "";
+    const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    let raf = 0;
+    let heard = false;
+    let lastLoud = performance.now();
+    const began = performance.now();
+    const tick = () => {
+      analyser.getByteTimeDomainData(buf);
+      let sum = 0;
+      for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
+      const rms = Math.sqrt(sum / buf.length);
+      levelRef.current = Math.min(1, rms * 6);
+      const now = performance.now();
+      if (rms > 0.04) { heard = true; lastLoud = now; }
+      if ((heard && now - lastLoud > 1500) || now - began > 30000 || (!heard && now - began > 8000)) { rec.stop(); return; }
+      raf = requestAnimationFrame(tick);
     };
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
-    recognitionRef.current = recognition;
-    setListening(true);
-    recognition.start();
-  }, [listening, onTranscript]);
+    const cleanup = () => {
+      cancelAnimationFrame(raf);
+      stream.getTracks().forEach((t) => t.stop());
+      ctx.close().catch(() => {});
+      levelRef.current = 0;
+    };
+    cleanupRef.current = cleanup;
+    rec.onstop = () => {
+      cleanup();
+      recorderRef.current = null;
+      if (heard && chunks.length) void transcribe(new Blob(chunks, { type: rec.mimeType || "audio/webm" }));
+      else { setState("idle"); setError("Não ouvi nada. Tente de novo."); }
+    };
+    recorderRef.current = rec;
+    rec.start(250);
+    setState("listening");
+    raf = requestAnimationFrame(tick);
+  }, [transcribe]);
 
   const setVoiceEnabled = useCallback((enabled: boolean) => {
     setVoiceEnabledState(enabled);
@@ -79,15 +114,20 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
   const speak = useCallback((text: string) => {
     if (!voiceEnabled || !text.trim() || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text.replace(/[*_#`]/g, ""));
-    utterance.lang = "pt-BR";
-    utterance.rate = 1;
+    const u = new SpeechSynthesisUtterance(text.replace(/[*_#`]/g, ""));
+    u.lang = "pt-BR";
+    u.rate = 1.05;
     const voices = window.speechSynthesis.getVoices();
-    utterance.voice = voices.find((voice) => voice.lang.toLowerCase().startsWith("pt-br"))
-      ?? voices.find((voice) => voice.lang.toLowerCase().startsWith("pt"))
-      ?? null;
-    window.speechSynthesis.speak(utterance);
+    u.voice = voices.find((v) => v.lang.toLowerCase().startsWith("pt-br")) ?? voices.find((v) => v.lang.toLowerCase().startsWith("pt")) ?? null;
+    let t = 0;
+    let raf = 0;
+    const pulse = () => { t += 0.18; levelRef.current = 0.35 + Math.abs(Math.sin(t)) * 0.4 * Math.random(); raf = requestAnimationFrame(pulse); };
+    u.onstart = () => { setState("speaking"); raf = requestAnimationFrame(pulse); };
+    u.onend = u.onerror = () => { cancelAnimationFrame(raf); levelRef.current = 0; setState((s) => (s === "speaking" ? "idle" : s)); };
+    window.speechSynthesis.speak(u);
   }, [voiceEnabled]);
 
-  return { supported, listening, voiceEnabled, start, stop, speak, setVoiceEnabled };
+  const stopSpeaking = useCallback(() => { window.speechSynthesis?.cancel(); setState((s) => (s === "speaking" ? "idle" : s)); }, []);
+
+  return { supported, state, listening: state === "listening", error, levelRef, voiceEnabled, start, stop, speak, stopSpeaking, setVoiceEnabled };
 }

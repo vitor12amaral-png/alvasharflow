@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
 import { z } from "zod";
-import { randomUUID } from "crypto";
+const randomUUID = () => crypto.randomUUID();
 
 export const Route = createFileRoute("/api/copilot")({
   server: {
