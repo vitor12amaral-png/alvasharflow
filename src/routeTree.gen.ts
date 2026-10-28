@@ -34,6 +34,7 @@ import { Route as AuthenticatedVideosRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedWorkflowRouteImport } from './routes/_authenticated/workflow'
 import { Route as ApiCopilotRouteImport } from './routes/api/copilot'
+import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
 import { Route as OnboardingTokenRouteImport } from './routes/onboarding.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
@@ -170,6 +171,11 @@ const ApiCopilotRoute = ApiCopilotRouteImport.update({
   path: '/api/copilot',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
+  id: '/api/transcribe',
+  path: '/api/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConviteTokenRoute = ConviteTokenRouteImport.update({
   id: '/convite/$token',
   path: '/convite/$token',
@@ -233,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/onboarding/$token': typeof OnboardingTokenRoute
   '/portal/$token': typeof PortalTokenRoute
@@ -266,6 +273,7 @@ export interface FileRoutesByTo {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/onboarding/$token': typeof OnboardingTokenRoute
   '/portal/$token': typeof PortalTokenRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/_authenticated/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/onboarding/$token': typeof OnboardingTokenRoute
   '/portal/$token': typeof PortalTokenRoute
@@ -336,6 +345,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/workflow'
     | '/api/copilot'
+    | '/api/transcribe'
     | '/convite/$token'
     | '/onboarding/$token'
     | '/portal/$token'
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/workflow'
     | '/api/copilot'
+    | '/api/transcribe'
     | '/convite/$token'
     | '/onboarding/$token'
     | '/portal/$token'
@@ -403,6 +414,7 @@ export interface FileRouteTypes {
     | '/_authenticated/whatsapp'
     | '/_authenticated/workflow'
     | '/api/copilot'
+    | '/api/transcribe'
     | '/convite/$token'
     | '/onboarding/$token'
     | '/portal/$token'
@@ -421,6 +433,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiCopilotRoute: typeof ApiCopilotRoute
+  ApiTranscribeRoute: typeof ApiTranscribeRoute
   ConviteTokenRoute: typeof ConviteTokenRoute
   OnboardingTokenRoute: typeof OnboardingTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
@@ -606,6 +619,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCopilotRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/transcribe': {
+      id: '/api/transcribe'
+      path: '/api/transcribe'
+      fullPath: '/api/transcribe'
+      preLoaderRoute: typeof ApiTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/convite/$token': {
       id: '/convite/$token'
       path: '/convite/$token'
@@ -713,6 +733,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiCopilotRoute: ApiCopilotRoute,
+  ApiTranscribeRoute: ApiTranscribeRoute,
   ConviteTokenRoute: ConviteTokenRoute,
   OnboardingTokenRoute: OnboardingTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
