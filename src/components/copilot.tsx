@@ -202,6 +202,11 @@ export function CopilotButton() {
               </div>
             </div>
           ))}
+          {chatError && !busy && (
+            <div className="flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />{/402|cr[eé]dit/i.test(chatError.message) ? "Créditos de IA esgotados." : /401/.test(chatError.message) ? "Sessão expirada, entre novamente." : "Não consegui executar agora. Tente de novo."}
+            </div>
+          )}
           {busy && (
             <div className="flex gap-2">
               <div className="rounded-2xl bg-muted/60 px-3 py-2">
