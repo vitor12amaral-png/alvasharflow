@@ -27,7 +27,13 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
     return () => cleanupRef.current();
   }, []);
 
+  const cancelledRef = useRef(false);
   const stop = useCallback(() => {
+    cancelledRef.current = false;
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+  }, []);
+  const cancel = useCallback(() => {
+    cancelledRef.current = true;
     if (recorderRef.current?.state === "recording") recorderRef.current.stop();
   }, []);
 
@@ -98,6 +104,7 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
     rec.onstop = () => {
       cleanup();
       recorderRef.current = null;
+      if (cancelledRef.current) { cancelledRef.current = false; setState("idle"); return; }
       if (heard && chunks.length) void transcribe(new Blob(chunks, { type: rec.mimeType || "audio/webm" }));
       else { setState("idle"); setError("Não ouvi nada. Tente de novo."); }
     };
