@@ -83,7 +83,9 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
       levelRef.current = Math.min(1, rms * 6);
       const now = performance.now();
       if (rms > 0.04) { heard = true; lastLoud = now; }
-      if ((heard && now - lastLoud > 1500) || now - began > 30000 || (!heard && now - began > 8000)) { rec.stop(); return; }
+      // Sem corte por silêncio: o usuário confirma quando terminar (limite de segurança de 5 min).
+      void lastLoud;
+      if (now - began > 300000) { rec.stop(); return; }
       raf = requestAnimationFrame(tick);
     };
     const cleanup = () => {
