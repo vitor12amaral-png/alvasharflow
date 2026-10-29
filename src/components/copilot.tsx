@@ -103,7 +103,7 @@ export function CopilotButton() {
           {(orbState !== "idle" || voice.error) && (
             <div className="animate-rise max-w-sm truncate rounded-full border border-primary/25 bg-popover/80 px-4 py-1.5 text-xs text-foreground shadow-[var(--floating-shadow)] backdrop-blur-xl">
               {voice.error && orbState === "idle" ? <span className="text-destructive">{voice.error}</span>
-                : orbState === "listening" ? "Ouvindo… fale naturalmente"
+                : orbState === "listening" ? "Ouvindo… pode pausar à vontade. Toque em Enviar quando terminar"
                 : orbState === "transcribing" ? "Entendendo o que você disse…"
                 : orbState === "thinking" ? (input ? `“${input}”` : "Executando…")
                 : "Respondendo…"}
@@ -112,7 +112,7 @@ export function CopilotButton() {
           <div className="group flex items-center gap-1 rounded-full border border-border/60 bg-popover/50 p-1 pl-1 pr-2 shadow-[var(--floating-shadow)] backdrop-blur-xl">
             <button
               onClick={() => {
-                if (orbState === "listening") voice.stop();
+                if (orbState === "listening") return;
                 else if (orbState === "speaking") voice.stopSpeaking();
                 else if (!voice.supported) toggleDock("copilot");
                 else if (orbState === "idle") void voice.start();
@@ -124,8 +124,15 @@ export function CopilotButton() {
             >
               <VoiceOrb state={orbState} levelRef={voice.levelRef} size={48} />
             </button>
+            {orbState === "listening" ? (
+              <>
+                <button onClick={() => voice.cancel()} className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive" aria-label="Cancelar fala" title="Cancelar"><X className="h-4 w-4" /></button>
+                <button onClick={() => voice.stop()} className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-[0_0_24px_-6px_var(--primary)] transition-transform hover:scale-[1.03]" aria-label="Confirmar fala"><Check className="h-3.5 w-3.5" />Enviar</button>
+              </>
+            ) : (<>
             <button onClick={() => toggleDock("copilot")} className="rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground" aria-label="Abrir conversa"><MessageSquare className="h-3.5 w-3.5" /></button>
             <button onClick={() => setOrbHidden(true)} className="rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground" aria-label="Ocultar bolinha"><X className="h-3.5 w-3.5" /></button>
+            </>)}
           </div>
         </div>
       )}
