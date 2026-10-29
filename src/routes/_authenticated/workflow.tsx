@@ -705,7 +705,8 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
             </div>
           }
         />
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+        <MonthStats videos={currentMonthVideos} priceByClient={priceByClient ?? {}} />
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
           <Segmented
             value={primaryView}
             onChange={onViewChange}
