@@ -22,12 +22,18 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
   cbRef.current = onTranscript;
 
   useEffect(() => {
-    setSupported(Boolean(navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== "undefined"));
+    setSupported(typeof navigator.mediaDevices?.getUserMedia === "function" && typeof MediaRecorder !== "undefined");
     setVoiceEnabledState(localStorage.getItem(VOICE_KEY) !== "off");
     return () => cleanupRef.current();
   }, []);
 
+  const cancelledRef = useRef(false);
   const stop = useCallback(() => {
+    cancelledRef.current = false;
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+  }, []);
+  const cancel = useCallback(() => {
+    cancelledRef.current = true;
     if (recorderRef.current?.state === "recording") recorderRef.current.stop();
   }, []);
 
@@ -83,7 +89,9 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
       levelRef.current = Math.min(1, rms * 6);
       const now = performance.now();
       if (rms > 0.04) { heard = true; lastLoud = now; }
-      if ((heard && now - lastLoud > 1500) || now - began > 30000 || (!heard && now - began > 8000)) { rec.stop(); return; }
+      // Sem corte por silêncio: o usuário confirma quando terminar (limite de segurança de 5 min).
+      void lastLoud;
+      if (now - began > 300000) { rec.stop(); return; }
       raf = requestAnimationFrame(tick);
     };
     const cleanup = () => {
@@ -96,6 +104,7 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
     rec.onstop = () => {
       cleanup();
       recorderRef.current = null;
+      if (cancelledRef.current) { cancelledRef.current = false; setState("idle"); return; }
       if (heard && chunks.length) void transcribe(new Blob(chunks, { type: rec.mimeType || "audio/webm" }));
       else { setState("idle"); setError("Não ouvi nada. Tente de novo."); }
     };
@@ -129,5 +138,5 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
 
   const stopSpeaking = useCallback(() => { window.speechSynthesis?.cancel(); setState((s) => (s === "speaking" ? "idle" : s)); }, []);
 
-  return { supported, state, listening: state === "listening", error, levelRef, voiceEnabled, start, stop, speak, stopSpeaking, setVoiceEnabled };
+  return { supported, state, listening: state === "listening", error, levelRef, voiceEnabled, start, stop, cancel, speak, stopSpeaking, setVoiceEnabled };
 }
