@@ -112,7 +112,7 @@ export function CopilotButton() {
           <div className="group flex items-center gap-1 rounded-full border border-border/60 bg-popover/50 p-1 pl-1 pr-2 shadow-[var(--floating-shadow)] backdrop-blur-xl">
             <button
               onClick={() => {
-                if (orbState === "listening") return;
+                if (orbState === "listening") voice.stop();
                 else if (orbState === "speaking") voice.stopSpeaking();
                 else if (!voice.supported) toggleDock("copilot");
                 else if (orbState === "idle") void voice.start();
