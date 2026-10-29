@@ -1121,16 +1121,15 @@ function Column({ id, label, dot, count, shortcut, onQuickAdd, children }: {
 
   return (
     <div ref={setNodeRef} className={cn(
-      "flex w-full shrink-0 flex-col rounded-xl border border-border/70 bg-card/40 backdrop-blur-xl transition-all duration-200 md:w-72",
+      "flex w-full shrink-0 flex-col rounded-2xl border border-border/60 bg-landing-panel/50 backdrop-blur-xl transition-all duration-200 md:w-72",
       isOver && "border-primary/60 bg-primary/5 shadow-[0_0_0_1px_var(--primary),0_12px_32px_-18px_var(--primary)]",
     )}>
-      <div className="sticky top-0 z-10 flex items-center gap-2 rounded-t-xl border-b border-border/70 bg-card/70 px-3 py-2.5 backdrop-blur-xl">
+      <div className="sticky top-0 z-10 flex items-center gap-2 rounded-t-2xl px-3 pb-1 pt-3">
         <span className={cn("h-2 w-2 rounded-full", dot)} />
-        <p className="text-xs font-semibold">{label}</p>
+        <p className="text-[11px] font-semibold text-muted-foreground">{label} · <span className="tabular-nums">{count}</span></p>
         {shortcut ? (
           <kbd className="rounded border border-border/70 bg-muted/40 px-1 text-[9px] text-muted-foreground">{shortcut}</kbd>
         ) : null}
-        <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">{count}</span>
       </div>
       <div className="min-h-24 space-y-2 p-2">{children}</div>
       {onQuickAdd && (
@@ -1319,9 +1318,9 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
   return (
     <div ref={(node) => { setNodeRef(node); drop.setNodeRef(node); }} data-vid={video.id}
       className={cn(
-        "group flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-2.5 py-2 text-sm backdrop-blur transition-colors hover:border-primary/40",
+        "group flex items-center gap-2 rounded-md border border-border/60 bg-landing px-2.5 py-2 text-sm transition-all hover:border-primary/60 hover:bg-primary/10 hover:shadow-[0_0_18px_-6px_var(--primary)]",
         video.block_reason && !done && "border-l-2 border-l-[oklch(0.78_0.16_75)]",
-        selected && "border-primary/70 ring-1 ring-primary/40",
+        selected && "border-primary/60 bg-primary/15 shadow-[0_0_18px_-6px_var(--primary)]",
         isDragging && "opacity-40",
         drop.isOver && "ring-1 ring-primary",
       )}
@@ -1806,5 +1805,36 @@ function GroupPopover({ onGroup }: { onGroup: (name: string | null, color: strin
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Resumo do mês no mesmo formato do painel da página de vendas. */
+function MonthStats({ videos, priceByClient }: { videos: VideoRow[]; priceByClient: Record<string, number> }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const done = videos.filter((v) => v.status === "aprovado" || v.status === "entregue").length;
+  const late = videos.filter((v) => v.due_date && v.due_date < today && v.status !== "aprovado" && v.status !== "entregue").length;
+  const revenue = videos.reduce((sum, v) => sum + (priceByClient[v.client_id] ?? 0), 0);
+  const pct = videos.length ? Math.round((done / videos.length) * 100) : 0;
+  const stats = [
+    { label: "Vídeos no mês", value: String(videos.length), note: null as string | null, tone: "text-success" },
+    { label: "Concluídos", value: String(done), note: `${pct}%`, tone: "text-success" },
+    { label: "Atrasados", value: String(late), note: late ? "atenção" : "em dia", tone: late ? "text-destructive" : "text-success" },
+    { label: "Receita prevista", value: formatBRL(revenue), note: null, tone: "text-success" },
+  ];
+  return (
+    <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+      {stats.map((s) => (
+        <div key={s.label} className="rounded-xl border border-border/60 bg-landing-panel/70 p-3 backdrop-blur-xl">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.label}</p>
+          <div className="mt-1 flex items-end justify-between gap-2">
+            <p className="truncate font-display text-xl font-semibold">{s.value}</p>
+            {s.note && <span className={cn("text-[10px] font-semibold", s.tone)}>{s.note}</span>}
+          </div>
+          <svg viewBox="0 0 100 24" className="mt-2 h-5 w-full text-primary" fill="none" aria-hidden>
+            <path d="M0 18 L12 14 L24 16 L36 9 L48 12 L60 6 L72 10 L84 4 L100 7" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </div>
+      ))}
+    </div>
   );
 }
