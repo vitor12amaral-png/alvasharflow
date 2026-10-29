@@ -70,9 +70,9 @@ function NavLinkRow({ item, pathname, suppressActive = false, onSelect }: { item
       to={item.to}
       onClick={onSelect}
       className={cn(
-        "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] transition-colors duration-150",
+        "group relative flex items-center gap-2.5 rounded-full px-3 py-2 text-[13px] transition-colors duration-150",
         active
-          ? "bg-primary/10 font-medium text-primary"
+          ? "bg-primary/10 font-medium text-primary shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_22%,transparent),0_0_20px_-10px_var(--primary)]"
           : "text-foreground/90 hover:bg-sidebar-accent/55 hover:text-foreground",
       )}
     >
@@ -176,15 +176,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (!user.isActive) return <TrialExpired user={user} onSignOut={signOut} />;
 
   return (
-    <div className="flex min-h-screen w-full">
-      <aside className="floating-glass hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/80 md:flex">
+    <div className="relative flex min-h-screen w-full">
+      <div aria-hidden className="app-horizon" />
+      <div aria-hidden className="pointer-events-none fixed -top-20 left-[22%] z-0 h-[520px] w-40 -rotate-[28deg] bg-gradient-to-b from-foreground/[0.06] to-transparent blur-2xl" />
+      <aside className="relative z-10 hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-landing/70 backdrop-blur-2xl md:flex">
         <div className="flex items-center gap-3 px-5 py-4">
           {brand.logo_url ? (
             <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-8 w-8 rounded-md object-cover" />
           ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <span className="font-display text-base font-bold text-primary-foreground">{brand.logo_letter || brand.brand_name.charAt(0)}</span>
-            </div>
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_14px_var(--primary)]" />
           )}
           <div className="min-w-0">
             <p className="truncate font-display text-base leading-tight font-semibold">{brand.brand_name}</p>
@@ -266,7 +266,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="relative z-10 flex flex-1 flex-col min-w-0">
         <header className="floating-glass flex items-center justify-between border-b px-4 py-2.5 md:hidden">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
