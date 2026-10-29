@@ -22,7 +22,7 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
   cbRef.current = onTranscript;
 
   useEffect(() => {
-    setSupported(Boolean(navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== "undefined"));
+    setSupported(typeof navigator.mediaDevices?.getUserMedia === "function" && typeof MediaRecorder !== "undefined");
     setVoiceEnabledState(localStorage.getItem(VOICE_KEY) !== "off");
     return () => cleanupRef.current();
   }, []);
@@ -138,5 +138,5 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
 
   const stopSpeaking = useCallback(() => { window.speechSynthesis?.cancel(); setState((s) => (s === "speaking" ? "idle" : s)); }, []);
 
-  return { supported, state, listening: state === "listening", error, levelRef, voiceEnabled, start, stop, speak, stopSpeaking, setVoiceEnabled };
+  return { supported, state, listening: state === "listening", error, levelRef, voiceEnabled, start, stop, cancel, speak, stopSpeaking, setVoiceEnabled };
 }
