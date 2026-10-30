@@ -24,6 +24,7 @@ import { dispatchMyWhatsappAlerts } from "@/lib/whatsapp-alerts.functions";
 import { amIPlatformOwner } from "@/lib/platform.functions";
 import { TrialBanner, TrialExpired } from "@/components/trial-gate";
 import { useQuery } from "@tanstack/react-query";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerOnly?: boolean };
