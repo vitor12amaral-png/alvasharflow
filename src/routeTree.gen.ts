@@ -35,6 +35,7 @@ import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedWorkflowRouteImport } from './routes/_authenticated/workflow'
 import { Route as ApiCopilotRouteImport } from './routes/api/copilot'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
+import { Route as ApiTtsRouteImport } from './routes/api/tts'
 import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
 import { Route as OnboardingTokenRouteImport } from './routes/onboarding.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
@@ -176,6 +177,11 @@ const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   path: '/api/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTtsRoute = ApiTtsRouteImport.update({
+  id: '/api/tts',
+  path: '/api/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConviteTokenRoute = ConviteTokenRouteImport.update({
   id: '/convite/$token',
   path: '/convite/$token',
@@ -240,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/tts': typeof ApiTtsRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/onboarding/$token': typeof OnboardingTokenRoute
   '/portal/$token': typeof PortalTokenRoute
@@ -274,6 +281,7 @@ export interface FileRoutesByTo {
   '/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/tts': typeof ApiTtsRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/onboarding/$token': typeof OnboardingTokenRoute
   '/portal/$token': typeof PortalTokenRoute
@@ -310,6 +318,7 @@ export interface FileRoutesById {
   '/_authenticated/workflow': typeof AuthenticatedWorkflowRoute
   '/api/copilot': typeof ApiCopilotRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/api/tts': typeof ApiTtsRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/onboarding/$token': typeof OnboardingTokenRoute
   '/portal/$token': typeof PortalTokenRoute
@@ -346,6 +355,7 @@ export interface FileRouteTypes {
     | '/workflow'
     | '/api/copilot'
     | '/api/transcribe'
+    | '/api/tts'
     | '/convite/$token'
     | '/onboarding/$token'
     | '/portal/$token'
@@ -380,6 +390,7 @@ export interface FileRouteTypes {
     | '/workflow'
     | '/api/copilot'
     | '/api/transcribe'
+    | '/api/tts'
     | '/convite/$token'
     | '/onboarding/$token'
     | '/portal/$token'
@@ -415,6 +426,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workflow'
     | '/api/copilot'
     | '/api/transcribe'
+    | '/api/tts'
     | '/convite/$token'
     | '/onboarding/$token'
     | '/portal/$token'
@@ -434,6 +446,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiCopilotRoute: typeof ApiCopilotRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
+  ApiTtsRoute: typeof ApiTtsRoute
   ConviteTokenRoute: typeof ConviteTokenRoute
   OnboardingTokenRoute: typeof OnboardingTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
@@ -626,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tts': {
+      id: '/api/tts'
+      path: '/api/tts'
+      fullPath: '/api/tts'
+      preLoaderRoute: typeof ApiTtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/convite/$token': {
       id: '/convite/$token'
       path: '/convite/$token'
@@ -734,6 +754,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiCopilotRoute: ApiCopilotRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
+  ApiTtsRoute: ApiTtsRoute,
   ConviteTokenRoute: ConviteTokenRoute,
   OnboardingTokenRoute: OnboardingTokenRoute,
   PortalTokenRoute: PortalTokenRoute,

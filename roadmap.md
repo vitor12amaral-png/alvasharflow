@@ -93,3 +93,9 @@
    - [x] Bolinha do copiloto viva com ondas reagindo à voz; microfone gravado e transcrito no servidor.
    - [x] Corrigir comandos do copiloto (sessão era enviada vazia).
    - [ ] Ferramentas: refazer de ponta a ponta com acabamento completo (deixado por último, a pedido).
+
+17. Fazer tudo (out/2026)
+   - [ ] Voz humanizada neural (TTS do servidor) com fala começando pela primeira frase.
+   - [ ] Microfone: transcrever toda gravação confirmada, mesmo voz baixa.
+   - [ ] Acabamento landing em todas as telas: tabelas, abas, badges, listas, Calendário, Financeiro, Tarefas, Clientes, Equipe.
+   - [ ] Ferramentas refeitas de ponta a ponta.
