@@ -263,7 +263,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-arctic text-[11px] font-semibold text-primary-foreground shadow-[0_0_18px_-4px_var(--primary)]" title={user.fullName ?? user.email}>
+                <button className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-arctic text-[11px] font-semibold text-primary-foreground shadow-[0_0_18px_-4px_var(--primary)]" title={user.fullName ?? user.email ?? undefined}>
                   {initials(user.fullName ?? user.email)}
                 </button>
               </DropdownMenuTrigger>
