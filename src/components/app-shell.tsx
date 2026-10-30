@@ -24,6 +24,7 @@ import { dispatchMyWhatsappAlerts } from "@/lib/whatsapp-alerts.functions";
 import { amIPlatformOwner } from "@/lib/platform.functions";
 import { TrialBanner, TrialExpired } from "@/components/trial-gate";
 import { useQuery } from "@tanstack/react-query";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerOnly?: boolean };
@@ -175,130 +176,141 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Teste vencido/conta suspensa: aviso claro no lugar de telas vazias.
   if (!user.isActive) return <TrialExpired user={user} onSignOut={signOut} />;
 
+  const visibleGroups = NAV_GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((i) => !i.ownerOnly || isPlatformOwner) }))
+    .filter((g) => g.items.length);
+
   return (
-    <div className="relative flex min-h-screen w-full">
-      <div aria-hidden className="app-horizon" />
-      <div aria-hidden className="pointer-events-none fixed -top-20 left-[22%] z-0 h-[520px] w-40 -rotate-[28deg] bg-gradient-to-b from-foreground/[0.06] to-transparent blur-2xl" />
-      <aside className="relative z-10 hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-landing/70 backdrop-blur-2xl md:flex">
-        <div className="flex items-center gap-3 px-5 py-4">
-          {brand.logo_url ? (
-            <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-8 w-8 rounded-md object-cover" />
-          ) : (
-            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_14px_var(--primary)]" />
-          )}
-          <div className="min-w-0">
-            <p className="truncate font-display text-base leading-tight font-semibold">{brand.brand_name}</p>
-            <p className="truncate text-[9px] tracking-[0.12em] text-foreground/75 uppercase">{brand.brand_tagline ?? ""}</p>
-          </div>
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-landing">
+      {/* Atmosfera da landing: arco de horizonte + feixe de luz */}
+      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[420px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_40%,transparent)]">
+        <div className="absolute left-1/2 top-[140px] aspect-square w-[min(1400px,160vw)] -translate-x-1/2 rounded-full p-[1.5px] opacity-70 [background:var(--gradient-rim)] shadow-[0_-30px_140px_-20px_var(--primary-glow)]">
+          <div className="h-full w-full rounded-full bg-landing" />
         </div>
+        <div className="absolute left-1/2 top-[120px] h-40 w-[50%] -translate-x-1/2 rounded-[50%] bg-primary/15 blur-3xl" />
+      </div>
+      <div aria-hidden className="pointer-events-none fixed -top-20 left-[12%] z-0 h-[520px] w-40 -rotate-[28deg] bg-gradient-to-b from-foreground/[0.05] to-transparent blur-2xl" />
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-3">
-          {SOLO_TOP.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} suppressActive={selectedGroup !== null} onSelect={() => setSelectedGroup(null)} />)}
-          {NAV_GROUPS.map((group) => {
-            const items = group.items.filter((i) => !i.ownerOnly || isPlatformOwner);
-            if (!items.length) return null;
-            const hasActive = items.some((i) => isActivePath(location.pathname, i.to));
-            const open = openGroups[group.id] ?? hasActive;
-            const highlighted = selectedGroup === group.id;
-            return (
-              <div key={group.id} className="pt-2">
-                <button
-                  onClick={() => toggleGroup(group.id, hasActive)}
-                 aria-expanded={open}
-                  className={cn(
-                   "group flex w-full items-center justify-between rounded-lg border border-transparent px-3 py-2.5 text-[12px] font-medium uppercase tracking-[0.08em] transition-colors duration-150",
-                   highlighted
-                     ? "border-primary/20 bg-primary/10 text-primary"
-                     : "font-semibold text-foreground hover:bg-sidebar-accent/45",
-                  )}
-                >
-                 <span>
-                   {group.label}
-                 </span>
-                  <ChevronDown className={cn(
-                   "h-3.5 w-3.5 text-foreground/80 transition-transform duration-150",
-                    open ? "rotate-0" : "-rotate-90",
-                    highlighted && "text-primary",
-                  )} />
-                </button>
-                {open && (
-                  <div className="mt-1 space-y-0.5 border-l border-border pl-1">
-                    {items.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} suppressActive={selectedGroup !== null} onSelect={() => setSelectedGroup(null)} />)}
-                  </div>
+      {/* Barra superior no estilo do mockup */}
+      <header className="sticky top-0 z-30 border-b border-border/50 bg-landing/70 backdrop-blur-2xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
+          <Link to="/workflow" className="flex shrink-0 items-center gap-2">
+            {brand.logo_url ? (
+              <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-7 w-7 rounded-md object-cover" />
+            ) : null}
+            <span className="font-display text-lg font-bold uppercase tracking-tight">{brand.brand_name}</span>
+            <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" />
+          </Link>
+
+          <nav className="hidden items-center gap-1 rounded-full border border-border/60 bg-landing-panel/60 p-1 lg:flex">
+            {visibleGroups.map((group) => {
+              const hasActive = group.items.some((i) => isActivePath(location.pathname, i.to));
+              return (
+                <DropdownMenu key={group.id}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={cn(
+                        "flex items-center gap-1 rounded-full px-4 py-1.5 text-[13px] transition-colors",
+                        hasActive
+                          ? "bg-primary/15 font-medium text-foreground shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_40%,transparent),0_0_18px_-6px_var(--primary)]"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {group.label}
+                      <ChevronDown className="h-3 w-3 opacity-70" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" sideOffset={10} className="min-w-52 rounded-2xl border-border/70 bg-landing-panel/95 p-1.5 backdrop-blur-xl">
+                    {group.items.map((item) => {
+                      const active = isActivePath(location.pathname, item.to);
+                      return (
+                        <DropdownMenuItem key={item.to} asChild className="rounded-xl">
+                          <Link to={item.to} className={cn("flex items-center gap-2.5 px-3 py-2", active && "bg-primary/10 text-primary")}>
+                            <item.icon className="h-4 w-4" />
+                            {item.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            })}
+            {SOLO_BOTTOM.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "rounded-full px-4 py-1.5 text-[13px] transition-colors",
+                  isActivePath(location.pathname, item.to) ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
-              </div>
-            );
-          })}
-          <div className="pt-2">
-            {SOLO_BOTTOM.map((item) => <NavLinkRow key={item.to} item={item} pathname={location.pathname} suppressActive={selectedGroup !== null} onSelect={() => setSelectedGroup(null)} />)}
-          </div>
-        </nav>
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
 
-        <div className="border-t border-sidebar-border p-2.5">
-          <div className="glass-surface flex items-center gap-2.5 rounded-lg border px-2 py-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-              {initials(user.fullName ?? user.email)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium">{user.fullName ?? "Sem nome"}</p>
-              <p className="truncate text-[10px] text-muted-foreground uppercase tracking-wider">{user.role}</p>
-            </div>
+          <div className="flex items-center gap-1">
             <NotificationCenter />
             <PackageAlertsBell threshold={brand.package_alert_threshold} />
             <button
               onClick={() => update({ sound: !prefs.sound })}
               data-sfx="off"
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+              className="rounded-full p-2 text-muted-foreground hover:bg-landing-panel hover:text-foreground"
               title={prefs.sound ? "Desativar sons" : "Ativar sons"}
             >
-              {prefs.sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+              {prefs.sound ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </button>
-
-            <button
-              onClick={signOut}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-              title="Sair"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-            </button>
-
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-arctic text-[11px] font-semibold text-primary-foreground shadow-[0_0_18px_-4px_var(--primary)]" title={user.fullName ?? user.email ?? undefined}>
+                  {initials(user.fullName ?? user.email)}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={10} className="min-w-56 rounded-2xl border-border/70 bg-landing-panel/95 p-1.5 backdrop-blur-xl">
+                <div className="px-3 py-2">
+                  <p className="truncate text-sm font-medium">{user.fullName ?? "Sem nome"}</p>
+                  <p className="truncate text-[10px] uppercase tracking-wider text-muted-foreground">{user.role}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="rounded-xl">
+                  <Link to="/configuracoes" className="flex items-center gap-2.5 px-3 py-2"><Settings className="h-4 w-4" /> Configurações</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={signOut} className="flex items-center gap-2.5 rounded-xl px-3 py-2">
+                  <LogOut className="h-4 w-4" /> Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-      </aside>
+      </header>
 
-      <div className="relative z-10 flex flex-1 flex-col min-w-0">
-        <header className="floating-glass flex items-center justify-between border-b px-4 py-2.5 md:hidden">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
-              <span className="font-display text-[10px] font-bold text-primary-foreground">A</span>
-            </div>
-            <span className="font-display text-sm font-semibold">AlvasharFlow</span>
-          </div>
-          <button onClick={signOut} className="text-xs text-muted-foreground">Sair</button>
-        </header>
-
-        <nav className="floating-glass fixed inset-x-0 bottom-0 z-30 flex justify-around overflow-x-auto border-t px-1 py-1.5 md:hidden">
-          {NAV.slice(0, 5).map((item) => {
-            const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "relative flex min-w-14 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[9px] transition-all",
-                   active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
+      {/* Moldura de vidro, igual ao mockup da landing */}
+      <div className="relative z-10 mx-auto max-w-7xl px-2 pb-24 pt-6 md:px-6 md:pb-10">
+        <div className="rounded-3xl border border-border/70 bg-landing-panel/80 p-1.5 shadow-[0_50px_140px_-40px_oklch(0_0_0/0.9)] backdrop-blur-xl">
+          <main className="min-h-[calc(100vh-8rem)] rounded-[1.25rem] border border-border/60 bg-landing/80">{children}</main>
+        </div>
       </div>
-      
+
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around overflow-x-auto border-t border-border/60 bg-landing/85 px-1 py-1.5 backdrop-blur-2xl lg:hidden">
+        {NAV.filter((i) => !i.ownerOnly || isPlatformOwner).map((item) => {
+          const active = isActivePath(location.pathname, item.to);
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={cn(
+                "relative flex min-w-14 shrink-0 flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[9px] transition-all",
+                active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
       <CommandPalette />
       <CopilotButton />
     </div>
