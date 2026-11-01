@@ -5,6 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-landing: var(--landing-bg);
+  --color-landing-panel: var(--landing-panel);
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
@@ -291,8 +293,6 @@
 @utility animate-marquee { animation: landing-marquee 28s linear infinite; }
 @keyframes landing-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 @utility animate-rise { animation: landing-rise 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-@utility bg-landing { background-color: var(--landing-bg); }
-@utility bg-landing-panel { background-color: var(--landing-panel); }
 
 /* Painel no idioma visual da landing: fundo profundo, fio de luz no topo */
 @utility panel-landing {
@@ -324,3 +324,23 @@
   z-index: 0;
 }
 :root.theme-light .app-horizon { display: none; }
+
+/* Seletores nativos no mesmo idioma dos campos: pílula de vidro com seta própria */
+@layer base {
+  select:not([multiple]):not([size]) {
+    appearance: none;
+    border-radius: 9999px;
+    border: 1px solid var(--glass-border);
+    background-color: color-mix(in oklab, var(--landing-panel) 70%, transparent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 0.9rem;
+    padding-right: 2rem;
+    color: var(--foreground);
+    transition: border-color 160ms ease, box-shadow 180ms ease;
+  }
+  select:not([multiple]):not([size]):hover { border-color: color-mix(in oklab, var(--foreground) 18%, transparent); }
+  select:not([multiple]):not([size]):focus { outline: none; border-color: color-mix(in oklab, var(--primary) 72%, transparent); box-shadow: 0 0 0 2px var(--focus-glow); }
+  select option { background-color: var(--popover); color: var(--popover-foreground); }
+}
