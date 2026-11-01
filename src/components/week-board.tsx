@@ -279,7 +279,7 @@ export function WeekBoard({
         <select
           value={clientFilter}
           onChange={(e) => setClientFilter(e.target.value)}
-          className="h-8 rounded-full border border-border bg-background px-3 text-xs"
+          className="h-8 px-3 text-xs"
         >
           <option value="">Todos os clientes</option>
           {clientNames.map((n) => <option key={n} value={n}>{n}</option>)}
@@ -522,7 +522,7 @@ export function WeekBoard({
                     <select
                       value={draft.client_id}
                       onChange={(e) => setDraft({ ...draft, client_id: e.target.value })}
-                      className="h-7 w-full rounded-md border border-border bg-background px-2 text-xs"
+                      className="h-7 w-full px-2 text-xs"
                     >
                       <option value="">Cliente…</option>
                       {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -608,7 +608,7 @@ function QuickEdit({
           <select
             value={card.client_id ?? ""}
             onChange={(e) => apply({ client_id: e.target.value }, false)}
-            className="mt-2 h-8 w-full rounded-md border border-border bg-background px-2 text-xs"
+            className="mt-2 h-8 w-full px-2 text-xs"
           >
             <option value="">Cliente…</option>
             {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

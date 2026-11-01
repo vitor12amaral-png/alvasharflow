@@ -144,7 +144,7 @@ function TarefasPage() {
         </Tabs>
         <div className="ml-auto flex items-center gap-2">
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tarefa…" className="h-9 w-44" />
-          <select value={filterClient} onChange={(e) => setFilterClient(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground" aria-label="Filtrar por cliente">
+          <select value={filterClient} onChange={(e) => setFilterClient(e.target.value)} className="h-9 px-3 text-sm" aria-label="Filtrar por cliente">
             <option value="all">Todos os clientes</option>
             {clientOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
