@@ -91,7 +91,7 @@ export function CopilotButton() {
     const text = assistantText(last);
     const pending = text.slice(sp.offset);
     // Corta na última pontuação forte; a primeira frase sai rápido, as demais em blocos maiores.
-    const re = /[.!?…:;](\s|$)|\n/g;
+    const re = /[.!?…:;]\s|\n/g;
     let cut = -1;
     let m: RegExpExecArray | null;
     while ((m = re.exec(pending))) cut = m.index + 1;
@@ -101,7 +101,7 @@ export function CopilotButton() {
       sp.offset += cut;
     }
   }, [messages, status]);
-  const orbState = voice.state === "listening" || voice.state === "transcribing" ? voice.state : busy ? "thinking" : voice.state;
+  const orbState = voice.state !== "idle" ? voice.state : busy ? "thinking" : "idle";
 
   useEffect(() => {
     if (!finalTranscript || busy) return;
