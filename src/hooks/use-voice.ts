@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SpeechQueue, cleanForSpeech } from "@/lib/speech-player";
 
 export type VoiceState = "idle" | "listening" | "transcribing" | "speaking";
 
@@ -20,6 +21,8 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
   const recorderRef = useRef<MediaRecorder | null>(null);
   const cbRef = useRef(onTranscript);
   cbRef.current = onTranscript;
+  const queueRef = useRef<SpeechQueue | null>(null);
+  const speakRafRef = useRef(0);
 
   useEffect(() => {
     setSupported(typeof navigator.mediaDevices?.getUserMedia === "function" && typeof MediaRecorder !== "undefined");
@@ -60,10 +63,12 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
   const start = useCallback(async () => {
     if (recorderRef.current?.state === "recording") return;
     setError(null);
+    queueRef.current?.stop();
+    queueRef.current?.unlock();
     window.speechSynthesis?.cancel();
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
     } catch {
       setError("Permita o acesso ao microfone no navegador.");
       return;
@@ -88,7 +93,7 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
       const rms = Math.sqrt(sum / buf.length);
       levelRef.current = Math.min(1, rms * 6);
       const now = performance.now();
-      if (rms > 0.04) { heard = true; lastLoud = now; }
+      if (rms > 0.012) { heard = true; lastLoud = now; }
       // Sem corte por silêncio: o usuário confirma quando terminar (limite de segurança de 5 min).
       void lastLoud;
       if (now - began > 300000) { rec.stop(); return; }
@@ -105,7 +110,9 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
       cleanup();
       recorderRef.current = null;
       if (cancelledRef.current) { cancelledRef.current = false; setState("idle"); return; }
-      if (heard && chunks.length) void transcribe(new Blob(chunks, { type: rec.mimeType || "audio/webm" }));
+      // Toda gravação confirmada com pelo menos ~0,6s vai para a transcrição, mesmo com voz baixa.
+      const longEnough = performance.now() - began > 600;
+      if (chunks.length && (heard || longEnough)) void transcribe(new Blob(chunks, { type: rec.mimeType || "audio/webm" }));
       else { setState("idle"); setError("Não ouvi nada. Tente de novo."); }
     };
     recorderRef.current = rec;
@@ -114,29 +121,59 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
     raf = requestAnimationFrame(tick);
   }, [transcribe]);
 
-  const setVoiceEnabled = useCallback((enabled: boolean) => {
-    setVoiceEnabledState(enabled);
-    localStorage.setItem(VOICE_KEY, enabled ? "on" : "off");
-    if (!enabled) window.speechSynthesis?.cancel();
-  }, []);
-
-  const speak = useCallback((text: string) => {
-    if (!voiceEnabled || !text.trim() || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/[*_#`]/g, ""));
+  const browserSpeak = useCallback((text: string) => {
+    if (!window.speechSynthesis) { setState((s) => (s === "speaking" ? "idle" : s)); return; }
+    const u = new SpeechSynthesisUtterance(cleanForSpeech(text));
     u.lang = "pt-BR";
     u.rate = 1.05;
     const voices = window.speechSynthesis.getVoices();
     u.voice = voices.find((v) => v.lang.toLowerCase().startsWith("pt-br")) ?? voices.find((v) => v.lang.toLowerCase().startsWith("pt")) ?? null;
-    let t = 0;
-    let raf = 0;
-    const pulse = () => { t += 0.18; levelRef.current = 0.35 + Math.abs(Math.sin(t)) * 0.4 * Math.random(); raf = requestAnimationFrame(pulse); };
-    u.onstart = () => { setState("speaking"); raf = requestAnimationFrame(pulse); };
-    u.onend = u.onerror = () => { cancelAnimationFrame(raf); levelRef.current = 0; setState((s) => (s === "speaking" ? "idle" : s)); };
+    u.onstart = () => setState("speaking");
+    u.onend = u.onerror = () => setState((s) => (s === "speaking" ? "idle" : s));
     window.speechSynthesis.speak(u);
-  }, [voiceEnabled]);
+  }, []);
 
-  const stopSpeaking = useCallback(() => { window.speechSynthesis?.cancel(); setState((s) => (s === "speaking" ? "idle" : s)); }, []);
+  const getQueue = useCallback(() => {
+    if (!queueRef.current) {
+      const q = new SpeechQueue();
+      q.onActive = (active) => {
+        cancelAnimationFrame(speakRafRef.current);
+        if (active) {
+          setState((s) => (s === "listening" || s === "transcribing" ? s : "speaking"));
+          const loop = () => { levelRef.current = q.level(); speakRafRef.current = requestAnimationFrame(loop); };
+          speakRafRef.current = requestAnimationFrame(loop);
+        } else {
+          levelRef.current = 0;
+          setState((s) => (s === "speaking" ? "idle" : s));
+        }
+      };
+      q.onFallback = (text) => browserSpeak(text);
+      queueRef.current = q;
+    }
+    return queueRef.current;
+  }, [browserSpeak]);
 
-  return { supported, state, listening: state === "listening", error, levelRef, voiceEnabled, start, stop, cancel, speak, stopSpeaking, setVoiceEnabled };
+  useEffect(() => () => { queueRef.current?.stop(); cancelAnimationFrame(speakRafRef.current); }, []);
+
+  const setVoiceEnabled = useCallback((enabled: boolean) => {
+    setVoiceEnabledState(enabled);
+    localStorage.setItem(VOICE_KEY, enabled ? "on" : "off");
+    if (!enabled) { queueRef.current?.stop(); window.speechSynthesis?.cancel(); }
+  }, []);
+
+  /** Adds a sentence to the neural voice queue; plays in order, starting immediately. */
+  const speak = useCallback((text: string) => {
+    if (!voiceEnabled || !text.trim()) return;
+    getQueue().enqueue(text);
+  }, [voiceEnabled, getQueue]);
+
+  const unlockAudio = useCallback(() => getQueue().unlock(), [getQueue]);
+
+  const stopSpeaking = useCallback(() => {
+    queueRef.current?.stop();
+    window.speechSynthesis?.cancel();
+    setState((s) => (s === "speaking" ? "idle" : s));
+  }, []);
+
+  return { supported, state, listening: state === "listening", error, levelRef, voiceEnabled, start, stop, cancel, speak, stopSpeaking, setVoiceEnabled, unlockAudio };
 }

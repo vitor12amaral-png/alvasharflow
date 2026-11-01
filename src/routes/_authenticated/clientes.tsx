@@ -184,22 +184,20 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
   const hasSubs = subs.length > 0;
 
   return (
-    <Card className={`overflow-hidden transition hover:border-primary/40 ${done ? "opacity-60" : ""}`}>
-      <div className="flex items-start gap-3 p-5">
+    <Card className={`overflow-hidden rounded-2xl transition duration-300 hover:border-primary/40 hover:shadow-[0_0_40px_-16px_var(--primary)] ${done ? "opacity-60" : ""}`}>
+      <div className="flex items-center gap-3 px-4 py-4 sm:px-5">
         {hasSubs ? (
           <button
             onClick={onToggle}
-            className="mt-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-full p-1.5 text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
             aria-label={open ? "Recolher marcas" : "Expandir marcas"}
           >
             <ChevronRight className={`h-4 w-4 transition-transform ${open ? "rotate-90" : ""}`} />
           </button>
-        ) : (
-          <div className="w-6" />
-        )}
-        <Link to="/clientes/$clientId" params={{ clientId: client.id }} className="group flex flex-1 min-w-0 items-start gap-3">
+        ) : null}
+        <Link to="/clientes/$clientId" params={{ clientId: client.id }} className="group flex flex-1 min-w-0 items-center gap-3">
           <div
-            className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/15 font-display font-semibold text-primary"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 font-display font-semibold text-primary ring-1 ring-inset ring-border/60"
             style={colorValue(client.color) ? { background: `color-mix(in oklab, ${colorValue(client.color)} 22%, transparent)`, color: colorValue(client.color)! } : undefined}
           >
             {initials(client.name)}
@@ -226,8 +224,8 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
               </span>
               {pack && <span className="font-medium">{formatBRL(pack.price)}</span>}
             </div>
-            <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
-              <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-landing ring-1 ring-inset ring-border/50">
+              <div className="h-full rounded-full bg-primary shadow-[0_0_12px_var(--primary)] transition-all" style={{ width: `${pct}%` }} />
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
               <MiniStat label="Pendentes" value={pendentes} />
@@ -236,7 +234,8 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
             </div>
           </div>
         </Link>
-        <ColorPicker table="clients" id={client.id} color={client.color} invalidate={[["clients"], ["clients-min"]]} size="md" className="mt-2" />
+        {!hasSubs && <AddSubClientButton parentId={client.id} compact />}
+        <ColorPicker table="clients" id={client.id} color={client.color} invalidate={[["clients"], ["clients-min"]]} size="md" />
         <DeleteAction
           table="clients"
           id={client.id}
@@ -245,24 +244,23 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
           description="Todos os vídeos, pacotes, links e histórico deste cliente serão removidos permanentemente."
           successMessage="Cliente excluído"
           invalidate={[["clients"], ["dashboard"], ["clients-min"]]}
-          className="mt-1"
         />
       </div>
 
       {open && hasSubs && (
-        <div className="border-t border-border bg-muted/20">
+        <div className="border-t border-border/60 bg-landing/60">
            {subs.filter((s) => showDone || !isClientDone(s)).map((s) => {
             const svids = s.videos ?? [];
             const sPend = svids.filter((v) => v.status !== "entregue" && v.status !== "aprovado").length;
              const subDone = isClientDone(s);
             return (
-               <div key={s.id} className={`flex items-center gap-2 border-b border-border/60 pr-4 last:border-0 hover:bg-muted/40 ${subDone ? "opacity-60" : ""}`}>
+               <div key={s.id} className={`flex items-center gap-2 border-b border-border/40 pr-4 last:border-0 transition hover:bg-primary/5 ${subDone ? "opacity-60" : ""}`}>
                 <Link
                   to="/clientes/$clientId"
                   params={{ clientId: s.id }}
                   className="flex flex-1 min-w-0 items-center gap-3 px-6 py-3 pl-14"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted font-display text-xs font-semibold">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-landing-panel font-display text-xs font-semibold ring-1 ring-inset ring-border/60">
                     {initials(s.name)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -289,11 +287,6 @@ function ParentCard({ client, subs, open, onToggle, showDone, done }: { client: 
           </div>
         </div>
       )}
-      {!hasSubs && (
-        <div className="border-t border-border bg-muted/10 px-6 py-2 pl-14">
-          <AddSubClientButton parentId={client.id} />
-        </div>
-      )}
     </Card>
   );
 }
@@ -303,7 +296,7 @@ function isClientDone(client: ClientRow) {
   return videos.length > 0 && videos.every((video) => video.status === "entregue" || video.status === "aprovado");
 }
 
-export function AddSubClientButton({ parentId }: { parentId: string }) {
+export function AddSubClientButton({ parentId, compact = false }: { parentId: string; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
@@ -336,9 +329,15 @@ export function AddSubClientButton({ parentId }: { parentId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="text-xs text-muted-foreground hover:text-foreground">
-          <Plus className="mr-1 h-3 w-3" />Adicionar marca
-        </Button>
+        {compact ? (
+          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary" title="Adicionar marca" aria-label="Adicionar marca">
+            <Plus className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button size="sm" variant="ghost" className="rounded-full text-xs text-muted-foreground hover:text-foreground">
+            <Plus className="mr-1 h-3 w-3" />Adicionar marca
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>Nova marca (sub-cliente)</DialogTitle></DialogHeader>

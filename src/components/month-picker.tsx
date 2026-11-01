@@ -31,7 +31,8 @@ export function MonthPicker({ className }: { className?: string }) {
     navigate({ to: ".", search: (prev: Record<string, unknown>) => ({ ...prev, month: undefined }) as never, replace: true });
   }
 
-  const label = new Date(year, month, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const raw = new Date(year, month, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const label = raw.charAt(0).toUpperCase() + raw.slice(1);
 
   return (
     <div className={cn("flex items-center gap-1", className)}>
@@ -39,8 +40,8 @@ export function MonthPicker({ className }: { className?: string }) {
         <ChevronLeft className="h-4 w-4" />
       </Button>
       <div className={cn(
-        "min-w-[160px] text-center font-display text-sm capitalize px-2 py-1 rounded-md",
-        isCurrent && "bg-primary/10 text-primary font-semibold",
+        "min-w-[160px] rounded-full border border-border/60 bg-landing-panel/60 px-3 py-1.5 text-center font-display text-sm",
+        isCurrent && "border-primary/40 bg-primary/10 font-semibold text-primary shadow-[0_0_18px_-8px_var(--primary)]",
       )}>
         {label}
       </div>
