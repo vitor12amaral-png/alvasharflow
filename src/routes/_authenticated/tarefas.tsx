@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2, Film } from "lucide-react";
+import { Plus, Loader2, Calendar, LayoutGrid, AlertCircle, Repeat, Trash2, Film, CheckCircle2, ListTodo } from "lucide-react";
+import { EmptyState } from "@/components/stat-card";
 import { DueDatePopover, formatDue } from "@/components/due-date-popover";
 import { DeleteAction } from "@/components/delete-action";
 import { MoreMenu } from "@/components/more-menu";
@@ -185,14 +186,14 @@ function TarefasPage() {
           {STATUS_COLS.map((col) => {
             const items = filtered.filter((t) => t.status === col.id);
             return (
-              <div key={col.id} className="rounded-lg border border-border bg-card/40 p-3">
+              <div key={col.id} className="rounded-2xl border border-border/60 bg-landing-panel/50 p-3 backdrop-blur-xl">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="font-display text-sm font-semibold">{col.label}</p>
-                  <span className="text-xs text-muted-foreground">{items.length}</span>
+                  <span className="rounded-full bg-landing px-2 py-0.5 text-[11px] font-semibold text-muted-foreground ring-1 ring-inset ring-border/60">{items.length}</span>
                 </div>
                 <div className="space-y-2">
                   {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => updateStatus.mutate({ id: t.id, status: s })} onDelete={() => remove.mutate(t.id)} />)}
-                  {items.length === 0 && <p className="py-6 text-center text-xs text-muted-foreground">Nada aqui.</p>}
+                  {items.length === 0 && <EmptyState icon={col.id === "concluido" ? CheckCircle2 : ListTodo} title={col.id === "concluido" ? "Nada concluído ainda" : "Nenhuma tarefa pendente"} hint={col.id === "concluido" ? undefined : "Use “Nova tarefa” para organizar o seu dia"} />}
                 </div>
               </div>
             );

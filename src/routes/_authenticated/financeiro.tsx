@@ -4,6 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, TrendingUp, CalendarClock, AlertCircle, DollarSign, CheckCircle2, Hourglass, Users } from "lucide-react";
@@ -68,30 +69,16 @@ function FinanceiroPage() {
       <PageHeader title="Financeiro" subtitle="Quanto os vídeos do mês valem e como cada pacote está sendo usado" actions={<MonthPicker />} />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4">
-          <TrendingUp className="h-4 w-4 text-primary" />
-          <p className="mt-2 font-display text-2xl font-bold">{formatBRL(fin.forecast)}</p>
-          <p className="text-xs text-muted-foreground">Previsto em {monthLabel} · {fin.total} vídeos</p>
-          {fin.unpriced > 0 && <p className="mt-1 text-[11px] text-[oklch(0.78_0.16_75)]">{fin.unpriced} vídeos sem valor definido (cliente sem pacote ou preço)</p>}
-        </Card>
-        <Card className="p-4">
-          <CheckCircle2 className="h-4 w-4 text-[oklch(0.72_0.17_155)]" />
-          <p className="mt-2 font-display text-2xl font-bold">{formatBRL(fin.deliveredValue)}</p>
-          <p className="text-xs text-muted-foreground">Já entregue · {fin.delivered} vídeos ({deliveredPct}%)</p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-[oklch(0.72_0.17_155)] transition-all" style={{ width: `${deliveredPct}%` }} />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <Hourglass className="h-4 w-4 text-[oklch(0.78_0.16_75)]" />
-          <p className="mt-2 font-display text-2xl font-bold">{formatBRL(fin.pendingValue)}</p>
-          <p className="text-xs text-muted-foreground">Falta entregar · {fin.total - fin.delivered} vídeos</p>
-        </Card>
-        <Card className="p-4">
-          <DollarSign className="h-4 w-4 text-primary" />
-          <p className="mt-2 font-display text-2xl font-bold">{formatBRL(recurring)}</p>
-          <p className="text-xs text-muted-foreground">Receita dos {active.length} pacotes ativos</p>
-        </Card>
+        <StatCard
+          label={`Previsto em ${monthLabel}`}
+          value={formatBRL(fin.forecast)}
+          note={`${fin.total} vídeos`}
+          icon={TrendingUp}
+          footer={fin.unpriced > 0 ? <span className="text-warning">{fin.unpriced} vídeos sem valor definido (cliente sem pacote ou preço)</span> : undefined}
+        />
+        <StatCard label="Já entregue" value={formatBRL(fin.deliveredValue)} note={`${deliveredPct}%`} tone="success" icon={CheckCircle2} progress={deliveredPct} footer={`${fin.delivered} vídeos entregues`} />
+        <StatCard label="Falta entregar" value={formatBRL(fin.pendingValue)} note={`${fin.total - fin.delivered} vídeos`} tone="warning" icon={Hourglass} progress={fin.forecast > 0 ? (fin.pendingValue / fin.forecast) * 100 : 0} />
+        <StatCard label="Pacotes ativos" value={formatBRL(recurring)} note={`${active.length} ativos`} icon={DollarSign} footer="Receita recorrente dos pacotes" />
       </div>
 
       <Card className="mt-3 flex flex-wrap items-center gap-x-8 gap-y-3 p-4">

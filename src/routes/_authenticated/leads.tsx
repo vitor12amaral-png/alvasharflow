@@ -3,6 +3,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/page-header";
+import { StatCard, EmptyState } from "@/components/stat-card";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,26 +87,13 @@ function LeadsPage() {
       />
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <Card className="p-4">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Leads em aberto</p>
-          <p className="mt-1 font-display text-2xl font-semibold">
-            {list.filter((l) => l.stage !== "fechado" && l.stage !== "perdido").length}
-          </p>
-        </Card>
-        <Card className={cn("p-4", overdue.length > 0 && "border-destructive/40")}>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Follow-up pendente</p>
-          <p className="mt-1 flex items-center gap-2 font-display text-2xl font-semibold">
-            {overdue.length}
-            {overdue.length > 0 && <AlertCircle className="h-4 w-4 text-destructive" />}
-          </p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Valor em negociação</p>
-          <p className="mt-1 font-display text-2xl font-semibold">
-            {formatBRL(list.filter((l) => l.stage !== "fechado" && l.stage !== "perdido")
-              .reduce((s, l) => s + (Number(l.estimated_value) || 0), 0))}
-          </p>
-        </Card>
+        <StatCard label="Leads em aberto" value={list.filter((l) => l.stage !== "fechado" && l.stage !== "perdido").length} icon={UserPlus} />
+        <StatCard label="Follow-up pendente" value={overdue.length} tone={overdue.length > 0 ? "danger" : "success"} note={overdue.length > 0 ? "atrasado" : "em dia"} icon={AlertCircle} />
+        <StatCard
+          label="Valor em negociação"
+          value={formatBRL(list.filter((l) => l.stage !== "fechado" && l.stage !== "perdido").reduce((s, l) => s + (Number(l.estimated_value) || 0), 0))}
+          icon={MessageSquarePlus}
+        />
       </div>
 
       <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar lead por nome, empresa ou e-mail…" className="mt-5 max-w-sm" />
@@ -145,9 +133,7 @@ function LeadsPage() {
                   />
                 ))}
                 {items.length === 0 && (
-                  <p className="rounded-lg border border-dashed border-border px-2 py-5 text-center text-[10px] text-muted-foreground">
-                    vazio
-                  </p>
+                  <EmptyState title="Nenhum lead aqui" hint="Arraste um cartão para esta etapa" className="py-5" />
                 )}
               </div>
             </div>
