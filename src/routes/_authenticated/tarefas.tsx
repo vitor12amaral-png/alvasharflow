@@ -193,7 +193,7 @@ function TarefasPage() {
                 </div>
                 <div className="space-y-2">
                   {items.map((t) => <TaskCard key={t.id} task={t} onStatus={(s) => updateStatus.mutate({ id: t.id, status: s })} onDelete={() => remove.mutate(t.id)} />)}
-                  {items.length === 0 && <EmptyState icon={col.id === "concluido" ? CheckCircle2 : ListTodo} title={col.id === "concluido" ? "Nada concluído ainda" : "Nenhuma tarefa pendente"} hint={col.id === "concluido" ? undefined : "Use “Nova tarefa” para organizar o seu dia"} />}
+                  {items.length === 0 && <EmptyState icon={col.id === "concluida" ? CheckCircle2 : ListTodo} title={col.id === "concluida" ? "Nada concluído ainda" : "Nenhuma tarefa pendente"} hint={col.id === "concluida" ? undefined : "Use “Nova tarefa” para organizar o seu dia"} />}
                 </div>
               </div>
             );
