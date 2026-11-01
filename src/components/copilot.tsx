@@ -15,6 +15,10 @@ import { useVoice } from "@/hooks/use-voice";
 
 const STORAGE_KEY = "alvesedt-copilot-messages";
 
+function assistantText(message: { parts: any[] }) {
+  return message.parts.filter((p: any) => p.type === "text").map((p: any) => p.text).join(" ");
+}
+
 export function CopilotButton() {
   const { isOpen, showLauncher, toggleDock, closeDock } = useDock();
   const open = isOpen("copilot");
@@ -25,6 +29,8 @@ export function CopilotButton() {
   const [input, setInput] = useState("");
   const [finalTranscript, setFinalTranscript] = useState("");
   const speakRef = useRef<(text: string) => void>(() => {});
+  // Fala em streaming: cada frase completa da resposta vai para a voz assim que chega.
+  const spokenRef = useRef<{ id: string | null; offset: number; armed: boolean }>({ id: null, offset: 0, armed: false });
   const qc = useQueryClient();
   const [orbHidden, setOrbHiddenState] = useState(false);
   useEffect(() => { setOrbHiddenState(localStorage.getItem("copilot-orb-hidden") === "1"); }, []);
@@ -49,11 +55,13 @@ export function CopilotButton() {
       if (ranTool) {
         qc.invalidateQueries();
       }
-      const text = message.parts
-        .filter((part: any) => part.type === "text")
-        .map((part: any) => part.text)
-        .join(" ");
-      if (text) speakRef.current(text);
+      const sp = spokenRef.current;
+      if (sp.armed && (sp.id === null || sp.id === message.id)) {
+        const text = assistantText(message);
+        const rest = text.slice(sp.id === message.id ? sp.offset : 0);
+        if (rest.trim()) speakRef.current(rest);
+      }
+      spokenRef.current = { id: null, offset: 0, armed: false };
     },
   });
 
@@ -73,10 +81,31 @@ export function CopilotButton() {
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
 
   const busy = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    const sp = spokenRef.current;
+    if (!sp.armed || status !== "streaming") return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "assistant") return;
+    if (sp.id !== last.id) { sp.id = last.id; sp.offset = 0; }
+    const text = assistantText(last);
+    const pending = text.slice(sp.offset);
+    // Corta na última pontuação forte; a primeira frase sai rápido, as demais em blocos maiores.
+    const re = /[.!?…:;](\s|$)|\n/g;
+    let cut = -1;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(pending))) cut = m.index + 1;
+    const min = sp.offset === 0 ? 12 : 40;
+    if (cut >= min) {
+      speakRef.current(pending.slice(0, cut));
+      sp.offset += cut;
+    }
+  }, [messages, status]);
   const orbState = voice.state === "listening" || voice.state === "transcribing" ? voice.state : busy ? "thinking" : voice.state;
 
   useEffect(() => {
     if (!finalTranscript || busy) return;
+    spokenRef.current = { id: null, offset: 0, armed: true };
     sendMessage({ text: finalTranscript });
     setFinalTranscript("");
     setInput("");
@@ -85,12 +114,14 @@ export function CopilotButton() {
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || busy) return;
+    voice.unlockAudio();
+    spokenRef.current = { id: null, offset: 0, armed: true };
     sendMessage({ text: input.trim() });
     setInput("");
   }
 
   function newConversation() {
-    window.speechSynthesis?.cancel();
+    voice.stopSpeaking();
     setMessages([]);
     setInitial([]);
     if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY);
