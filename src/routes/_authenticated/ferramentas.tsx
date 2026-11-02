@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Segmented } from "@/components/segmented";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DeleteAction } from "@/components/delete-action";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { Copy, FileText, FolderTree, Loader2, Plus } from "lucide-react";
+import { Copy, FileText, FolderTree, Loader2, Plus, FileSignature, Calculator, Sparkles, ShieldCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/stat-card";
 import { toast } from "sonner";
 import { ContractGenerator, PriceCalculator, HookGenerator, QualityChecklist } from "@/components/agency-tools";
 
@@ -23,38 +24,61 @@ export const Route = createFileRoute("/_authenticated/ferramentas")({
   head: () => ({
     meta: [
       { title: "Ferramentas — AlvasharFlow" },
-      { name: "description", content: "Propostas pré-prontas e organizador de pastas para clientes." },
+      { name: "description", content: "Contrato, preço e margem, ganchos com IA, checklist de qualidade, propostas e pastas da agência." },
       { property: "og:title", content: "Ferramentas — AlvasharFlow" },
-      { property: "og:description", content: "Modelos de proposta com variáveis e estrutura de pastas por cliente." },
+      { property: "og:description", content: "Contrato, preço e margem, ganchos com IA, checklist de qualidade, propostas e pastas da agência." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
 });
 
+type ToolId = "contrato" | "preco" | "ganchos" | "cq" | "propostas" | "pastas";
+
+const TOOLS: { id: ToolId; label: string; hint: string; icon: typeof FileText }[] = [
+  { id: "contrato", label: "Contrato", hint: "Com dados do cliente", icon: FileSignature },
+  { id: "preco", label: "Preço e margem", hint: "Quanto cobrar", icon: Calculator },
+  { id: "ganchos", label: "Ganchos IA", hint: "Primeiros 3 segundos", icon: Sparkles },
+  { id: "cq", label: "Qualidade", hint: "Antes de entregar", icon: ShieldCheck },
+  { id: "propostas", label: "Propostas", hint: "Textos prontos", icon: FileText },
+  { id: "pastas", label: "Pastas", hint: "Estrutura no Drive", icon: FolderTree },
+];
+
 function FerramentasPage() {
-  const [tab, setTab] = useState<"propostas" | "pastas" | "contrato" | "preco" | "ganchos" | "cq">("contrato");
+  const [tab, setTab] = useState<ToolId>("contrato");
   return (
     <div className="p-6 md:p-8">
-      <PageHeader
-        title="Ferramentas"
-        subtitle="Contratos, preços, ganchos, qualidade, propostas e pastas"
-        actions={
-          <Segmented
-            value={tab}
-            onChange={setTab}
-            options={[
-              { value: "contrato", label: "Contrato" },
-              { value: "preco", label: "Preço" },
-              { value: "ganchos", label: "Ganchos IA" },
-              { value: "cq", label: "Qualidade" },
-              { value: "propostas", label: "Propostas", icon: <FileText className="h-3.5 w-3.5" /> },
-              { value: "pastas", label: "Pastas", icon: <FolderTree className="h-3.5 w-3.5" /> },
-            ]}
-          />
-        }
-      />
-      <div className="mt-6">{tab === "contrato" ? <ContractGenerator /> : tab === "preco" ? <PriceCalculator /> : tab === "ganchos" ? <HookGenerator /> : tab === "cq" ? <QualityChecklist /> : tab === "propostas" ? <Proposals /> : <DriveOrganizer />}</div>
+      <PageHeader title="Ferramentas" subtitle="Tudo o que a agência usa no dia a dia, num só lugar" />
+      <div role="tablist" aria-label="Ferramentas" className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+        {TOOLS.map((t) => {
+          const active = t.id === tab;
+          return (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "group flex items-start gap-3 rounded-2xl border p-3 text-left transition duration-300",
+                active
+                  ? "border-primary/60 bg-primary/10 shadow-[0_0_30px_-12px_var(--primary)]"
+                  : "border-border/60 bg-landing-panel/50 hover:border-primary/30 hover:bg-landing-panel/80",
+              )}
+            >
+              <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ring-inset transition", active ? "bg-primary text-primary-foreground ring-primary/40" : "bg-landing text-muted-foreground ring-border/60 group-hover:text-primary")}>
+                <t.icon className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className={cn("block truncate text-sm font-semibold", active ? "text-foreground" : "text-foreground/85")}>{t.label}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">{t.hint}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <div key={tab} className="mt-5 animate-in fade-in slide-in-from-bottom-1 duration-300">
+        {tab === "contrato" ? <ContractGenerator /> : tab === "preco" ? <PriceCalculator /> : tab === "ganchos" ? <HookGenerator /> : tab === "cq" ? <QualityChecklist /> : tab === "propostas" ? <Proposals /> : <DriveOrganizer />}
+      </div>
     </div>
   );
 }
@@ -98,13 +122,14 @@ function Proposals() {
 
   const save = useMutation({
     mutationFn: async (form: { id?: string; category: string; title: string; body: string }) => {
+      if (!me?.workspaceId) throw new Error("Agência ainda carregando. Tente de novo em instantes.");
       if (form.id) {
         const { error } = await supabase.from("proposal_templates")
           .update({ category: form.category, title: form.title, body: form.body }).eq("id", form.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("proposal_templates").insert({
-          workspace_id: me?.workspaceId ?? "", category: form.category, title: form.title, body: form.body,
+          workspace_id: me!.workspaceId!, category: form.category, title: form.title, body: form.body,
         });
         if (error) throw error;
       }
@@ -135,9 +160,7 @@ function Proposals() {
       </Card>
 
       {byCategory.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-          Nenhuma proposta salva ainda. Crie a primeira para reaproveitar em novos clientes.
-        </div>
+        <EmptyState icon={FileText} title="Nenhuma proposta salva ainda" hint="Crie a primeira para reaproveitar em novos clientes." className="py-10" />
       )}
 
       {byCategory.map(([category, items]) => (
@@ -145,7 +168,7 @@ function Proposals() {
           <p className="mb-3 font-display text-sm font-semibold">{category}</p>
           <div className="space-y-2">
             {items.map((p) => (
-              <div key={p.id} className="rounded-lg border border-border/70 p-3">
+              <div key={p.id} className="rounded-xl border border-border/60 bg-landing/60 p-3 transition hover:border-primary/40">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-medium">{p.title}</p>
@@ -259,7 +282,7 @@ function DriveOrganizer() {
         </p>
         <ul className="mt-3 space-y-1.5">
           {template.map((folder) => (
-            <li key={folder} className="flex items-center gap-2 rounded-md border border-border/70 px-3 py-2 text-sm">
+            <li key={folder} className="flex items-center gap-2 rounded-xl border border-border/60 bg-landing/60 px-3 py-2 text-sm">
               <FolderTree className="h-3.5 w-3.5 text-muted-foreground" />{folder}
             </li>
           ))}

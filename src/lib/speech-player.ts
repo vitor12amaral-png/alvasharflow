@@ -39,6 +39,8 @@ export class SpeechQueue {
   private controller: AbortController | null = null;
   private generation = 0;
   private buf = new Uint8Array(256);
+  /** Sem créditos/permissão: usa a voz do navegador até recarregar a página. */
+  private blocked = false;
   onActive: (active: boolean) => void = () => {};
   onFallback: (text: string) => void = () => {};
 
@@ -72,6 +74,7 @@ export class SpeechQueue {
   enqueue(text: string) {
     const clean = cleanForSpeech(text);
     if (!clean) return;
+    if (this.blocked) { this.onFallback(clean); return; }
     this.queue.push(clean);
     this.onActive(true);
     void this.run();
@@ -104,6 +107,7 @@ export class SpeechQueue {
           await this.synthesize(text, gen);
         } catch (e) {
           if (gen !== this.generation || (e instanceof DOMException && e.name === "AbortError")) return;
+          if (e instanceof Error && /TTS (401|402|403)/.test(e.message)) this.blocked = true;
           // Neural voice failed: speak the rest with the browser voice so the answer is never silent.
           const rest = [text, ...this.queue].join(" ");
           this.queue = [];

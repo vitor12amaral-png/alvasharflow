@@ -130,7 +130,7 @@ export function CopilotButton() {
   return (
     <Sheet open={open} onOpenChange={(v) => (v ? toggleDock("copilot") : closeDock())}>
       {showLauncher && !orbHidden && (
-        <div className="fixed bottom-5 left-1/2 z-40 flex -translate-x-1/2 flex-col items-center gap-2">
+        <div className="fixed bottom-20 left-1/2 z-40 flex -translate-x-1/2 flex-col items-center gap-2 lg:bottom-5">
           {(orbState !== "idle" || voice.error) && (
             <div className="animate-rise max-w-sm truncate rounded-full border border-primary/25 bg-popover/80 px-4 py-1.5 text-xs text-foreground shadow-[var(--floating-shadow)] backdrop-blur-xl">
               {voice.error && orbState === "idle" ? <span className="text-destructive">{voice.error}</span>

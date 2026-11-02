@@ -149,7 +149,7 @@ function WhatsappPage() {
         <Card className="flex max-h-[70vh] flex-col overflow-hidden p-0">
           <div className="border-b border-border p-2">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar conversa" className="h-9 pl-8" />
             </div>
           </div>
