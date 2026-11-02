@@ -17,3 +17,5 @@
 - Finance figures come from a shared pure helper: month value follows competence month, package usage counts linked videos (legacy unlinked ones by client family and creation date within the package period), so finance never depends on the old quota counter.
 - Copilot voice records with MediaRecorder and transcribes via /api/transcribe (browser speech recognition is unreliable in embedded previews); chat auth headers are read per request.
 - The signed-in app uses a top navigation bar with grouped dropdowns and a framed glass content panel, mirroring the landing-page product mockup so the app and sales page feel like one product.
+- Copilot speech streams sentence-by-sentence to /api/tts (neural voice, PCM over SSE) through a shared ordered queue, falling back to browser speech when the service is unavailable, so replies start fast and are never silent.
+- Agency calculator math lives in a pure price-calculator module separate from client pricing resolution, so tool changes never affect batch/finance pricing.
