@@ -1,51 +1,64 @@
-export type PriceInputs = {
-  /** Custo por hora do editor (R$). */
-  hourly: number;
-  /** Horas gastas por vídeo. */
-  hours: number;
-  /** Vídeos no pacote. */
-  videos: number;
-  /** Despesas fixas do mês (R$), rateadas pelos vídeos do pacote. */
-  fixed: number;
-  /** Margem desejada sobre o preço líquido (%). */
-  margin: number;
-  /** Impostos sobre o preço final (%). */
-  tax: number;
+import { supabase } from "@/integrations/supabase/client";
+
+export type PricingInfo = {
+  packageId: string | null;
+  pricePerVideo: number;
+  source: "pacote" | "avulso" | "indefinido";
+  clientName: string;
 };
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
+/** Resolve quanto vale cada vídeo de um cliente: pacote ativo > valor avulso do cliente. */
+export async function resolveClientPricing(clientId: string): Promise<PricingInfo> {
+  const [{ data: pkg }, { data: client }] = await Promise.all([
+    supabase
+      .from("client_packages")
+      .select("id, price, total_videos, price_per_video")
+      .eq("client_id", clientId)
+      .eq("status", "ativo")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase.from("clients").select("name, price_per_video, parent_client_id").eq("id", clientId).maybeSingle(),
+  ]);
 
-/** Preço por vídeo que cobre custo, impostos e entrega a margem pedida. */
-export function priceFor(p: PriceInputs, videos = p.videos) {
-  const n = Math.max(1, videos);
-  const costPerVideo = p.hourly * p.hours + p.fixed / n;
-  const keep = 1 - Math.min(95, p.margin) / 100 - Math.min(50, p.tax) / 100;
-  const pricePerVideo = costPerVideo / Math.max(0.05, keep);
-  const packagePrice = pricePerVideo * n;
-  const profit = packagePrice * (1 - p.tax / 100) - costPerVideo * n;
-  const netPerVideo = pricePerVideo * (1 - p.tax / 100) - p.hourly * p.hours;
-  const breakEven = netPerVideo > 0 ? Math.ceil(p.fixed / netPerVideo) : Infinity;
-  return {
-    costPerVideo: round2(costPerVideo),
-    pricePerVideo: round2(pricePerVideo),
-    packagePrice: round2(packagePrice),
-    profit: round2(profit),
-    breakEven: Number.isFinite(breakEven) ? breakEven : 0,
-  };
+  let packageId = pkg?.id ?? null;
+  let perVideo = suggestPerVideo(pkg?.price_per_video, pkg?.price, pkg?.total_videos);
+
+  // Sub-cliente: usa o pacote do cliente-mãe
+  if (!packageId && client?.parent_client_id) {
+    const { data: parentPkg } = await supabase
+      .from("client_packages")
+      .select("id, price, total_videos, price_per_video")
+      .eq("client_id", client.parent_client_id)
+      .eq("status", "ativo")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (parentPkg) {
+      packageId = parentPkg.id;
+      perVideo = suggestPerVideo(parentPkg.price_per_video, parentPkg.price, parentPkg.total_videos);
+    }
+  }
+
+  if (perVideo > 0) {
+    return { packageId, pricePerVideo: perVideo, source: "pacote", clientName: client?.name ?? "" };
+  }
+  const avulso = Number(client?.price_per_video ?? 0);
+  if (avulso > 0) {
+    return { packageId, pricePerVideo: avulso, source: "avulso", clientName: client?.name ?? "" };
+  }
+  return { packageId, pricePerVideo: 0, source: "indefinido", clientName: client?.name ?? "" };
 }
 
-const SIZES = [4, 10, 20, 30];
-const DISCOUNT: Record<number, number> = { 4: 0, 10: 0, 20: 5, 30: 10 };
-const MIN_MARGIN = 15;
-
-/** Tabela de pacotes com desconto progressivo, sem deixar a margem cair abaixo de 15%. */
-export function packageTable(p: PriceInputs) {
-  const sizes = Array.from(new Set([...SIZES, p.videos])).filter((v) => v > 0).sort((a, b) => a - b).slice(0, 5);
-  return sizes.map((videos) => {
-    const discount = DISCOUNT[videos] ?? (videos >= 30 ? 10 : videos >= 20 ? 5 : 0);
-    const margin = Math.max(MIN_MARGIN, p.margin - discount);
-    const effective = Math.min(discount, p.margin - margin);
-    const r = priceFor({ ...p, margin }, videos);
-    return { videos, price: r.packagePrice, perVideo: r.pricePerVideo, profit: r.profit, discount: Math.max(0, effective) };
-  });
+export function suggestPerVideo(
+  explicit: number | string | null | undefined,
+  price: number | string | null | undefined,
+  totalVideos: number | null | undefined,
+): number {
+  const e = Number(explicit ?? 0);
+  if (e > 0) return e;
+  const p = Number(price ?? 0);
+  const t = Number(totalVideos ?? 0);
+  if (p > 0 && t > 0) return Math.round((p / t) * 100) / 100;
+  return 0;
 }

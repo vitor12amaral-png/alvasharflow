@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { priceFor, packageTable } from "./pricing";
+import { priceFor, packageTable } from "./price-calculator";
 
 const base = { hourly: 40, hours: 2, videos: 10, fixed: 300, margin: 40, tax: 0 };
 

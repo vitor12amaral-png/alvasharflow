@@ -18,7 +18,7 @@ import { generateHooks, type Hook } from "@/lib/hooks.functions";
 import { formatBRL } from "@/lib/format";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { cn } from "@/lib/utils";
-import { priceFor, packageTable, type PriceInputs } from "@/lib/pricing";
+import { priceFor, packageTable, type PriceInputs } from "@/lib/price-calculator";
 
 /* ---------- utilidades ---------- */
 
