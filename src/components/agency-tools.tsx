@@ -236,7 +236,7 @@ export function PriceCalculator() {
           <p className="text-[11px] leading-relaxed text-muted-foreground">Despesas fixas são divididas pelos vídeos do pacote. Impostos incidem sobre o preço final.</p>
         </Card>
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             <StatCard label="Custo por vídeo" value={formatBRL(r.costPerVideo)} tone="muted" icon={Calculator} />
             <StatCard label="Preço por vídeo" value={formatBRL(r.pricePerVideo)} note={`${p.margin}% margem`} icon={Sparkles} />
             <StatCard label="Preço do pacote" value={formatBRL(r.packagePrice)} note={`${p.videos} vídeos`} />

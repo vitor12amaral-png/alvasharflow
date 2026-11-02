@@ -36,12 +36,12 @@ export const Route = createFileRoute("/_authenticated/ferramentas")({
 type ToolId = "contrato" | "preco" | "ganchos" | "cq" | "propostas" | "pastas";
 
 const TOOLS: { id: ToolId; label: string; hint: string; icon: typeof FileText }[] = [
-  { id: "contrato", label: "Contrato", hint: "Gerado com os dados do cliente", icon: FileSignature },
-  { id: "preco", label: "Preço e margem", hint: "Quanto cobrar por pacote", icon: Calculator },
-  { id: "ganchos", label: "Ganchos com IA", hint: "Primeiros 3 segundos", icon: Sparkles },
-  { id: "cq", label: "Controle de qualidade", hint: "Checklist antes de entregar", icon: ShieldCheck },
-  { id: "propostas", label: "Propostas", hint: "Textos prontos com variáveis", icon: FileText },
-  { id: "pastas", label: "Pastas", hint: "Estrutura padrão no Drive", icon: FolderTree },
+  { id: "contrato", label: "Contrato", hint: "Com dados do cliente", icon: FileSignature },
+  { id: "preco", label: "Preço e margem", hint: "Quanto cobrar", icon: Calculator },
+  { id: "ganchos", label: "Ganchos IA", hint: "Primeiros 3 segundos", icon: Sparkles },
+  { id: "cq", label: "Qualidade", hint: "Antes de entregar", icon: ShieldCheck },
+  { id: "propostas", label: "Propostas", hint: "Textos prontos", icon: FileText },
+  { id: "pastas", label: "Pastas", hint: "Estrutura no Drive", icon: FolderTree },
 ];
 
 function FerramentasPage() {

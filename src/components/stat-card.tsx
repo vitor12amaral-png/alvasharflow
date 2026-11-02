@@ -45,9 +45,9 @@ export function StatCard({
           </span>
         )}
       </div>
-      <div className="mt-1 flex items-end justify-between gap-2">
-        <p className="truncate font-display text-2xl font-semibold tracking-tight">{value}</p>
-        {note && <span className={cn("shrink-0 pb-1 text-[11px] font-semibold", toneText[tone])}>{note}</span>}
+      <div className="mt-1 flex flex-wrap items-end justify-between gap-x-2">
+        <p className="whitespace-nowrap font-display text-2xl font-semibold tracking-tight">{value}</p>
+        {note && <span className={cn("pb-1 text-[11px] font-semibold", toneText[tone])}>{note}</span>}
       </div>
       {typeof progress === "number" && (
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-landing ring-1 ring-inset ring-border/50">
