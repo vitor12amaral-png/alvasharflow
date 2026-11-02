@@ -59,7 +59,7 @@ function VideosPage() {
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1 max-w-sm">
-          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute z-10 top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por título…" className="pl-9" />
         </div>
         <Select value={status} onValueChange={setStatus}>
