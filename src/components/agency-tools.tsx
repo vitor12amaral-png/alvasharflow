@@ -240,7 +240,7 @@ export function PriceCalculator() {
             <StatCard label="Custo por vídeo" value={formatBRL(r.costPerVideo)} tone="muted" icon={Calculator} />
             <StatCard label="Preço por vídeo" value={formatBRL(r.pricePerVideo)} note={`${p.margin}% margem`} icon={Sparkles} />
             <StatCard label="Preço do pacote" value={formatBRL(r.packagePrice)} note={`${p.videos} vídeos`} />
-            <StatCard label="Lucro no pacote" value={formatBRL(r.profit)} tone={r.profit > 0 ? "success" : "danger"} note={r.breakEven ? `empata com ${r.breakEven}` : undefined} />
+            <StatCard label="Lucro no pacote" value={formatBRL(r.profit)} tone={r.profit > 0 ? "success" : "danger"} note={r.breakEven ? `empata em ${r.breakEven} vídeos` : undefined} />
           </div>
           <Card className="p-5">
             <div className="mb-3 flex items-center justify-between">
