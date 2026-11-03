@@ -66,8 +66,8 @@ function Logo() {
 
 function Nav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/50 bg-landing/70 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+    <header className="sticky top-0 z-40 ">
+      <div className="glass-apple mx-auto mt-3 flex max-w-5xl rounded-full !py-2.5 items-center justify-between px-6 py-4">
         <Logo />
         <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
           <a href="#recursos" className="transition-colors hover:text-foreground">Recursos</a>
@@ -75,7 +75,7 @@ function Nav() {
           <a href="#planos" className="transition-colors hover:text-foreground">Planos</a>
           <Link to="/auth" className="transition-colors hover:text-foreground">Entrar</Link>
         </nav>
-        <Link to="/auth" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[0_0_24px_-6px_var(--primary)] transition-transform hover:scale-[1.03]">
+        <Link to="/auth" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] transition-transform hover:scale-[1.03]">
           Testar grátis <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
@@ -86,15 +86,13 @@ function Nav() {
 function Hero() {
   return (
     <section className="relative">
-      {/* light ray */}
-      <div aria-hidden className="pointer-events-none absolute -top-20 left-[8%] h-[520px] w-40 -rotate-[28deg] bg-gradient-to-b from-foreground/10 to-transparent blur-2xl" />
       <div className="relative mx-auto max-w-4xl px-6 pt-24 text-center md:pt-32">
         <a href="#recursos" className="animate-rise inline-flex items-center gap-2 rounded-full border border-border/70 bg-landing-panel/80 py-1 pr-3 pl-1 text-xs backdrop-blur">
           <span className="rounded-full bg-primary px-2.5 py-0.5 font-semibold text-primary-foreground">Novo</span>
           <span>Copiloto por voz</span>
           <ChevronRight className="h-3 w-3 text-muted-foreground" />
         </a>
-        <h1 className="animate-rise mt-7 font-display text-5xl leading-[1.05] font-semibold tracking-tight [animation-delay:80ms] md:text-7xl">
+        <h1 className="animate-rise mt-7 font-display text-5xl leading-[1.05] font-semibold tracking-[-0.025em] [animation-delay:80ms] md:text-7xl">
           Sua produção de vídeos,
           <br />
           <span className="text-arctic">organizada de verdade.</span>
@@ -106,7 +104,7 @@ function Hero() {
           <a href="#recursos" className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-medium text-foreground/90 transition-colors hover:text-foreground">
             Ver recursos <ArrowRight className="h-3.5 w-3.5" />
           </a>
-          <Link to="/auth" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_0_36px_-6px_var(--primary)] transition-transform hover:scale-[1.03]">
+          <Link to="/auth" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] transition-transform hover:scale-[1.03]">
             Começar 30 dias grátis <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
@@ -114,10 +112,10 @@ function Hero() {
 
       {/* planet horizon */}
       <div className="relative mx-auto -mt-4 h-[300px] max-w-6xl overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_70px)] md:h-[380px]">
-        <div aria-hidden className="absolute left-1/2 top-20 aspect-square w-[min(820px,120vw)] -translate-x-1/2 rounded-full p-[2px] [background:var(--gradient-rim)] shadow-[0_-30px_120px_-20px_var(--primary-glow)]">
+        <div aria-hidden className="absolute left-1/2 top-20 aspect-square w-[min(820px,120vw)] -translate-x-1/2 rounded-full p-[1.5px] [background:radial-gradient(60%_40%_at_50%_0%,var(--primary),oklch(1_0_0/0.12)_45%,transparent_75%)]">
           <div className="h-full w-full rounded-full bg-landing" />
         </div>
-        <div aria-hidden className="absolute left-1/2 top-24 h-40 w-[60%] -translate-x-1/2 rounded-[50%] bg-primary/20 blur-3xl" />
+        <div aria-hidden className="absolute left-1/2 top-[78px] h-px w-40 -translate-x-1/2 bg-gradient-to-r from-transparent via-foreground to-transparent" />
       </div>
 
       {/* product mockup */}
@@ -211,7 +209,7 @@ function Niches() {
 }
 
 function Card({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("relative overflow-hidden rounded-2xl border border-border/60 bg-landing-panel/70 p-6", className)}>{children}</div>;
+  return <div className={cn("relative overflow-hidden panel-apple rounded-2xl p-6", className)}>{children}</div>;
 }
 
 function Bento() {
@@ -226,8 +224,12 @@ function Bento() {
           <h3 className="text-center font-display text-lg font-semibold">Levas por mês</h3>
           <p className="mt-1 text-center text-sm text-muted-foreground">Crie 30 vídeos de uma vez, já no mês certo.</p>
           <div className="mt-6 space-y-2">
-            <div className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-[0_0_24px_-4px_var(--primary)]"><Layers3 className="h-3.5 w-3.5" /> Roney · 30 Reels · Novembro</div>
-            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-landing px-3 py-2 text-xs"><Layers3 className="h-3.5 w-3.5 text-muted-foreground" /> Bruna · 12 cortes · Novembro</div>
+            {[["Roney · Reels 12", "Roteiro", "bg-warning"], ["Bruna · Corte 04", "Edição", "bg-primary"], ["Lucas · Reels 07", "Aprovado", "bg-success"]].map(([t, st, dot]) => (
+              <div key={t} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]">
+                <span className="flex items-center gap-2"><Layers3 className="h-3.5 w-3.5 text-muted-foreground" /> {t}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] px-2 py-0.5 text-[10px] text-muted-foreground"><span className={cn("h-1 w-1 rounded-full", dot)} /> {st}</span>
+              </div>
+            ))}
           </div>
         </Card>
         <Card>
@@ -240,8 +242,8 @@ function Bento() {
           </div>
         </Card>
         <Card className="md:row-span-2 flex flex-col items-center">
-          <div aria-hidden className="absolute left-1/2 top-0 h-44 w-48 -translate-x-1/2 [background:var(--gradient-beam)] [clip-path:polygon(0_0,100%_0,62%_100%,38%_100%)]" />
-          <div className="relative mt-36 flex h-16 w-16 items-center justify-center rounded-2xl border border-border/70 bg-landing shadow-[0_0_40px_-6px_var(--primary)]">
+          <div aria-hidden className="absolute left-1/2 top-16 h-40 w-40 -translate-x-1/2 rounded-full border border-white/[0.06] [background:radial-gradient(circle_at_50%_30%,rgb(255_255_255/0.06),transparent_70%)]" />
+          <div className="relative mt-36 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-landing shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_20px_40px_-12px_rgb(0_0_0/0.9)] transition-transform hover:scale-105">
             <Mic className="h-7 w-7 text-primary" />
           </div>
           <div className="mt-auto pt-10 text-center">
@@ -320,7 +322,7 @@ function TeamVisual() {
       <div className="mt-6 flex h-40 items-end gap-6">
         {team.map(([n, h]) => (
           <div key={n} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-            <div className={cn("w-full rounded-t-lg", h > 40 ? "bg-destructive/80" : "bg-arctic shadow-[0_0_24px_-6px_var(--primary)]")} style={{ height: `${(h / 45) * 100}%` }} />
+            <div className={cn("w-full rounded-t-lg", h > 40 ? "bg-destructive/80" : "bg-arctic shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]")} style={{ height: `${(h / 45) * 100}%` }} />
             <span className="text-xs text-muted-foreground">{n} · {h}h</span>
           </div>
         ))}
@@ -366,7 +368,7 @@ function FinalCta() {
           <div>
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Organize o próximo mês hoje.</h2>
             <p className="mt-3 text-muted-foreground">Cadastre seus clientes e crie a primeira leva em menos de 5 minutos.</p>
-            <Link to="/auth" className="mt-7 inline-flex items-center gap-1.5 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_0_36px_-6px_var(--primary)] transition-transform hover:scale-[1.03]">
+            <Link to="/auth" className="mt-7 inline-flex items-center gap-1.5 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] transition-transform hover:scale-[1.03]">
               Começar 30 dias grátis <ArrowRight className="h-4 w-4" />
             </Link>
             <p className="mt-3 text-xs text-muted-foreground">Sem cartão · cancele quando quiser</p>
