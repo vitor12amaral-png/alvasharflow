@@ -209,7 +209,7 @@ function Niches() {
 }
 
 function Card({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("relative overflow-hidden rounded-2xl border border-border/60 bg-landing-panel/70 p-6", className)}>{children}</div>;
+  return <div className={cn("relative overflow-hidden panel-apple rounded-2xl p-6", className)}>{children}</div>;
 }
 
 function Bento() {
