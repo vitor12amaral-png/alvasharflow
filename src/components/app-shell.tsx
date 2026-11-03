@@ -182,17 +182,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-landing">
-      {/* Atmosfera da landing: arco de horizonte + feixe de luz */}
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[420px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_40%,transparent)]">
-        <div className="absolute left-1/2 top-[140px] aspect-square w-[min(1400px,160vw)] -translate-x-1/2 rounded-full p-[1.5px] opacity-70 [background:var(--gradient-rim)] shadow-[0_-30px_140px_-20px_var(--primary-glow)]">
-          <div className="h-full w-full rounded-full bg-landing" />
-        </div>
-        <div className="absolute left-1/2 top-[120px] h-40 w-[50%] -translate-x-1/2 rounded-[50%] bg-primary/15 blur-3xl" />
-      </div>
-      <div aria-hidden className="pointer-events-none fixed -top-20 left-[12%] z-0 h-[520px] w-40 -rotate-[28deg] bg-gradient-to-b from-foreground/[0.05] to-transparent blur-2xl" />
+      {/* Fio de luz fino no topo — sem névoa */}
+      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
 
-      {/* Barra superior no estilo do mockup */}
-      <header className="sticky top-0 z-30 border-b border-border/50 bg-landing/70 backdrop-blur-2xl">
+      {/* Barra superior em vidro Apple */}
+      <header className="glass-apple sticky top-0 z-30 !rounded-none !border-x-0 !border-t-0">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
           <Link to="/workflow" className="flex shrink-0 items-center gap-2">
             {brand.logo_url ? (

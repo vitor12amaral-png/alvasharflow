@@ -56,7 +56,7 @@
 /* Dark by default — this is a management suite */
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.11 0.02 245);
+  --background: oklch(0.12 0.012 250);
   --foreground: oklch(0.98 0.005 260);
   --card: oklch(0.15 0.025 242 / 70%);
   --card-foreground: oklch(0.98 0.005 260);
@@ -67,14 +67,14 @@
   --secondary: oklch(0.25 0.045 240);
   --secondary-foreground: oklch(0.98 0.005 260);
   --muted: oklch(0.235 0.04 240);
-  --muted-foreground: oklch(0.76 0.03 230);
+  --muted-foreground: oklch(0.72 0.02 250);
   --accent: oklch(0.31 0.07 245);
   --accent-foreground: oklch(0.98 0.005 260);
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0.005 260);
   --success: oklch(0.72 0.17 155);
   --warning: oklch(0.78 0.16 75);
-  --border: oklch(0.80 0.08 220 / 12%);
+  --border: oklch(1 0 0 / 8%);
   --input: oklch(1 0 0 / 10%);
   --ring: oklch(0.72 0.13 212 / 60%);
   --chart-1: oklch(0.72 0.13 212);
@@ -100,7 +100,7 @@
   --glass-surface: oklch(0.22 0.04 240 / 62%);
   --glass-surface-strong: oklch(0.19 0.035 240 / 88%);
   --glass-control: oklch(0.26 0.016 255 / 48%);
-  --glass-border: oklch(0.82 0.09 215 / 14%);
+  --glass-border: oklch(1 0 0 / 8%);
   --glass-highlight: oklch(1 0 0 / 5%);
   --glass-shadow: 0 18px 46px -34px oklch(0 0 0 / 0.72), inset 0 1px 0 oklch(1 0 0 / 0.04);
   --floating-shadow: 0 24px 70px -34px oklch(0 0 0 / 0.88), inset 0 1px 0 oklch(1 0 0 / 0.06);
@@ -113,15 +113,6 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image:
-      radial-gradient(70rem 18rem at 50% -8%, oklch(0.72 0.13 212 / 0.24), transparent 70%),
-      radial-gradient(40rem 60rem at 6% -20%, oklch(0.97 0.02 220 / 0.05), transparent 60%),
-      radial-gradient(60rem 40rem at 85% -10%, oklch(0.59 0.17 252 / 0.18), transparent 70%),
-      radial-gradient(50rem 36rem at -10% 110%, oklch(0.72 0.13 212 / 0.14), transparent 70%),
-      linear-gradient(oklch(0.80 0.08 220 / 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(0.80 0.08 220 / 0.035) 1px, transparent 1px);
-    background-size: auto, auto, auto, auto, 56px 56px, 56px 56px;
-    background-attachment: fixed;
   }
   h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0; }
 }
@@ -283,8 +274,8 @@
 
 /* Landing — cinematic dark */
 :root {
-  --landing-bg: oklch(0.11 0.02 245);
-  --landing-panel: oklch(0.15 0.025 242);
+  --landing-bg: oklch(0.12 0.012 250);
+  --landing-panel: oklch(0.165 0.012 255);
   --gradient-planet: radial-gradient(closest-side, oklch(0.11 0.02 245) 92%, transparent 100%);
   --gradient-rim: conic-gradient(from 200deg at 50% 50%, transparent 0deg, oklch(0.72 0.13 212) 60deg, oklch(0.85 0.1 210) 90deg, oklch(0.59 0.17 252) 130deg, transparent 200deg);
   --gradient-beam: linear-gradient(180deg, oklch(0.72 0.13 212) 0%, oklch(0.59 0.17 252 / 60%) 45%, transparent 100%);
@@ -297,13 +288,25 @@
 /* Painel no idioma visual da landing: fundo profundo, fio de luz no topo */
 @utility panel-landing {
   position: relative;
-  border-color: var(--glass-border);
-  background:
-    linear-gradient(180deg, oklch(1 0 0 / 0.035), transparent 40%),
-    color-mix(in oklab, var(--landing-panel) 82%, transparent);
-  backdrop-filter: blur(20px) saturate(130%);
-  box-shadow: var(--glass-shadow), inset 0 1px 0 oklch(0.85 0.1 210 / 0.08);
+  border-color: rgb(255 255 255 / 0.08);
+  background: rgb(18 18 22 / 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.14), 0 20px 48px -12px rgb(0 0 0 / 0.8);
 }
+@utility panel-apple {
+  position: relative;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(18 18 22 / 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.14), 0 20px 48px -12px rgb(0 0 0 / 0.8);
+}
+@utility glass-apple {
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(14 14 18 / 0.62);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.1);
+}
+:root.theme-light .panel-apple, :root.theme-light .glass-apple { background: var(--card); border-color: var(--border); box-shadow: none; }
 :root.theme-light .panel-landing { background: var(--card); }
 /* Anel do horizonte da landing, usado como luz ambiente no app */
 @utility app-horizon {
@@ -317,7 +320,7 @@
   border-radius: 9999px;
   padding: 1px;
   background: var(--gradient-rim);
-  opacity: 0.35;
+  opacity: 0;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   filter: drop-shadow(0 20px 60px var(--primary-glow));
