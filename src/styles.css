@@ -306,8 +306,45 @@
   backdrop-filter: blur(20px) saturate(180%);
   box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.1);
 }
-:root.theme-light .panel-apple, :root.theme-light .glass-apple { background: var(--card); border-color: var(--border); box-shadow: none; }
+/* Cartão da referência: preto fosco, borda milimétrica e luz ciano só na borda de baixo */
+@utility card-ref {
+  position: relative;
+  border: 1px solid rgb(255 255 255 / 0.07);
+  background:
+    radial-gradient(90% 55% at 50% 115%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 70%),
+    rgb(13 13 16 / 0.82);
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.09), inset 0 -1px 0 0 color-mix(in oklab, var(--primary) 22%, transparent), 0 24px 50px -24px rgb(0 0 0 / 0.9);
+}
+/* Mini superfície interna (linhas, KPIs, itens) */
+@utility chip-ref {
+  border: 1px solid rgb(255 255 255 / 0.06);
+  background: rgb(255 255 255 / 0.025);
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+}
+/* Eclipse do herói: planeta escuro com aro de luz concentrado no topo */
+@utility eclipse-glow {
+  border-radius: 9999px;
+  box-shadow: 0 -18px 70px -6px color-mix(in oklab, var(--primary) 55%, transparent), 0 -4px 18px 0 color-mix(in oklab, var(--primary) 40%, transparent);
+  mask-image: linear-gradient(90deg, transparent 18%, #000 42%, #000 58%, transparent 82%);
+}
+@utility eclipse-rim {
+  border-radius: 9999px;
+  padding: 2px;
+  background: linear-gradient(90deg, transparent 12%, color-mix(in oklab, var(--primary) 70%, transparent) 32%, oklch(0.98 0.02 210) 50%, color-mix(in oklab, var(--primary) 70%, transparent) 68%, transparent 88%);
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+@utility eclipse-body {
+  border-radius: 9999px;
+  background: var(--landing-bg);
+  box-shadow: inset 0 40px 90px -50px color-mix(in oklab, var(--primary) 55%, transparent), inset 0 2px 6px -2px oklch(1 0 0 / 0.5);
+}
+@keyframes beam-pulse { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@utility animate-beam { animation: beam-pulse 4s ease-in-out infinite; }
+@keyframes float-soft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@utility animate-float { animation: float-soft 6s ease-in-out infinite; }
+:root.theme-light .panel-apple, :root.theme-light .glass-apple, :root.theme-light .card-ref { background: var(--card); border-color: var(--border); box-shadow: none; }
 :root.theme-light .panel-landing { background: var(--card); }
+:root.theme-light .chip-ref { background: var(--muted); border-color: var(--border); box-shadow: none; }
 /* Anel do horizonte da landing, usado como luz ambiente no app */
 @utility app-horizon {
   pointer-events: none;
