@@ -125,20 +125,19 @@ function Hero() {
       </div>
 
       {/* Eclipse: planeta escuro com aro de luz concentrado no zênite */}
-      <div aria-hidden className="relative z-10 mx-auto -mt-2 h-[260px] max-w-[1400px] overflow-hidden md:h-[330px]">
-        <div className="absolute left-1/2 top-[70px] aspect-square w-[min(1180px,150vw)] -translate-x-1/2">
+      <div aria-hidden className="relative z-10 mx-auto mt-6 h-[300px] max-w-[1400px] overflow-hidden md:h-[380px]">
+        <div className="absolute left-1/2 top-[90px] aspect-square w-[min(1000px,150vw)] -translate-x-1/2">
           <div className="eclipse-glow absolute inset-0" />
           <div className="eclipse-body absolute inset-0" />
           <div className="eclipse-rim absolute inset-0" />
-          <div className="absolute inset-[7%] rounded-full border-t border-foreground/[0.07]" />
+          <div className="absolute inset-[9%] rounded-full border-t border-foreground/[0.08]" />
         </div>
-        <div className="absolute left-1/2 top-[64px] h-[3px] w-48 -translate-x-1/2 rounded-full bg-foreground/80 blur-[3px]" />
-        <div className="absolute left-1/2 top-[69px] h-px w-72 -translate-x-1/2 bg-gradient-to-r from-transparent via-foreground to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-landing" />
+        <div className="absolute left-1/2 top-[89px] h-[2px] w-80 -translate-x-1/2 bg-gradient-to-r from-transparent via-foreground to-transparent" />
+        <div className="absolute left-1/2 top-[80px] h-5 w-[420px] -translate-x-1/2 rounded-[50%] bg-primary/25 blur-xl" />
       </div>
 
       {/* Painel do produto surgindo de trás do eclipse */}
-      <div className="relative z-20 mx-auto -mt-40 max-w-5xl px-6 md:-mt-52">
+      <div className="relative z-20 mx-auto -mt-[150px] max-w-5xl px-6 md:-mt-[170px]">
         <AppMockup />
       </div>
     </section>
