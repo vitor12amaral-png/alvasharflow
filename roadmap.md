@@ -99,3 +99,8 @@
    - [x] Microfone: transcrever toda gravação confirmada, mesmo voz baixa.
    - [x] Acabamento landing em todas as telas: indicadores, estados vazios, seletores, Clientes, Financeiro, Leads, Tarefas, mês.
    - [x] Ferramentas refeitas de ponta a ponta.
+
+18. Redesign translúcido (referência do vídeo)
+   - [x] Fundo preto limpo, vidro fino, sem névoa.
+   - [x] Página de vendas: arco de eclipse, painel do produto, grade de recursos, planos.
+   - [x] App: barra em pílula, títulos brancos, campos/abas/etiquetas/tabelas no novo estilo, sem brilho no menu e no mês.
