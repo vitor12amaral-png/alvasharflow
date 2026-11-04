@@ -73,7 +73,7 @@ function NavLinkRow({ item, pathname, suppressActive = false, onSelect }: { item
       className={cn(
         "group relative flex items-center gap-2.5 rounded-full px-3 py-2 text-[13px] transition-colors duration-150",
         active
-          ? "bg-primary/10 font-medium text-primary shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_22%,transparent),0_0_20px_-10px_var(--primary)]"
+          ? "bg-foreground/[0.06] font-medium text-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.08)]"
           : "text-foreground/90 hover:bg-sidebar-accent/55 hover:text-foreground",
       )}
     >
@@ -182,21 +182,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-landing">
-      {/* Fio de luz fino no topo — sem névoa */}
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-
-      {/* Barra superior em vidro Apple */}
-      <header className="glass-apple sticky top-0 z-30 !rounded-none !border-x-0 !border-t-0">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
+      {/* Barra superior em pílula de vidro, igual à da página de vendas */}
+      <header className="sticky top-0 z-30 px-2 pt-3 md:px-6">
+        <div className="glass-apple mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 rounded-full pr-2 pl-5 md:pl-6">
           <Link to="/workflow" className="flex shrink-0 items-center gap-2">
             {brand.logo_url ? (
               <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-7 w-7 rounded-md object-cover" />
             ) : null}
             <span className="font-display text-lg font-bold uppercase tracking-tight">{brand.brand_name}</span>
-            <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" />
+            <span className="h-2 w-2 rounded-full bg-primary" />
           </Link>
 
-          <nav className="hidden items-center gap-1 rounded-full border border-border/60 bg-landing-panel/60 p-1 lg:flex">
+          <nav className="hidden items-center gap-0.5 rounded-full p-1 lg:flex">
             {visibleGroups.map((group) => {
               const hasActive = group.items.some((i) => isActivePath(location.pathname, i.to));
               return (
@@ -206,7 +203,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       className={cn(
                         "flex items-center gap-1 rounded-full px-4 py-1.5 text-[13px] transition-colors",
                         hasActive
-                          ? "bg-primary/15 font-medium text-foreground shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_40%,transparent),0_0_18px_-6px_var(--primary)]"
+                          ? "bg-foreground/[0.07] font-medium text-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.1)]"
                           : "text-muted-foreground hover:text-foreground",
                       )}
                     >
@@ -257,7 +254,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-arctic text-[11px] font-semibold text-primary-foreground shadow-[0_0_18px_-4px_var(--primary)]" title={user.fullName ?? user.email ?? undefined}>
+                <button className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-deep text-[11px] font-semibold text-primary-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.3)]" title={user.fullName ?? user.email ?? undefined}>
                   {initials(user.fullName ?? user.email)}
                 </button>
               </DropdownMenuTrigger>
@@ -281,8 +278,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Moldura de vidro, igual ao mockup da landing */}
       <div className="relative z-10 mx-auto max-w-7xl px-2 pb-24 pt-6 md:px-6 md:pb-10">
-        <div className="rounded-3xl border border-border/70 bg-landing-panel/80 p-1.5 shadow-[0_50px_140px_-40px_oklch(0_0_0/0.9)] backdrop-blur-xl">
-          <main className="min-h-[calc(100vh-8rem)] rounded-[1.25rem] border border-border/60 bg-landing/80">{children}</main>
+        <div className="rounded-[26px] border border-foreground/[0.08] bg-landing/90 p-1.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.1),0_60px_140px_-50px_oklch(0_0_0/0.95)]">
+          <main className="min-h-[calc(100vh-8rem)] rounded-[20px] border border-foreground/[0.06] bg-landing">{children}</main>
         </div>
       </div>
 

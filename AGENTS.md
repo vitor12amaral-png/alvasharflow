@@ -19,3 +19,4 @@
 - The signed-in app uses a top navigation bar with grouped dropdowns and a framed glass content panel, mirroring the landing-page product mockup so the app and sales page feel like one product.
 - Copilot speech streams sentence-by-sentence to /api/tts (neural voice, PCM over SSE) through a shared ordered queue, falling back to browser speech when the service is unavailable, so replies start fast and are never silent.
 - Agency calculator math lives in a pure price-calculator module separate from client pricing resolution, so tool changes never affect batch/finance pricing.
+- Shared surface utilities in src/styles.css (card-ref, panel-landing, chip-ref, glass-apple, eclipse-*) style both the landing page and the signed-in app, so the two stay one visual language; prefer them over ad-hoc shadows/glows.
