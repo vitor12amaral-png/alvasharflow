@@ -336,9 +336,10 @@ function Bento() {
 
         {/* 3 — Copiloto: feixe de luz descendo sobre a lente */}
         <Card className="flex flex-col items-center md:row-span-2">
-          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[52%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] bg-gradient-to-b from-primary via-primary/70 to-primary/10" />
-          <div aria-hidden className="absolute inset-x-0 top-0 h-[52%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] [background:repeating-linear-gradient(100deg,transparent_0_14px,oklch(1_0_0/0.12)_14px_16px)]" />
-          <div className="relative mt-[44%] flex h-24 w-24 items-center justify-center rounded-[26px] border border-foreground/10 bg-landing shadow-[inset_0_1px_0_oklch(1_0_0/0.2),inset_0_-12px_24px_-12px_color-mix(in_oklab,var(--primary)_40%,transparent),0_24px_50px_-14px_oklch(0_0_0/0.95)] transition-transform hover:scale-105">
+          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] blur-md [clip-path:polygon(10%_0,90%_0,60%_100%,40%_100%)] bg-gradient-to-b from-primary/70 to-primary/30" />
+          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] bg-gradient-to-b from-primary via-primary/85 to-primary/40" />
+          <div aria-hidden className="absolute inset-x-0 top-0 h-[42%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] [background:repeating-conic-gradient(from_160deg_at_50%_100%,transparent_0deg_3deg,oklch(1_0_0/0.14)_3deg_4deg)]" />
+          <div className="absolute left-1/2 top-[38%] flex h-24 w-24 -translate-x-1/2 items-center justify-center rounded-[26px] border border-foreground/10 bg-landing shadow-[inset_0_1px_0_oklch(1_0_0/0.2),inset_0_-12px_24px_-12px_color-mix(in_oklab,var(--primary)_40%,transparent),0_24px_50px_-14px_oklch(0_0_0/0.95)] transition-transform hover:scale-105">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-b from-foreground/[0.14] to-transparent">
               <Mic className="h-7 w-7 text-foreground" />
             </div>
