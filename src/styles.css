@@ -381,6 +381,6 @@
     transition: border-color 160ms ease, box-shadow 180ms ease;
   }
   select:not([multiple]):not([size]):hover { border-color: color-mix(in oklab, var(--foreground) 18%, transparent); }
-  select:not([multiple]):not([size]):focus { outline: none; border-color: color-mix(in oklab, var(--primary) 72%, transparent); box-shadow: 0 0 0 2px var(--focus-glow); }
+  select:not([multiple]):not([size]):focus { outline: none; border-color: color-mix(in oklab, var(--primary) 65%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 45%, transparent); }
   select option { background-color: var(--popover); color: var(--popover-foreground); }
 }
