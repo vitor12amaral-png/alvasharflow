@@ -73,7 +73,7 @@ function NavLinkRow({ item, pathname, suppressActive = false, onSelect }: { item
       className={cn(
         "group relative flex items-center gap-2.5 rounded-full px-3 py-2 text-[13px] transition-colors duration-150",
         active
-          ? "bg-primary/10 font-medium text-primary shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_22%,transparent),0_0_20px_-10px_var(--primary)]"
+          ? "bg-foreground/[0.06] font-medium text-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.08)]"
           : "text-foreground/90 hover:bg-sidebar-accent/55 hover:text-foreground",
       )}
     >
@@ -193,10 +193,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               <img src={brand.logo_url} alt={`Logo ${brand.brand_name}`} className="h-7 w-7 rounded-md object-cover" />
             ) : null}
             <span className="font-display text-lg font-bold uppercase tracking-tight">{brand.brand_name}</span>
-            <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" />
+            <span className="h-2 w-2 rounded-full bg-primary" />
           </Link>
 
-          <nav className="hidden items-center gap-1 rounded-full border border-border/60 bg-landing-panel/60 p-1 lg:flex">
+          <nav className="hidden items-center gap-0.5 rounded-full p-1 lg:flex">
             {visibleGroups.map((group) => {
               const hasActive = group.items.some((i) => isActivePath(location.pathname, i.to));
               return (
@@ -206,7 +206,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       className={cn(
                         "flex items-center gap-1 rounded-full px-4 py-1.5 text-[13px] transition-colors",
                         hasActive
-                          ? "bg-primary/15 font-medium text-foreground shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_40%,transparent),0_0_18px_-6px_var(--primary)]"
+                          ? "bg-foreground/[0.07] font-medium text-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.1)]"
                           : "text-muted-foreground hover:text-foreground",
                       )}
                     >
@@ -257,7 +257,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-arctic text-[11px] font-semibold text-primary-foreground shadow-[0_0_18px_-4px_var(--primary)]" title={user.fullName ?? user.email ?? undefined}>
+                <button className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-deep text-[11px] font-semibold text-primary-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.3)]" title={user.fullName ?? user.email ?? undefined}>
                   {initials(user.fullName ?? user.email)}
                 </button>
               </DropdownMenuTrigger>

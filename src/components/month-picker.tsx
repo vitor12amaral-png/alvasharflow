@@ -40,8 +40,8 @@ export function MonthPicker({ className }: { className?: string }) {
         <ChevronLeft className="h-4 w-4" />
       </Button>
       <div className={cn(
-        "min-w-[160px] rounded-full border border-border/60 bg-landing-panel/60 px-3 py-1.5 text-center font-display text-sm",
-        isCurrent && "border-primary/40 bg-primary/10 font-semibold text-primary shadow-[0_0_18px_-8px_var(--primary)]",
+        "chip-ref min-w-[160px] rounded-full px-3 py-1.5 text-center font-display text-sm font-medium",
+        isCurrent && "text-foreground",
       )}>
         {label}
       </div>
