@@ -72,7 +72,7 @@ function PrimaryCta({ children, className }: { children: React.ReactNode; classN
     <Link
       to="/auth"
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground",
+        "btn-cta inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold",
         "shadow-[inset_0_1px_0_oklch(1_0_0/0.4),0_8px_24px_-10px_var(--primary)] transition-transform hover:scale-[1.03]",
         className,
       )}
@@ -104,7 +104,7 @@ function Hero() {
     <section className="relative">
       <div className="relative z-20 mx-auto max-w-4xl px-6 pt-24 text-center md:pt-28">
         <a href="#recursos" className="animate-rise chip-ref inline-flex items-center gap-2 rounded-full py-1 pr-3 pl-1 text-xs">
-          <span className="rounded-full bg-primary px-2.5 py-0.5 font-semibold text-primary-foreground">Novo</span>
+          <span className="rounded-full btn-cta px-2.5 py-0.5 font-semibold">Novo</span>
           <span className="text-foreground/90">Copiloto por voz</span>
           <ChevronRight className="h-3 w-3 text-muted-foreground" />
         </a>
@@ -133,7 +133,7 @@ function Hero() {
           <div className="absolute inset-[9%] rounded-full border-t border-foreground/[0.08]" />
         </div>
         <div className="absolute left-1/2 top-[89px] h-[2px] w-80 -translate-x-1/2 bg-gradient-to-r from-transparent via-foreground to-transparent" />
-        <div className="absolute left-1/2 top-[80px] h-5 w-[420px] -translate-x-1/2 rounded-[50%] bg-primary/25 blur-xl" />
+        <div className="absolute left-1/2 top-[80px] h-5 w-[420px] -translate-x-1/2 rounded-[50%] bg-violet/30 blur-xl" />
       </div>
 
       {/* Painel do produto surgindo de trás do eclipse */}
@@ -297,7 +297,7 @@ function Bento() {
         <Card className="flex flex-col pr-0">
           <div className="pr-6"><CardTitle title="Levas por mês" text="Crie 30 vídeos de uma vez, já no mês certo." /></div>
           <div className="relative mt-auto space-y-2 pb-1">
-            <div className="ml-4 flex items-center gap-2.5 rounded-l-xl bg-primary py-2.5 pr-4 pl-3 text-[11px] font-medium text-primary-foreground shadow-[0_10px_30px_-8px_var(--primary),inset_0_1px_0_oklch(1_0_0/0.35)]">
+            <div className="ml-4 flex items-center gap-2.5 rounded-l-xl btn-cta py-2.5 pr-4 pl-3 text-[11px] font-medium">
               <Layers3 className="h-3.5 w-3.5" /> <span className="font-semibold">RON-12</span>
               <span className="h-2.5 w-2.5 rounded-full border-2 border-primary-foreground/70" />
               <span className="truncate">Reels 12 · gancho novo</span>
@@ -380,7 +380,7 @@ function Bento() {
           const I = Icon as typeof Kanban;
           return (
             <div key={label as string} className={cn("card-ref flex items-center gap-3 rounded-2xl px-4 py-3.5", i === 1 && "border-primary/40")}>
-              <span className={cn("flex h-9 w-9 items-center justify-center rounded-full", i === 1 ? "bg-primary text-primary-foreground shadow-[0_6px_20px_-6px_var(--primary)]" : "chip-ref text-muted-foreground")}>
+              <span className={cn("flex h-9 w-9 items-center justify-center rounded-full", i === 1 ? "btn-cta" : "chip-ref text-muted-foreground")}>
                 <I className="h-4 w-4" />
               </span>
               <div>
@@ -440,7 +440,7 @@ function MonthVisual() {
       <div className="relative space-y-2.5">
         {rows.map((r) => (
           <div key={r.title} className={cn("flex items-center gap-4 rounded-2xl px-4 py-3.5", r.active ? "chip-ref" : "opacity-55")}>
-            <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full", r.active ? "bg-primary text-primary-foreground shadow-[0_8px_24px_-6px_var(--primary)]" : "chip-ref")}>
+            <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full", r.active ? "btn-cta" : "chip-ref")}>
               <r.icon className="h-5 w-5" />
             </span>
             <div>
@@ -493,7 +493,7 @@ function Pricing() {
                 to="/auth"
                 className={cn(
                   "mt-6 flex items-center justify-center rounded-full py-2.5 text-sm font-semibold transition-transform hover:scale-[1.02]",
-                  p.featured ? "bg-primary text-primary-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.4),0_10px_30px_-8px_var(--primary)]" : "chip-ref text-foreground",
+                  p.featured ? "btn-cta" : "chip-ref text-foreground",
                 )}
               >
                 Começar grátis
