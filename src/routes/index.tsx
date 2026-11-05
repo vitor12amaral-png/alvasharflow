@@ -485,7 +485,7 @@ function Pricing() {
       <div className="mt-14 grid gap-5 md:grid-cols-3 md:items-start">
         {PLANS.map((p) => (
           <div key={p.name} className={cn("rounded-[20px]", p.featured && "md:-mt-5")}>
-            <div className={cn("card-ref rounded-[20px] p-7", p.featured && "border-primary/70 shadow-[inset_0_1px_0_oklch(1_0_0/0.1),0_30px_80px_-40px_var(--primary)]")}>
+            <div className={cn("card-ref rounded-[20px] p-7", p.featured && "card-featured")}>
               <p className="font-display text-4xl font-semibold tracking-tight tabular-nums">{p.price}<span className="text-sm font-medium text-muted-foreground"> /mês</span></p>
               <p className="mt-2 font-semibold">{p.name}</p>
               <p className="mt-1 min-h-10 text-sm text-muted-foreground">{p.note}</p>
