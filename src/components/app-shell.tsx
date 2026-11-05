@@ -30,8 +30,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerOnly?: boolean };
 type NavGroup = { id: string; label: string; items: NavItem[] };
 
-const SOLO_TOP: NavItem[] = [
-];
+const SOLO_TOP: NavItem[] = [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }];
 
 const NAV_GROUPS: NavGroup[] = [
   { id: "clientes", label: "Clientes", items: [
@@ -194,6 +193,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="hidden items-center gap-0.5 rounded-full p-1 lg:flex">
+            {SOLO_TOP.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] transition-colors",
+                  isActivePath(location.pathname, item.to) ? "bg-foreground/[0.07] font-medium text-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.1)]" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <item.icon className={cn("h-3.5 w-3.5", isActivePath(location.pathname, item.to) && "text-violet-glow")} />
+                {item.label}
+              </Link>
+            ))}
             {visibleGroups.map((group) => {
               const hasActive = group.items.some((i) => isActivePath(location.pathname, i.to));
               return (
@@ -233,7 +245,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={item.to}
                 className={cn(
                   "rounded-full px-4 py-1.5 text-[13px] transition-colors",
-                  isActivePath(location.pathname, item.to) ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:text-foreground",
+                  isActivePath(location.pathname, item.to) ? "bg-foreground/[0.07] text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {item.label}
