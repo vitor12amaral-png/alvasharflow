@@ -38,6 +38,9 @@
   --color-ring-offset-background: var(--background);
   --color-primary-glow: var(--primary-glow);
   --color-primary-deep: var(--primary-deep);
+  --color-violet: var(--violet);
+  --color-violet-glow: var(--violet-glow);
+  --color-violet-foreground: var(--violet-foreground);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -80,6 +83,10 @@
   --chart-1: oklch(0.72 0.13 212);
   --primary-glow: oklch(0.59 0.17 252);
   --primary-deep: oklch(0.46 0.13 250);
+  --violet: oklch(0.62 0.24 295);
+  --violet-glow: oklch(0.72 0.2 305);
+  --violet-foreground: oklch(0.99 0 0);
+  --gradient-cta: linear-gradient(180deg, oklch(0.7 0.22 300), oklch(0.56 0.25 290));
   --gradient-arctic: linear-gradient(135deg, oklch(0.72 0.13 212), oklch(0.59 0.17 252) 55%, oklch(0.46 0.13 250));
   --chart-2: oklch(0.72 0.17 155);
   --chart-3: oklch(0.78 0.16 75);
@@ -313,9 +320,9 @@
   position: relative;
   border: 1px solid rgb(255 255 255 / 0.07);
   background:
-    radial-gradient(90% 55% at 50% 115%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 70%),
+    radial-gradient(90% 55% at 50% 115%, color-mix(in oklab, var(--violet) 16%, transparent), transparent 70%),
     rgb(13 13 16 / 0.82);
-  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.09), inset 0 -1px 0 0 color-mix(in oklab, var(--primary) 22%, transparent), 0 24px 50px -24px rgb(0 0 0 / 0.9);
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.09), inset 0 -1px 0 0 color-mix(in oklab, var(--violet) 30%, transparent), 0 24px 50px -24px rgb(0 0 0 / 0.9);
 }
 /* Mini superfície interna (linhas, KPIs, itens) */
 @utility chip-ref {
@@ -326,19 +333,19 @@
 /* Eclipse do herói: planeta escuro com aro de luz concentrado no topo */
 @utility eclipse-glow {
   border-radius: 9999px;
-  box-shadow: 0 -18px 70px -6px color-mix(in oklab, var(--primary) 55%, transparent), 0 -4px 18px 0 color-mix(in oklab, var(--primary) 40%, transparent);
+  box-shadow: 0 -22px 80px -6px color-mix(in oklab, var(--violet) 65%, transparent), 0 -6px 22px 0 color-mix(in oklab, var(--primary) 45%, transparent);
   mask-image: linear-gradient(90deg, transparent 18%, #000 42%, #000 58%, transparent 82%);
 }
 @utility eclipse-rim {
   border-radius: 9999px;
   padding: 2px;
-  background: linear-gradient(90deg, transparent 12%, color-mix(in oklab, var(--primary) 70%, transparent) 32%, oklch(0.98 0.02 210) 50%, color-mix(in oklab, var(--primary) 70%, transparent) 68%, transparent 88%);
+  background: linear-gradient(90deg, transparent 12%, color-mix(in oklab, var(--violet) 80%, transparent) 30%, oklch(0.98 0.02 260) 50%, color-mix(in oklab, var(--primary) 75%, transparent) 70%, transparent 88%);
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
 @utility eclipse-body {
   border-radius: 9999px;
   background: var(--landing-bg);
-  box-shadow: inset 0 40px 90px -50px color-mix(in oklab, var(--primary) 55%, transparent), inset 0 2px 6px -2px oklch(1 0 0 / 0.5);
+  box-shadow: inset 0 40px 90px -50px color-mix(in oklab, var(--violet) 60%, transparent), inset 0 2px 6px -2px oklch(1 0 0 / 0.5);
 }
 @keyframes beam-pulse { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
 @utility animate-beam { animation: beam-pulse 4s ease-in-out infinite; }
@@ -346,6 +353,7 @@
 @utility animate-float { animation: float-soft 6s ease-in-out infinite; }
 :root.theme-light .panel-apple, :root.theme-light .glass-apple, :root.theme-light .card-ref { background: var(--card); border-color: var(--border); box-shadow: none; }
 :root.theme-light .panel-landing { background: var(--card); }
+:root.theme-light { --violet: oklch(0.55 0.24 292); --violet-glow: oklch(0.62 0.22 300); }
 :root.theme-light .chip-ref { background: var(--muted); border-color: var(--border); box-shadow: none; }
 /* Anel do horizonte da landing, usado como luz ambiente no app */
 @utility app-horizon {
@@ -385,4 +393,16 @@
   select:not([multiple]):not([size]):hover { border-color: color-mix(in oklab, var(--foreground) 18%, transparent); }
   select:not([multiple]):not([size]):focus { outline: none; border-color: color-mix(in oklab, var(--primary) 65%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 45%, transparent); }
   select option { background-color: var(--popover); color: var(--popover-foreground); }
+}
+
+/* CTA vivo: cápsula violeta com chanfro e brilho só na base */
+@utility btn-cta {
+  background: var(--gradient-cta);
+  color: var(--violet-foreground);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.35), inset 0 -1px 0 oklch(0 0 0 / 0.25), 0 10px 28px -10px var(--violet), 0 0 0 1px color-mix(in oklab, var(--violet) 60%, transparent);
+}
+/* Cartão em destaque: filete violeta de 1px */
+@utility card-featured {
+  border-color: color-mix(in oklab, var(--violet) 55%, transparent) !important;
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.1), 0 0 0 1px color-mix(in oklab, var(--violet) 25%, transparent), 0 30px 80px -30px color-mix(in oklab, var(--violet) 55%, transparent);
 }
