@@ -48,7 +48,7 @@ function DashboardPage() {
   const { ym, year, month } = useMonthFromSearch();
   const { data: me } = useCurrentUser();
   const { data, isLoading } = useQuery({
-    queryKey: ["dashboard-v2", me?.workspaceId],
+    queryKey: ["dashboard", me?.workspaceId],
     enabled: !!me,
     queryFn: async () => {
       const [videos, clients, packages, activity, members, profiles] = await Promise.all([
