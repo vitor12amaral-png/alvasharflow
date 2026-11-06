@@ -133,7 +133,6 @@ function Hero() {
           <div className="eclipse-body absolute inset-[5%]" />
           <div className="eclipse-rim absolute inset-0" />
         </div>
-        <div className="absolute left-1/2 top-[84px] h-3 w-[360px] -translate-x-1/2 rounded-[50%] bg-foreground/70 blur-md" />
         <div className="absolute left-1/2 top-[60px] h-16 w-[620px] -translate-x-1/2 rounded-[50%] bg-violet/25 blur-3xl" />
       </div>
 
