@@ -59,14 +59,14 @@
 /* Dark by default — this is a management suite */
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.12 0.012 250);
+  --background: oklch(0.1 0.008 270);
   --foreground: oklch(0.98 0.005 260);
   --card: oklch(0.15 0.025 242 / 70%);
   --card-foreground: oklch(0.98 0.005 260);
   --popover: oklch(0.15 0.025 242);
   --popover-foreground: oklch(0.98 0.005 260);
-  --primary: oklch(0.72 0.13 212);
-  --primary-foreground: oklch(0.15 0.03 240);
+  --primary: oklch(0.66 0.2 256);
+  --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.25 0.045 240);
   --secondary-foreground: oklch(0.98 0.005 260);
   --muted: oklch(0.235 0.04 240);
@@ -79,14 +79,14 @@
   --warning: oklch(0.78 0.16 75);
   --border: oklch(1 0 0 / 8%);
   --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.72 0.13 212 / 60%);
-  --chart-1: oklch(0.72 0.13 212);
-  --primary-glow: oklch(0.59 0.17 252);
+  --ring: oklch(0.66 0.2 256 / 60%);
+  --chart-1: oklch(0.66 0.2 256);
+  --primary-glow: oklch(0.72 0.17 240);
   --primary-deep: oklch(0.46 0.13 250);
-  --violet: oklch(0.62 0.24 295);
+  --violet: oklch(0.6 0.26 298);
   --violet-glow: oklch(0.72 0.2 305);
   --violet-foreground: oklch(0.99 0 0);
-  --gradient-cta: linear-gradient(180deg, oklch(0.7 0.22 300), oklch(0.56 0.25 290));
+  --gradient-cta: linear-gradient(110deg, oklch(0.62 0.21 258) 0%, oklch(0.6 0.25 285) 55%, oklch(0.62 0.26 305) 100%);
   --gradient-arctic: linear-gradient(135deg, oklch(0.72 0.13 212), oklch(0.59 0.17 252) 55%, oklch(0.46 0.13 250));
   --chart-2: oklch(0.72 0.17 155);
   --chart-3: oklch(0.78 0.16 75);
@@ -94,12 +94,12 @@
   --chart-5: oklch(0.62 0.22 25);
   --sidebar: oklch(0.11 0.02 245 / 70%);
   --sidebar-foreground: oklch(0.85 0.01 260);
-  --sidebar-primary: oklch(0.72 0.13 212);
+  --sidebar-primary: oklch(0.66 0.2 256);
   --sidebar-primary-foreground: oklch(0.14 0.02 260);
   --sidebar-accent: oklch(0.23 0.045 240);
   --sidebar-accent-foreground: oklch(0.98 0.005 260);
   --sidebar-border: oklch(0.80 0.08 220 / 10%);
-  --sidebar-ring: oklch(0.72 0.13 212 / 60%);
+  --sidebar-ring: oklch(0.66 0.2 256 / 60%);
   --surface-raised: oklch(0.195 0.022 248);
   --surface-deep: oklch(0.125 0.018 248);
   --focus-glow: oklch(0.76 0.16 225 / 16%);
@@ -281,7 +281,7 @@
 
 /* Landing — cinematic dark */
 :root {
-  --landing-bg: oklch(0.12 0.012 250);
+  --landing-bg: oklch(0.1 0.008 270);
   --landing-panel: oklch(0.165 0.012 255);
   --gradient-planet: radial-gradient(closest-side, oklch(0.11 0.02 245) 92%, transparent 100%);
   --gradient-rim: conic-gradient(from 200deg at 50% 50%, transparent 0deg, oklch(0.72 0.13 212) 60deg, oklch(0.85 0.1 210) 90deg, oklch(0.59 0.17 252) 130deg, transparent 200deg);
@@ -320,9 +320,10 @@
   position: relative;
   border: 1px solid rgb(255 255 255 / 0.07);
   background:
-    radial-gradient(90% 55% at 50% 115%, color-mix(in oklab, var(--violet) 16%, transparent), transparent 70%),
-    rgb(13 13 16 / 0.82);
-  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.09), inset 0 -1px 0 0 color-mix(in oklab, var(--violet) 30%, transparent), 0 24px 50px -24px rgb(0 0 0 / 0.9);
+    radial-gradient(70% 45% at 50% 118%, color-mix(in oklab, var(--violet) 28%, transparent), transparent 70%),
+    radial-gradient(40% 30% at 15% 115%, color-mix(in oklab, var(--primary) 18%, transparent), transparent 70%),
+    linear-gradient(180deg, rgb(20 20 26 / 0.9), rgb(11 11 15 / 0.92));
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.1), inset 0 -1px 0 0 color-mix(in oklab, var(--violet) 55%, transparent), 0 18px 40px -18px color-mix(in oklab, var(--violet) 35%, transparent), 0 24px 50px -24px rgb(0 0 0 / 0.9);
 }
 /* Mini superfície interna (linhas, KPIs, itens) */
 @utility chip-ref {
@@ -333,19 +334,35 @@
 /* Eclipse do herói: planeta escuro com aro de luz concentrado no topo */
 @utility eclipse-glow {
   border-radius: 9999px;
-  box-shadow: 0 -22px 80px -6px color-mix(in oklab, var(--violet) 65%, transparent), 0 -6px 22px 0 color-mix(in oklab, var(--primary) 45%, transparent);
-  mask-image: linear-gradient(90deg, transparent 18%, #000 42%, #000 58%, transparent 82%);
+  background: radial-gradient(50% 14% at 50% 0%, color-mix(in oklab, var(--violet) 70%, transparent), transparent 100%);
+  box-shadow: 0 -40px 140px -10px color-mix(in oklab, var(--violet) 55%, transparent), 0 -10px 50px 0 color-mix(in oklab, var(--primary) 55%, transparent);
+  mask-image: linear-gradient(90deg, transparent 8%, #000 35%, #000 65%, transparent 92%);
+}
+/* Faixa luminosa grossa (azul -> branco -> roxo), suave por dentro */
+@utility eclipse-band {
+  border-radius: 9999px;
+  background: linear-gradient(90deg, oklch(0.62 0.22 258), oklch(0.8 0.12 250) 38%, oklch(0.95 0.04 280) 50%, oklch(0.68 0.24 300) 64%, oklch(0.55 0.26 305));
+  filter: blur(4px) saturate(140%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 10%, transparent 26%), linear-gradient(90deg, transparent 4%, #000 30%, #000 70%, transparent 96%);
+  mask-composite: intersect;
 }
 @utility eclipse-rim {
   border-radius: 9999px;
-  padding: 2px;
-  background: linear-gradient(90deg, transparent 12%, color-mix(in oklab, var(--violet) 80%, transparent) 30%, oklch(0.98 0.02 260) 50%, color-mix(in oklab, var(--primary) 75%, transparent) 70%, transparent 88%);
+  padding: 1.5px;
+  background: linear-gradient(90deg, transparent 8%, oklch(0.75 0.15 252) 28%, oklch(1 0 0) 50%, oklch(0.75 0.2 300) 72%, transparent 92%);
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
 @utility eclipse-body {
   border-radius: 9999px;
-  background: var(--landing-bg);
-  box-shadow: inset 0 40px 90px -50px color-mix(in oklab, var(--violet) 60%, transparent), inset 0 2px 6px -2px oklch(1 0 0 / 0.5);
+  background: radial-gradient(70% 12% at 50% 0%, color-mix(in oklab, var(--violet) 22%, transparent), transparent 100%), var(--landing-bg);
+  box-shadow: inset 0 2px 6px -2px oklch(1 0 0 / 0.35), inset 0 30px 60px -36px color-mix(in oklab, var(--violet) 75%, transparent);
+}
+/* Raios de luz ambiente vindos do alto */
+@utility hero-rays {
+  background:
+    linear-gradient(115deg, transparent 30%, color-mix(in oklab, var(--primary) 10%, transparent) 42%, transparent 50%),
+    linear-gradient(65deg, transparent 50%, color-mix(in oklab, var(--violet) 10%, transparent) 60%, transparent 70%);
+  mask-image: linear-gradient(180deg, #000, transparent 85%);
 }
 @keyframes beam-pulse { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
 @utility animate-beam { animation: beam-pulse 4s ease-in-out infinite; }

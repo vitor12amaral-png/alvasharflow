@@ -104,3 +104,9 @@
    - [x] Fundo preto limpo, vidro fino, sem névoa.
    - [x] Página de vendas: arco de eclipse, painel do produto, grade de recursos, planos.
    - [x] App: barra em pílula, títulos brancos, campos/abas/etiquetas/tabelas no novo estilo, sem brilho no menu e no mês.
+
+19. Site vivo azul + roxo, nível da referência (nov/2026)
+   - [ ] Paleta azul elétrico + roxo em botões, destaques e luzes.
+   - [ ] Eclipse luminoso grosso e luz real sobre o painel do produto.
+   - [ ] Grade de recursos com feixe e brilhos coloridos como na referência.
+   - [ ] Comparar com os quadros da referência a cada ajuste.
