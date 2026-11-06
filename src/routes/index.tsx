@@ -130,7 +130,7 @@ function Hero() {
         <div className="absolute left-1/2 top-[90px] aspect-square w-[min(1000px,150vw)] -translate-x-1/2">
           <div className="eclipse-glow absolute inset-0" />
           <div className="eclipse-band absolute inset-0" />
-          <div className="eclipse-body absolute inset-[26px]" />
+          <div className="eclipse-body absolute inset-[5%]" />
           <div className="eclipse-rim absolute inset-0" />
         </div>
         <div className="absolute left-1/2 top-[84px] h-3 w-[360px] -translate-x-1/2 rounded-[50%] bg-foreground/70 blur-md" />
@@ -337,8 +337,8 @@ function Bento() {
 
         {/* 3 — Copiloto: feixe de luz descendo sobre a lente */}
         <Card className="flex flex-col items-center md:row-span-2">
-          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] blur-md [clip-path:polygon(10%_0,90%_0,60%_100%,40%_100%)] bg-gradient-to-b from-violet/80 to-primary/40" />
-          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] bg-gradient-to-b from-violet via-violet/80 to-primary/60" />
+          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] blur-md [clip-path:polygon(10%_0,90%_0,60%_100%,40%_100%)] " style={{ background: "linear-gradient(180deg, var(--violet), color-mix(in oklab, var(--primary) 60%, transparent))" }} />
+          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] " style={{ background: "linear-gradient(180deg, var(--violet-glow), var(--violet) 55%, var(--primary))" }} />
           <div aria-hidden className="absolute inset-x-0 top-0 h-[42%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] [background:repeating-conic-gradient(from_160deg_at_50%_100%,transparent_0deg_3deg,oklch(1_0_0/0.14)_3deg_4deg)]" />
           <div className="absolute left-1/2 top-[38%] flex h-24 w-24 -translate-x-1/2 items-center justify-center rounded-[26px] border border-foreground/10 bg-landing shadow-[inset_0_1px_0_oklch(1_0_0/0.2),inset_0_-12px_24px_-12px_color-mix(in_oklab,var(--violet)_55%,transparent),0_0_60px_-10px_var(--violet),0_24px_50px_-14px_oklch(0_0_0/0.95)] transition-transform hover:scale-105">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-b from-foreground/[0.14] to-transparent">
