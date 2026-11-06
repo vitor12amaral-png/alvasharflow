@@ -102,6 +102,7 @@ function Nav() {
 function Hero() {
   return (
     <section className="relative">
+      <div aria-hidden className="hero-rays pointer-events-none absolute inset-x-0 top-0 h-[720px]" />
       <div className="relative z-20 mx-auto max-w-4xl px-6 pt-24 text-center md:pt-28">
         <a href="#recursos" className="animate-rise chip-ref inline-flex items-center gap-2 rounded-full py-1 pr-3 pl-1 text-xs">
           <span className="rounded-full btn-cta px-2.5 py-0.5 font-semibold">Novo</span>
@@ -124,16 +125,16 @@ function Hero() {
         </div>
       </div>
 
-      {/* Eclipse: planeta escuro com aro de luz concentrado no zênite */}
-      <div aria-hidden className="relative z-10 mx-auto mt-6 h-[300px] max-w-[1400px] overflow-hidden md:h-[380px]">
+      {/* Eclipse: planeta escuro com faixa de luz azul/roxa no zênite */}
+      <div aria-hidden className="relative z-10 mx-auto mt-2 h-[320px] max-w-[1400px] overflow-hidden md:h-[400px]">
         <div className="absolute left-1/2 top-[90px] aspect-square w-[min(1000px,150vw)] -translate-x-1/2">
           <div className="eclipse-glow absolute inset-0" />
-          <div className="eclipse-body absolute inset-0" />
+          <div className="eclipse-band absolute inset-0" />
+          <div className="eclipse-body absolute inset-[26px]" />
           <div className="eclipse-rim absolute inset-0" />
-          <div className="absolute inset-[9%] rounded-full border-t border-foreground/[0.08]" />
         </div>
-        <div className="absolute left-1/2 top-[89px] h-[2px] w-80 -translate-x-1/2 bg-gradient-to-r from-transparent via-foreground to-transparent" />
-        <div className="absolute left-1/2 top-[80px] h-5 w-[420px] -translate-x-1/2 rounded-[50%] bg-violet/30 blur-xl" />
+        <div className="absolute left-1/2 top-[84px] h-3 w-[360px] -translate-x-1/2 rounded-[50%] bg-foreground/70 blur-md" />
+        <div className="absolute left-1/2 top-[60px] h-16 w-[620px] -translate-x-1/2 rounded-[50%] bg-violet/25 blur-3xl" />
       </div>
 
       {/* Painel do produto surgindo de trás do eclipse */}
@@ -174,7 +175,7 @@ function AppMockup() {
   const weeks = [[62, 38], [30, 44], [48, 52], [28, 20], [74, 40], [32, 48], [66, 36]];
   const nav = [["Workflow", Kanban], ["Clientes", Users], ["Equipe", UserPlus], ["Financeiro", Wallet], ["Relatórios", BarChart3]] as const;
   return (
-    <div className="rounded-[22px] border border-foreground/[0.08] bg-landing/90 p-1.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.1),0_60px_140px_-50px_oklch(0_0_0/0.95)] backdrop-blur-xl">
+    <div className="rounded-[22px] border border-foreground/[0.08] bg-landing/90 p-1.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.14),0_-30px_80px_-40px_var(--violet),0_60px_140px_-50px_oklch(0_0_0/0.95)] backdrop-blur-xl">
       <div className="rounded-2xl border border-foreground/[0.06] bg-landing text-left">
         <div className="flex items-center justify-between border-b border-foreground/[0.06] px-5 py-3.5">
           <Logo small />
@@ -222,7 +223,7 @@ function AppMockup() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between text-[11px]"><span className="font-medium">{b.name}</span><span className="tabular-nums text-muted-foreground">{b.done}/{b.total}</span></div>
                       <p className="text-[9.5px] text-muted-foreground">{b.sub}</p>
-                      <div className="mt-1 h-[3px] overflow-hidden rounded-full bg-foreground/[0.06]"><div className="h-full rounded-full bg-primary" style={{ width: `${(b.done / b.total) * 100}%` }} /></div>
+                      <div className="mt-1 h-[3px] overflow-hidden rounded-full bg-foreground/[0.06]"><div className="h-full rounded-full bg-gradient-to-r from-primary to-violet" style={{ width: `${(b.done / b.total) * 100}%` }} /></div>
                     </div>
                     <span className="hidden text-[10px] font-medium text-foreground/80 sm:inline">Abrir</span>
                   </div>
@@ -238,7 +239,7 @@ function AppMockup() {
                 <div aria-hidden className="pointer-events-none absolute inset-x-0 top-1/3 border-t border-dashed border-foreground/[0.05]" />
                 {weeks.map(([a, b], i) => (
                   <div key={i} className="flex h-full flex-1 items-end justify-center gap-1">
-                    <div className="w-2 rounded-t-[3px] bg-primary shadow-[0_0_12px_-2px_var(--primary)]" style={{ height: `${a}%` }} />
+                    <div className="w-2 rounded-t-[3px] bg-gradient-to-t from-primary to-violet shadow-[0_0_12px_-2px_var(--violet)]" style={{ height: `${a}%` }} />
                     <div className="w-2 rounded-t-[3px] bg-primary/25" style={{ height: `${b}%` }} />
                   </div>
                 ))}
@@ -336,10 +337,10 @@ function Bento() {
 
         {/* 3 — Copiloto: feixe de luz descendo sobre a lente */}
         <Card className="flex flex-col items-center md:row-span-2">
-          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] blur-md [clip-path:polygon(10%_0,90%_0,60%_100%,40%_100%)] bg-gradient-to-b from-primary/70 to-primary/30" />
-          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] bg-gradient-to-b from-primary via-primary/85 to-primary/40" />
+          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] blur-md [clip-path:polygon(10%_0,90%_0,60%_100%,40%_100%)] bg-gradient-to-b from-violet/80 to-primary/40" />
+          <div aria-hidden className="animate-beam absolute inset-x-0 top-0 h-[42%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] bg-gradient-to-b from-violet via-violet/80 to-primary/60" />
           <div aria-hidden className="absolute inset-x-0 top-0 h-[42%] [clip-path:polygon(14%_0,86%_0,58%_100%,42%_100%)] [background:repeating-conic-gradient(from_160deg_at_50%_100%,transparent_0deg_3deg,oklch(1_0_0/0.14)_3deg_4deg)]" />
-          <div className="absolute left-1/2 top-[38%] flex h-24 w-24 -translate-x-1/2 items-center justify-center rounded-[26px] border border-foreground/10 bg-landing shadow-[inset_0_1px_0_oklch(1_0_0/0.2),inset_0_-12px_24px_-12px_color-mix(in_oklab,var(--primary)_40%,transparent),0_24px_50px_-14px_oklch(0_0_0/0.95)] transition-transform hover:scale-105">
+          <div className="absolute left-1/2 top-[38%] flex h-24 w-24 -translate-x-1/2 items-center justify-center rounded-[26px] border border-foreground/10 bg-landing shadow-[inset_0_1px_0_oklch(1_0_0/0.2),inset_0_-12px_24px_-12px_color-mix(in_oklab,var(--violet)_55%,transparent),0_0_60px_-10px_var(--violet),0_24px_50px_-14px_oklch(0_0_0/0.95)] transition-transform hover:scale-105">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-b from-foreground/[0.14] to-transparent">
               <Mic className="h-7 w-7 text-foreground" />
             </div>
@@ -357,7 +358,7 @@ function Bento() {
           </div>
           <div className="relative overflow-hidden pt-5">
             <div className="h-full rounded-tl-2xl border-t border-l border-foreground/[0.08] bg-landing/80 p-5 text-[13px] shadow-[inset_0_1px_0_oklch(1_0_0/0.08)]">
-              <p className="flex items-center gap-2.5 font-medium"><span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary text-primary-foreground"><Users className="h-3 w-3" /></span> Roney <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /></p>
+              <p className="flex items-center gap-2.5 font-medium"><span className="flex h-5 w-5 items-center justify-center rounded-md btn-cta"><Users className="h-3 w-3" /></span> Roney <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /></p>
               <p className="mt-3 flex items-center gap-2.5 text-foreground/90"><FolderOpen className="h-3.5 w-3.5 text-muted-foreground" /> Marca Pessoal</p>
               <div className="mt-2 ml-[7px] space-y-2 border-l border-foreground/[0.1] pl-5 text-muted-foreground">
                 <p className="flex items-center gap-2"><Clapperboard className="h-3.5 w-3.5" /> Reels · 30</p>
