@@ -20,3 +20,4 @@
 - Copilot speech streams sentence-by-sentence to /api/tts (neural voice, PCM over SSE) through a shared ordered queue, falling back to browser speech when the service is unavailable, so replies start fast and are never silent.
 - Agency calculator math lives in a pure price-calculator module separate from client pricing resolution, so tool changes never affect batch/finance pricing.
 - Shared surface utilities in src/styles.css (card-ref, card-featured, btn-cta, panel-landing, chip-ref, glass-apple, eclipse-*) style both the landing page and the signed-in app, so the two stay one visual language; prefer them over ad-hoc shadows/glows.
+- Cursor spotlight is one global pointer listener (src/lib/spotlight.ts) setting --mx/--my on hovered panels plus CSS ::before layers, so every card gets hover light without per-component code.

@@ -5,7 +5,7 @@ import {
   CheckSquare, Megaphone, Volume2, VolumeX, Sparkles, MessageCircle,
   Wrench, ShieldCheck, ChevronDown,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,6 +88,39 @@ function NavLinkRow({ item, pathname, suppressActive = false, onSelect }: { item
 
 const GROUPS_KEY = "af-nav-groups";
 
+
+const HoverCtx = createContext<{ enter: () => void; leave: () => void }>({ enter: () => {}, leave: () => {} });
+function HoverMenu({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<number | null>(null);
+  const enter = () => { if (timer.current) window.clearTimeout(timer.current); setOpen(true); };
+  const leave = () => { timer.current = window.setTimeout(() => setOpen(false), 140); };
+  return (
+    <div onPointerEnter={(e) => e.pointerType === "mouse" && enter()} onPointerLeave={(e) => e.pointerType === "mouse" && leave()}>
+      <HoverCtx.Provider value={{ enter, leave }}>
+        <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>{children}</DropdownMenu>
+      </HoverCtx.Provider>
+    </div>
+  );
+}
+function HoverMenuPanel({ children }: { children: ReactNode }) {
+  const { enter, leave } = useContext(HoverCtx);
+  return (
+    <DropdownMenuContent
+      align="center"
+      sideOffset={10}
+      onPointerEnter={enter}
+      onPointerLeave={leave}
+      onCloseAutoFocus={(e) => e.preventDefault()}
+      className="min-w-56 rounded-2xl border-border/70 bg-landing-panel/95 p-1.5 backdrop-blur-xl animate-in fade-in-0 zoom-in-95"
+    >
+      {children}
+    </DropdownMenuContent>
+  );
+}
+function HoverMenuTrigger({ children }: { children: ReactNode }) {
+  return <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>;
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useCurrentUser();
@@ -209,8 +242,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             {visibleGroups.map((group) => {
               const hasActive = group.items.some((i) => isActivePath(location.pathname, i.to));
               return (
-                <DropdownMenu key={group.id}>
-                  <DropdownMenuTrigger asChild>
+                <HoverMenu key={group.id}>
+                  <HoverMenuTrigger>
                     <button
                       className={cn(
                         "flex items-center gap-1 rounded-full px-4 py-1.5 text-[13px] transition-colors",
@@ -222,8 +255,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {group.label}
                       <ChevronDown className="h-3 w-3 opacity-70" />
                     </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" sideOffset={10} className="min-w-52 rounded-2xl border-border/70 bg-landing-panel/95 p-1.5 backdrop-blur-xl">
+                  </HoverMenuTrigger>
+                  <HoverMenuPanel>
                     {group.items.map((item) => {
                       const active = isActivePath(location.pathname, item.to);
                       return (
@@ -235,8 +268,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                         </DropdownMenuItem>
                       );
                     })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </HoverMenuPanel>
+                </HoverMenu>
               );
             })}
             {SOLO_BOTTOM.map((item) => (
