@@ -462,9 +462,10 @@
 .ambient-lights {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
   overflow: hidden;
+  mix-blend-mode: screen;
 }
 .ambient-lights::before,
 .ambient-lights::after {
@@ -474,7 +475,7 @@
   height: 55vw;
   border-radius: 9999px;
   filter: blur(120px);
-  opacity: 0.22;
+  opacity: 0.16;
   animation: ambient-drift 18s ease-in-out infinite;
 }
 .ambient-lights::before { top: -20vw; left: -12vw; background: var(--primary); }
@@ -486,7 +487,8 @@
   width: 600px;
   height: 600px;
   margin: -300px 0 0 -300px;
-  z-index: 0;
+  z-index: 1;
+  mix-blend-mode: screen;
   pointer-events: none;
   border-radius: 9999px;
   background: radial-gradient(circle, color-mix(in oklab, var(--violet) 16%, transparent), color-mix(in oklab, var(--primary) 6%, transparent) 40%, transparent 70%);
