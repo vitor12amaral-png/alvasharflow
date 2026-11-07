@@ -496,3 +496,21 @@
   transition: opacity 0.4s ease;
 }
 @media (hover: none) { .cursor-glow { display: none; } }
+
+/* Mesma luz em qualquer cartão com borda dentro do app (botões-cartão, linhas, blocos) */
+:where(main) :where(.border.rounded-lg, .border.rounded-xl, .border.rounded-2xl):not(input, textarea, select) {
+  position: relative;
+  isolation: isolate;
+}
+:where(main) :where(.border.rounded-lg, .border.rounded-xl, .border.rounded-2xl):not(input, textarea, select)::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in oklab, var(--violet) 20%, transparent), color-mix(in oklab, var(--primary) 8%, transparent) 45%, transparent 70%);
+}
+:where(main) :where(.border.rounded-lg, .border.rounded-xl, .border.rounded-2xl):not(input, textarea, select):hover::before { opacity: 1; }

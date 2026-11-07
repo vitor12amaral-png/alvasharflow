@@ -1,4 +1,4 @@
-const SELECTOR = ".card-ref, .card-featured, .panel-landing, .panel-apple, [data-spot]";
+const SELECTOR = ".card-ref, .card-featured, .panel-landing, .panel-apple, [data-spot], main .border.rounded-lg, main .border.rounded-xl, main .border.rounded-2xl";
 
 /** Liga a luz que acompanha o mouse em cartões/painéis e no fundo da página. */
 export function installSpotlight(): () => void {
