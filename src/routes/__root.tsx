@@ -9,6 +9,7 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { installSpotlight } from "@/lib/spotlight";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -102,8 +103,11 @@ function RootComponent() {
     });
     return () => data.subscription.unsubscribe();
   }, [queryClient, router]);
+  useEffect(() => installSpotlight(), []);
   return (
     <QueryClientProvider client={queryClient}>
+      <div aria-hidden className="ambient-lights" />
+      <div aria-hidden className="cursor-glow" />
       <Outlet />
       <Toaster theme="dark" position="top-right" />
     </QueryClientProvider>
