@@ -89,6 +89,21 @@ function NavLinkRow({ item, pathname, suppressActive = false, onSelect }: { item
 const GROUPS_KEY = "af-nav-groups";
 
 
+function HoverMenu({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<number | null>(null);
+  const enter = () => { if (timer.current) window.clearTimeout(timer.current); setOpen(true); };
+  const leave = () => { timer.current = window.setTimeout(() => setOpen(false), 140); };
+  return (
+    <div onPointerEnter={(e) => e.pointerType === "mouse" && enter()} onPointerLeave={(e) => e.pointerType === "mouse" && leave()}>
+      <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>{children}</DropdownMenu>
+    </div>
+  );
+}
+function HoverMenuTrigger({ children }: { children: ReactNode }) {
+  return <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: user, isLoading } = useCurrentUser();
   const location = useLocation();
@@ -209,8 +224,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             {visibleGroups.map((group) => {
               const hasActive = group.items.some((i) => isActivePath(location.pathname, i.to));
               return (
-                <DropdownMenu key={group.id}>
-                  <DropdownMenuTrigger asChild>
+                <HoverMenu key={group.id}>
+                  <HoverMenuTrigger>
                     <button
                       className={cn(
                         "flex items-center gap-1 rounded-full px-4 py-1.5 text-[13px] transition-colors",
@@ -222,7 +237,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {group.label}
                       <ChevronDown className="h-3 w-3 opacity-70" />
                     </button>
-                  </DropdownMenuTrigger>
+                  </HoverMenuTrigger>
                   <DropdownMenuContent align="center" sideOffset={10} className="min-w-52 rounded-2xl border-border/70 bg-landing-panel/95 p-1.5 backdrop-blur-xl">
                     {group.items.map((item) => {
                       const active = isActivePath(location.pathname, item.to);
@@ -236,7 +251,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       );
                     })}
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </HoverMenu>
               );
             })}
             {SOLO_BOTTOM.map((item) => (
