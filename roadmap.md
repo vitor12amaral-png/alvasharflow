@@ -106,7 +106,7 @@
    - [x] App: barra em pílula, títulos brancos, campos/abas/etiquetas/tabelas no novo estilo, sem brilho no menu e no mês.
 
 19. Site vivo azul + roxo, nível da referência (nov/2026)
-   - [ ] Paleta azul elétrico + roxo em botões, destaques e luzes.
-   - [ ] Eclipse luminoso grosso e luz real sobre o painel do produto.
-   - [ ] Grade de recursos com feixe e brilhos coloridos como na referência.
-   - [ ] Comparar com os quadros da referência a cada ajuste.
+   - [x] Paleta azul elétrico + roxo em botões, destaques e luzes.
+   - [x] Eclipse luminoso grosso e luz real sobre o painel do produto.
+   - [x] Grade de recursos com feixe e brilhos coloridos como na referência.
+   - [x] Comparar com os quadros da referência a cada ajuste.
