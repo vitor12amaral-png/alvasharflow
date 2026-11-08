@@ -49,6 +49,10 @@ export const THEME_PRESETS: { id: string; label: string; theme: "dark" | "light"
 export function applyBranding(b: Partial<Branding> | null) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
+  registerBrandingReapply(() => applyBranding(b));
+  root.style.setProperty("--radius", b?.radius || DEFAULT_BRANDING.radius);
+  // Outro modelo visual escolhido pela pessoa manda nas cores.
+  if (activeTemplate() !== "marca") return;
   const primary = b?.primary_color || DEFAULT_BRANDING.primary_color;
   root.style.setProperty("--primary", primary);
   root.style.setProperty("--ring", primary);
