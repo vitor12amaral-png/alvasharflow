@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { setSfxEnabled, setSfxVolume } from "@/lib/sfx";
+import { applyTemplate, resolveTemplate, type TemplateId } from "@/lib/themes";
 
 const KEY = "alvashar-prefs";
 
@@ -14,6 +15,12 @@ export type Preferences = {
   density: "confortavel" | "compacto";
   /** Aumenta o contraste das bordas e textos secundários. */
   highContrast: boolean;
+  /** Modelo visual do app inteiro. */
+  template: TemplateId;
+  /** Cor do modelo Personalizado (hex). */
+  customColor: string;
+  /** Fundo do modelo Personalizado. */
+  customMode: "dark" | "light";
 };
 
 export const DEFAULT_PREFS: Preferences = {
@@ -22,6 +29,9 @@ export const DEFAULT_PREFS: Preferences = {
   reduceMotion: false,
   density: "confortavel",
   highContrast: false,
+  template: "marca",
+  customColor: "#7c5cff",
+  customMode: "dark",
 };
 
 export function readPrefs(): Preferences {
@@ -50,6 +60,7 @@ export function applyPrefs(p: Preferences) {
   root.classList.toggle("high-contrast", p.highContrast);
   setSfxEnabled(p.sound, { silent: true });
   setSfxVolume(p.volume);
+  applyTemplate(resolveTemplate(p.template, p.customColor, p.customMode));
 }
 
 /** Hook reativo — todas as telas ficam em sincronia. */
