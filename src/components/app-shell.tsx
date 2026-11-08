@@ -28,26 +28,26 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; ownerOnly?: boolean };
-type NavGroup = { id: string; label: string; items: NavItem[] };
+type NavGroup = { id: string; label: string; icon: typeof LayoutDashboard; items: NavItem[] };
 
 const SOLO_TOP: NavItem[] = [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }];
 
 const NAV_GROUPS: NavGroup[] = [
-  { id: "clientes", label: "Clientes", items: [
+  { id: "clientes", label: "Clientes", icon: Users, items: [
     { to: "/clientes", label: "Clientes", icon: Users },
     { to: "/leads", label: "Leads", icon: Sparkles },
     { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
   ] },
-  { id: "trabalho", label: "Trabalho", items: [
+  { id: "trabalho", label: "Trabalho", icon: Kanban, items: [
     { to: "/workflow", label: "Workflow", icon: Kanban },
     { to: "/tarefas", label: "Tarefas", icon: CheckSquare },
   ] },
-  { id: "conteudo", label: "Conteúdo", items: [
+  { id: "conteudo", label: "Conteúdo", icon: Megaphone, items: [
     { to: "/marketing", label: "Marketing", icon: Megaphone },
     { to: "/calendario", label: "Calendário", icon: Calendar },
     { to: "/biblioteca", label: "Biblioteca", icon: FolderOpen },
   ] },
-  { id: "gestao", label: "Gestão", items: [
+  { id: "gestao", label: "Gestão", icon: Wallet, items: [
     { to: "/financeiro", label: "Financeiro", icon: Wallet },
     { to: "/equipe", label: "Equipe", icon: UsersRound },
     { to: "/ferramentas", label: "Ferramentas", icon: Wrench },
@@ -58,6 +58,16 @@ const NAV_GROUPS: NavGroup[] = [
 const SOLO_BOTTOM: NavItem[] = [{ to: "/configuracoes", label: "Configurações", icon: Settings }];
 
 const NAV = [...SOLO_TOP, ...NAV_GROUPS.flatMap((g) => g.items), ...SOLO_BOTTOM] as NavItem[];
+
+/** Abas do topo no mesmo desenho da página de vendas: texto limpo, ícone fino, ponto de luz na ativa. */
+function navLinkClass(active: boolean) {
+  return cn(
+    "relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] transition-colors duration-200",
+    active
+      ? "font-medium text-foreground after:absolute after:-bottom-[7px] after:left-1/2 after:h-[3px] after:w-5 after:-translate-x-1/2 after:rounded-full after:bg-[image:var(--gradient-cta)] after:shadow-[0_0_10px_var(--violet)]"
+      : "text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground",
+  );
+}
 
 function isActivePath(pathname: string, to: string) {
   return pathname === to || pathname.startsWith(to + "/");
@@ -214,6 +224,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-landing">
+      <div aria-hidden className="app-aurora" />
       {/* Barra superior em pílula de vidro, igual à da página de vendas */}
       <header className="sticky top-0 z-30 px-2 pt-3 md:px-6">
         <div className="glass-apple mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 rounded-full pr-2 pl-5 md:pl-6">
@@ -225,17 +236,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="h-2 w-2 rounded-full bg-primary" />
           </Link>
 
-          <nav className="hidden items-center gap-0.5 rounded-full p-1 lg:flex">
+          <nav className="hidden items-center gap-1 lg:flex" data-tour="nav">
             {SOLO_TOP.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] transition-colors",
-                  isActivePath(location.pathname, item.to) ? "bg-foreground/[0.07] font-medium text-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.1)]" : "text-muted-foreground hover:text-foreground",
-                )}
+                className={navLinkClass(isActivePath(location.pathname, item.to))}
               >
-                <item.icon className={cn("h-3.5 w-3.5", isActivePath(location.pathname, item.to) && "text-violet-glow")} />
+                <item.icon className="h-3.5 w-3.5" />
                 {item.label}
               </Link>
             ))}
@@ -244,14 +252,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               return (
                 <HoverMenu key={group.id}>
                   <HoverMenuTrigger>
-                    <button
-                      className={cn(
-                        "flex items-center gap-1 rounded-full px-4 py-1.5 text-[13px] transition-colors",
-                        hasActive
-                          ? "bg-foreground/[0.07] font-medium text-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.1)]"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
+                    <button data-tour={`nav-${group.id}`} className={navLinkClass(hasActive)}>
+                      <group.icon className="h-3.5 w-3.5" />
                       {group.label}
                       <ChevronDown className="h-3 w-3 opacity-70" />
                     </button>
@@ -276,11 +278,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
-                className={cn(
-                  "rounded-full px-4 py-1.5 text-[13px] transition-colors",
-                  isActivePath(location.pathname, item.to) ? "bg-foreground/[0.07] text-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
+                className={navLinkClass(isActivePath(location.pathname, item.to))}
               >
+                <item.icon className="h-3.5 w-3.5" />
                 {item.label}
               </Link>
             ))}
@@ -323,7 +323,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Moldura de vidro, igual ao mockup da landing */}
       <div className="relative z-10 mx-auto max-w-7xl px-2 pb-24 pt-6 md:px-6 md:pb-10">
-        <div className="rounded-[26px] border border-foreground/[0.08] bg-landing/90 p-1.5 shadow-[inset_0_1px_0_oklch(1_0_0/0.1),0_60px_140px_-50px_oklch(0_0_0/0.95)]">
+        <div className="rounded-[26px] border border-foreground/[0.08] bg-landing/90 p-1.5 app-frame-glow">
           <main className="min-h-[calc(100vh-8rem)] rounded-[20px] border border-foreground/[0.06] bg-landing">{children}</main>
         </div>
       </div>
