@@ -1315,13 +1315,15 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
   const drop = useDroppable({ id: `drop::${video.id}` });
   const tint = colorValue(video.color);
   const done = video.status === "entregue" || video.status === "aprovado";
-  void onMove; void moving; void team; void onAssign; void onEstimate; void mutedDue; void anySelected; void clients; void parentId; void brandName; void onSetClient;
+  const stageIdx = VIDEO_STAGES.findIndex((st) => st.id === video.status);
+  const nextStage = stageIdx >= 0 ? VIDEO_STAGES[stageIdx + 1] : undefined;
+  void onMove; void moving; void onEstimate; void mutedDue; void anySelected; void clients; void parentId; void brandName; void onSetClient;
   return (
     <div ref={(node) => { setNodeRef(node); drop.setNodeRef(node); }} data-vid={video.id}
       className={cn(
-        "group flex items-center gap-2 rounded-md border border-border/60 bg-landing px-2.5 py-2 text-sm transition-all hover:border-primary/60 hover:bg-primary/10 hover:shadow-[0_0_18px_-6px_var(--primary)]",
+        "group flex flex-col rounded-md border border-border/60 bg-landing px-2.5 py-2 text-sm transition-all hover:border-primary/40 hover:bg-primary/[0.06] hover:shadow-[0_0_14px_-8px_var(--primary)]",
         video.block_reason && !done && "border-l-2 border-l-[oklch(0.78_0.16_75)]",
-        selected && "border-primary/60 bg-primary/15 shadow-[0_0_18px_-6px_var(--primary)]",
+        selected && "border-primary/60 bg-primary/15 shadow-[0_0_14px_-8px_var(--primary)]",
         isDragging && "opacity-40",
         drop.isOver && "ring-1 ring-primary",
       )}
@@ -1330,6 +1332,7 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
         ...(tint ? { background: `color-mix(in oklch, ${tint} 22%, var(--card))`, borderColor: `color-mix(in oklch, ${tint} 55%, transparent)` } : {}),
       }}
     >
+      <div className="flex items-center gap-2">
       <div onClick={(e) => e.stopPropagation()}>
         <Checkbox checked={selected} onCheckedChange={onToggle} className="h-3.5 w-3.5" />
       </div>
@@ -1348,6 +1351,34 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
       <button onClick={onExpand} className="opacity-0 transition group-hover:opacity-100" aria-label="Abrir">
         <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
       </button>
+      </div>
+      {/* Ações rápidas: aparecem ao passar o mouse (sempre visíveis no toque) */}
+      <div className="grid grid-rows-[1fr] transition-[grid-template-rows,opacity] duration-200 md:grid-rows-[0fr] md:opacity-0 md:group-hover:grid-rows-[1fr] md:group-hover:opacity-100 md:group-focus-within:grid-rows-[1fr] md:group-focus-within:opacity-100">
+        <div className="min-h-0 overflow-hidden">
+          <div className="mt-2 flex items-center gap-1.5 border-t border-border/50 pt-2">
+            {onSetStatus && nextStage && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onSetStatus(nextStage.id); }}
+                className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary transition-colors hover:bg-primary/25"
+                title={`Avançar para ${nextStage.label}`}
+              >
+                <ChevronRight className="h-3 w-3" /> {nextStage.label}
+              </button>
+            )}
+            <select
+              value={video.editor_id ?? ""}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => onAssign(e.target.value || null)}
+              className="h-6 min-w-0 flex-1 truncate py-0 pl-2 text-[10px]"
+              aria-label="Editor responsável"
+            >
+              <option value="">Sem editor</option>
+              {team.map((m) => <option key={m.id} value={m.id}>{m.full_name ?? "Sem nome"}</option>)}
+            </select>
+            <button onClick={(e) => { e.stopPropagation(); onExpand(); }} className="rounded-full px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground">Abrir</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
