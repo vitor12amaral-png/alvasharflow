@@ -67,6 +67,7 @@ function ConfigPage() {
       <Tabs defaultValue="perfil" className="mt-6">
         <TabsList className="flex flex-wrap">
           <TabsTrigger value="perfil">Perfil</TabsTrigger>
+          <TabsTrigger value="visual">Aparência</TabsTrigger>
           <TabsTrigger value="marca">Marca &amp; tema</TabsTrigger>
           <TabsTrigger value="aparencia">Acessibilidade</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
@@ -94,6 +95,7 @@ function ConfigPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="visual"><AppearanceTab /></TabsContent>
         <TabsContent value="marca"><BrandingTab /></TabsContent>
         <TabsContent value="aparencia"><PrefsTab /></TabsContent>
         <TabsContent value="templates"><TemplatesTab /></TabsContent>
@@ -300,6 +302,97 @@ function BrandingTab() {
         </Button>
       </div>
     </Card>
+  );
+}
+
+/* ------------------------------- aparência -------------------------------- */
+
+function AppearanceTab() {
+  const { prefs, update } = usePreferences();
+  const options = [...THEME_TEMPLATES, customTemplate(prefs.customColor, prefs.customMode)];
+  return (
+    <div className="space-y-4">
+      <Card className="p-6">
+        <p className="font-display text-lg font-semibold tracking-tight">Modelo visual</p>
+        <p className="text-sm text-muted-foreground">Muda as cores do app inteiro: botões, luzes, destaques e gráficos. Vale só para você.</p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {options.map((t) => {
+            const active = prefs.template === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => { update({ template: t.id }); sfx.select(); }}
+                aria-pressed={active}
+                className={cn(
+                  "group relative overflow-hidden rounded-2xl border p-2 text-left transition-all",
+                  active ? "border-primary shadow-[0_0_0_1px_var(--primary)]" : "border-border hover:border-foreground/25",
+                )}
+              >
+                <ThemePreview swatch={t.swatch} light={t.mode === "light"} />
+                <div className="flex items-start justify-between gap-2 px-1.5 pb-1 pt-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{t.label}</p>
+                    <p className="text-[11px] leading-snug text-muted-foreground">{t.description}</p>
+                  </div>
+                  {active && <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"><Check className="h-3 w-3" /></span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {prefs.template === "personalizado" && (
+          <div className="mt-5 flex flex-wrap items-center gap-4 rounded-xl border border-border p-4">
+            <label className="flex items-center gap-3 text-sm">
+              <input
+                type="color"
+                value={prefs.customColor}
+                onChange={(e) => update({ customColor: e.target.value })}
+                className="h-10 w-14 cursor-pointer rounded-lg border border-border bg-transparent"
+                aria-label="Cor personalizada"
+              />
+              Sua cor
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {["#7c5cff", "#ff3b6b", "#ff9500", "#34c759", "#00c7be", "#0a84ff", "#bf5af2", "#e5e5ea"].map((c) => (
+                <button key={c} onClick={() => update({ customColor: c })} className={cn("h-7 w-7 rounded-full border-2 transition-transform hover:scale-110", prefs.customColor === c ? "border-foreground" : "border-transparent")} style={{ background: c }} aria-label={`Cor ${c}`} />
+              ))}
+            </div>
+            <div className="ml-auto flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Fundo claro</span>
+              <Switch checked={prefs.customMode === "light"} onCheckedChange={(c) => update({ customMode: c ? "light" : "dark" })} />
+            </div>
+          </div>
+        )}
+      </Card>
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-6">
+        <div>
+          <p className="text-sm font-medium">Tutorial guiado</p>
+          <p className="text-xs text-muted-foreground">Mostra de novo o passo a passo de como usar o app, fazendo as ações de verdade.</p>
+        </div>
+        <Button variant="outline" onClick={() => restartTour()}>Refazer tutorial</Button>
+      </Card>
+    </div>
+  );
+}
+
+function ThemePreview({ swatch, light }: { swatch: [string, string, string]; light: boolean }) {
+  const [bg, a, b] = swatch;
+  const line = light ? "oklch(0.22 0.02 260 / 0.12)" : "oklch(1 0 0 / 0.1)";
+  return (
+    <div className="relative h-24 overflow-hidden rounded-xl" style={{ background: bg }}>
+      <div className="absolute inset-x-0 -top-10 h-20" style={{ background: `radial-gradient(60% 80% at 50% 100%, color-mix(in oklab, ${b} 55%, transparent), transparent 70%)` }} />
+      <div className="absolute left-3 right-3 top-3 flex h-4 items-center gap-1.5 rounded-full px-2" style={{ border: `1px solid ${line}`, background: light ? "oklch(1 0 0 / 0.7)" : "oklch(1 0 0 / 0.04)" }}>
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: a }} />
+        <span className="h-1 w-6 rounded-full" style={{ background: line }} />
+        <span className="h-1 w-5 rounded-full" style={{ background: line }} />
+      </div>
+      <div className="absolute bottom-3 left-3 right-3 grid grid-cols-3 gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-8 rounded-md" style={{ border: `1px solid ${line}`, background: light ? "oklch(1 0 0 / 0.75)" : "oklch(1 0 0 / 0.03)", boxShadow: i === 1 ? `inset 0 -2px 0 ${b}` : undefined }} />
+        ))}
+      </div>
+      <span className="absolute bottom-[3.15rem] right-3 h-3 w-10 rounded-full" style={{ background: `linear-gradient(110deg, ${a}, ${b})` }} />
+    </div>
   );
 }
 

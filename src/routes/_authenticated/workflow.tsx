@@ -18,7 +18,7 @@ import { Plus, Loader2, Layers3, Rows3, LayoutGrid, SplitSquareVertical, Link2, 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable, type DragEndEvent } from "@dnd-kit/core";
-import { STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
+import { VIDEO_STAGES, STAGE_LABEL, STAGE_ACCENT, PRIORITY_LABEL, PRIORITY_COLOR } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { formatBRL, formatDate, naturalCompare } from "@/lib/format";
 import { cn } from "@/lib/utils";
