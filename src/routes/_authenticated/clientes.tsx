@@ -126,7 +126,7 @@ function ClientesPage() {
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" />Novo cliente</Button>
+              <Button data-tour="new-client"><Plus className="mr-2 h-4 w-4" />Novo cliente</Button>
             </DialogTrigger>
             <ClientWizard onClose={() => setOpen(false)} />
           </Dialog>

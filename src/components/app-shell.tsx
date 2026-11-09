@@ -13,6 +13,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CopilotButton } from "@/components/copilot";
+import { GuidedTour } from "@/components/guided-tour";
 import { installGlobalSfx } from "@/lib/sfx";
 import { usePreferences } from "@/hooks/use-preferences";
 import { useBranding, DEFAULT_BRANDING } from "@/hooks/use-branding";
@@ -349,6 +350,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <CommandPalette />
       <CopilotButton />
+      <GuidedTour userId={user.id} />
     </div>
   );
 }

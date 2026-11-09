@@ -694,7 +694,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
 
               <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline"><Layers3 className="mr-1 h-4 w-4" />Nova leva</Button>
+                  <Button variant="outline" data-tour="new-batch"><Layers3 className="mr-1 h-4 w-4" />Nova leva</Button>
                 </DialogTrigger>
                 <BatchVideosDialog onClose={() => setBatchOpen(false)} clients={clients} defaultClientId={clientId === "all" ? "" : clientId} month={ym} />
               </Dialog>
@@ -742,6 +742,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
           {primaryView === "kanban" && (boardView === "kanban" || boardView === "split") && (
             <DndContext sensors={sensors} onDragEnd={onDragEnd}>
               <div
+                data-tour="board"
                 ref={marquee.containerRef}
                 onPointerDown={marquee.onPointerDown}
                 className="relative select-none overflow-x-auto snap-x snap-mandatory md:snap-none"
@@ -800,7 +801,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
                                   selectedCount={selected.size}
                                   onSetStatus={(status) => setStatus([v.id], status)}
                                   team={team}
-                                  onAssign={() => {}}
+                                  onAssign={(editorId) => patch.mutate({ ids: [v.id], changes: { editor_id: editorId } })}
                                   onEstimate={() => {}}
                                 />
                                 ));
