@@ -568,3 +568,12 @@
 .tour-hole::after { content: ""; position: absolute; inset: -3px; border-radius: inherit; animation: tour-pulse 1.8s ease-in-out infinite; }
 @keyframes tour-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 .tour-arrow { animation: tour-bob 1.2s ease-in-out infinite; }
+
+/* Conteúdo do app: vidro escuro que deixa a luz do topo atravessar */
+.app-main {
+  background:
+    radial-gradient(80% 40% at 50% 0%, color-mix(in oklab, var(--violet) 12%, transparent), transparent 70%),
+    radial-gradient(50% 30% at 0% 0%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 70%),
+    color-mix(in oklab, var(--landing-bg) 78%, transparent);
+}
+:root.theme-light .app-main { background: color-mix(in oklab, var(--landing-bg) 85%, transparent); }
