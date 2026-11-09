@@ -324,8 +324,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Moldura de vidro, igual ao mockup da landing */}
       <div className="relative z-10 mx-auto max-w-7xl px-2 pb-24 pt-6 md:px-6 md:pb-10">
-        <div className="rounded-[26px] border border-foreground/[0.08] bg-landing/90 p-1.5 app-frame-glow">
-          <main className="min-h-[calc(100vh-8rem)] rounded-[20px] border border-foreground/[0.06] bg-landing">{children}</main>
+        <div className="rounded-[26px] border border-foreground/[0.08] bg-landing/40 p-1.5 backdrop-blur-xl app-frame-glow">
+          <main className="app-main min-h-[calc(100vh-8rem)] rounded-[20px] border border-foreground/[0.06]">{children}</main>
         </div>
       </div>
 

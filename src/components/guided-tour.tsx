@@ -32,6 +32,7 @@ export const TOUR_STEPS: Step[] = [
 ];
 
 const doneKey = (userId: string) => `alvashar-tour-done:${userId}`;
+const STEP_KEY = "alvashar-tour-step";
 export const TOUR_START_EVENT = "alvashar-tour-start";
 
 /** Reinicia o tutorial (usado em Configurações). */
@@ -61,7 +62,8 @@ export function GuidedTour({ userId }: { userId: string }) {
 
   // Abre sozinho na primeira entrada; pode ser reaberto pelo evento.
   useEffect(() => {
-    if (localStorage.getItem(doneKey(userId)) !== "1") setIndex(0);
+    const saved = Number(sessionStorage.getItem(STEP_KEY));
+    if (localStorage.getItem(doneKey(userId)) !== "1") setIndex(Number.isFinite(saved) && saved > 0 && saved < TOUR_STEPS.length ? saved : 0);
     const start = () => { setIndex(0); };
     window.addEventListener(TOUR_START_EVENT, start);
     return () => window.removeEventListener(TOUR_START_EVENT, start);
@@ -83,7 +85,11 @@ export function GuidedTour({ userId }: { userId: string }) {
     });
   }, [userId]);
 
-  useEffect(() => { sawDialog.current = false; }, [index]);
+  useEffect(() => {
+    sawDialog.current = false;
+    if (index === null) sessionStorage.removeItem(STEP_KEY);
+    else sessionStorage.setItem(STEP_KEY, String(index));
+  }, [index]);
 
   // Acompanha a posição do alvo (ele pode surgir, mover ou rolar).
   useLayoutEffect(() => {
