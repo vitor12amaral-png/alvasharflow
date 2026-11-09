@@ -21,3 +21,5 @@
 - Agency calculator math lives in a pure price-calculator module separate from client pricing resolution, so tool changes never affect batch/finance pricing.
 - Shared surface utilities in src/styles.css (card-ref, card-featured, btn-cta, panel-landing, chip-ref, glass-apple, eclipse-*) style both the landing page and the signed-in app, so the two stay one visual language; prefer them over ad-hoc shadows/glows.
 - Cursor spotlight is one global pointer listener (src/lib/spotlight.ts) setting --mx/--my on hovered panels plus CSS ::before layers, so every card gets hover light without per-component code.
+- Visual templates live in src/lib/themes.ts and are a per-user preference applied as inline CSS variables on <html>; the "marca" template defers to workspace branding, so personal looks never change the agency's saved brand.
+- The guided tour (src/components/guided-tour.tsx) targets elements by data-tour attributes and advances on real actions (route, click, dialog close), so tutorial steps keep working when layouts change.
