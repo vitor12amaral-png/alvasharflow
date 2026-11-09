@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LogOut, Loader2, Copy, Link2, Trash2, Plus, Pencil, X, Save } from "lucide-react";
+import { LogOut, Loader2, Copy, Link2, Trash2, Plus, Pencil, X, Save, Check } from "lucide-react";
 import { initials } from "@/lib/format";
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { STAGE_LABEL, PRIORITY_LABEL } from "@/lib/video-workflow";
 import type { VideoStatus, VideoPriority } from "@/lib/video-workflow";
 import { listCopilotMemory, rememberForCopilot, forgetCopilotMemory, updateCopilotMemory } from "@/lib/copilot-memory.functions";
+import { THEME_TEMPLATES, customTemplate } from "@/lib/themes";
+import { restartTour } from "@/components/guided-tour";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: ConfigPage,

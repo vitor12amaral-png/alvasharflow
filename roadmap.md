@@ -110,3 +110,10 @@
    - [x] Eclipse luminoso grosso e luz real sobre o painel do produto.
    - [x] Grade de recursos com feixe e brilhos coloridos como na referência.
    - [x] Comparar com os quadros da referência a cada ajuste.
+
+20. Aparência, tutorial e vida no app (nov/2026)
+   - [x] Abas do app no desenho da página de vendas.
+   - [x] Luz do mouse mais suave no Workflow; app menos escuro (luz no topo e brilho do quadro).
+   - [x] Opções ao passar o mouse (menus do topo e cartões do Workflow).
+   - [x] Modelos de cor do app inteiro em Configurações → Aparência (inclui Apple Glass Claro, Grafite e cor personalizada).
+   - [x] Tutorial guiado com foco, setas, ações reais e botão de pular.
