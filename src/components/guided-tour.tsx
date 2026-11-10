@@ -16,15 +16,17 @@ type Step = {
   path?: string;
   /** Pula o passo quando já estiver nesta tela. */
   skipIfAt?: string;
+  /** Afasta a caixa do alvo (ex.: abrir espaço para o menu que surge). */
+  offset?: number;
 };
 
 export const TOUR_STEPS: Step[] = [
   { mode: "next", title: "Bem-vindo ao AlvasharFlow", body: "Em 1 minuto você aprende o essencial fazendo de verdade: criar seu primeiro cliente, lançar uma leva e acompanhar no Workflow." },
   { mode: "next", target: '[data-tour="nav"]', title: "Suas abas", body: "Tudo fica aqui no topo. Passe o mouse sobre um grupo e as opções aparecem na hora, sem clicar." },
-  { mode: "route", target: '[data-tour="nav-clientes"]', path: "/clientes", skipIfAt: "/clientes", title: "Abra seus clientes", body: "Passe o mouse em Clientes e escolha Clientes." },
+  { mode: "route", target: '[data-tour="nav-clientes"]', path: "/clientes", skipIfAt: "/clientes", offset: 190, title: "Abra seus clientes", body: "Passe o mouse em Clientes e escolha Clientes." },
   { mode: "click", target: '[data-tour="new-client"]', path: "/clientes", title: "Crie seu primeiro cliente", body: "Clique em Novo cliente." },
   { mode: "dialog-close", target: '[role="dialog"]', path: "/clientes", title: "Preencha e salve", body: "Digite o nome do cliente e o pacote, depois clique em Salvar. Pode ser um cliente de teste." },
-  { mode: "route", target: '[data-tour="nav-trabalho"]', path: "/workflow", skipIfAt: "/workflow", title: "Vá para o Workflow", body: "Passe o mouse em Trabalho e escolha Workflow. É aqui que os vídeos andam." },
+  { mode: "route", target: '[data-tour="nav-trabalho"]', path: "/workflow", skipIfAt: "/workflow", offset: 150, title: "Vá para o Workflow", body: "Passe o mouse em Trabalho e escolha Workflow. É aqui que os vídeos andam." },
   { mode: "next", target: '[data-tour="new-batch"]', path: "/workflow", title: "Nova leva", body: "Aqui você lança os vídeos do mês de um cliente de uma vez. O mês da leva é independente do prazo." },
   { mode: "next", target: '[data-tour="board"]', path: "/workflow", title: "Seu quadro", body: "Arraste os cartões entre as etapas. Passe o mouse num cartão para avançar etapa ou escolher o editor na hora." },
   { mode: "next", target: '[data-tour="copilot"]', title: "Seu copiloto", body: "Toque na bolinha e fale. Ele cria levas, move vídeos e responde por voz." },
@@ -143,8 +145,9 @@ export function GuidedTour({ userId }: { userId: string }) {
   const hole = rect ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 } : null;
   const cardW = Math.min(340, vw.w - 24);
   const below = hole ? hole.top + hole.height + 210 < vw.h || hole.top < 220 : false;
-  const cardTop = hole ? (below ? Math.min(hole.top + hole.height + 18, vw.h - 200) : Math.max(12, hole.top - 18 - 190)) : vw.h / 2 - 110;
-  const cardLeft = hole ? Math.min(Math.max(12, hole.left + hole.width / 2 - cardW / 2), vw.w - cardW - 12) : vw.w / 2 - cardW / 2;
+  const cardTop = hole ? (below ? Math.min(hole.top + hole.height + 18 + (step.offset ?? 0), vw.h - 200) : Math.max(12, hole.top - 18 - 190)) : vw.h / 2 - 110;
+  const off = step.offset ?? 0;
+  const cardLeft = hole && off ? Math.min(hole.left + hole.width + 24, vw.w - cardW - 12) : hole ? Math.min(Math.max(12, hole.left + hole.width / 2 - cardW / 2), vw.w - cardW - 12) : vw.w / 2 - cardW / 2;
   const arrowLeft = hole ? Math.min(Math.max(16, hole.left + hole.width / 2 - cardLeft - 10), cardW - 36) : 0;
   const needsTrip = !rect && step.path && !location.pathname.startsWith(step.path);
   const waiting = step.mode !== "next";
