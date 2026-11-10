@@ -15,6 +15,13 @@
       "when": 1792462803492,
       "tag": "0001_blocks_revisions_capacity_quota",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794270421653,
+      "tag": "0002_profile_tour_completed",
+      "breakpoints": true
     }
   ]
 }
