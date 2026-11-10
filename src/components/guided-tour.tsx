@@ -16,15 +16,17 @@ type Step = {
   path?: string;
   /** Pula o passo quando já estiver nesta tela. */
   skipIfAt?: string;
+  /** Afasta a caixa do alvo (ex.: abrir espaço para o menu que surge). */
+  offset?: number;
 };
 
 export const TOUR_STEPS: Step[] = [
   { mode: "next", title: "Bem-vindo ao AlvasharFlow", body: "Em 1 minuto você aprende o essencial fazendo de verdade: criar seu primeiro cliente, lançar uma leva e acompanhar no Workflow." },
   { mode: "next", target: '[data-tour="nav"]', title: "Suas abas", body: "Tudo fica aqui no topo. Passe o mouse sobre um grupo e as opções aparecem na hora, sem clicar." },
-  { mode: "route", target: '[data-tour="nav-clientes"]', path: "/clientes", skipIfAt: "/clientes", title: "Abra seus clientes", body: "Passe o mouse em Clientes e escolha Clientes." },
+  { mode: "route", target: '[data-tour="nav-clientes"]', path: "/clientes", skipIfAt: "/clientes", offset: 230, title: "Abra seus clientes", body: "Passe o mouse em Clientes e escolha Clientes." },
   { mode: "click", target: '[data-tour="new-client"]', path: "/clientes", title: "Crie seu primeiro cliente", body: "Clique em Novo cliente." },
-  { mode: "dialog-close", target: '[role="dialog"]', path: "/clientes", title: "Preencha e salve", body: "Digite o nome do cliente e o pacote, depois clique em Salvar. Pode ser um cliente de teste." },
-  { mode: "route", target: '[data-tour="nav-trabalho"]', path: "/workflow", skipIfAt: "/workflow", title: "Vá para o Workflow", body: "Passe o mouse em Trabalho e escolha Workflow. É aqui que os vídeos andam." },
+  { mode: "dialog-close", target: '[role="dialog"]:not([data-tour-card])', path: "/clientes", title: "Preencha e salve", body: "Digite o nome do cliente e o pacote, depois clique em Salvar. Pode ser um cliente de teste." },
+  { mode: "route", target: '[data-tour="nav-trabalho"]', path: "/workflow", skipIfAt: "/workflow", offset: 230, title: "Vá para o Workflow", body: "Passe o mouse em Trabalho e escolha Workflow. É aqui que os vídeos andam." },
   { mode: "next", target: '[data-tour="new-batch"]', path: "/workflow", title: "Nova leva", body: "Aqui você lança os vídeos do mês de um cliente de uma vez. O mês da leva é independente do prazo." },
   { mode: "next", target: '[data-tour="board"]', path: "/workflow", title: "Seu quadro", body: "Arraste os cartões entre as etapas. Passe o mouse num cartão para avançar etapa ou escolher o editor na hora." },
   { mode: "next", target: '[data-tour="copilot"]', title: "Seu copiloto", body: "Toque na bolinha e fale. Ele cria levas, move vídeos e responde por voz." },
@@ -144,7 +146,17 @@ export function GuidedTour({ userId }: { userId: string }) {
   const cardW = Math.min(340, vw.w - 24);
   const below = hole ? hole.top + hole.height + 210 < vw.h || hole.top < 220 : false;
   const cardTop = hole ? (below ? Math.min(hole.top + hole.height + 18, vw.h - 200) : Math.max(12, hole.top - 18 - 190)) : vw.h / 2 - 110;
-  const cardLeft = hole ? Math.min(Math.max(12, hole.left + hole.width / 2 - cardW / 2), vw.w - cardW - 12) : vw.w / 2 - cardW / 2;
+  const off = step.offset ?? 0;
+  const cardLeft = hole && off ? Math.min(hole.left + off, vw.w - cardW - 12) : hole ? Math.min(Math.max(12, hole.left + hole.width / 2 - cardW / 2), vw.w - cardW - 12) : vw.w / 2 - cardW / 2;
+  // Alvo grande (ex.: janela de cadastro): caixa ao lado, sem cobrir.
+  let side: "left" | "right" | null = null;
+  if (hole && hole.height > 280) {
+    if (hole.left + hole.width + cardW + 24 < vw.w) side = "right";
+    else if (hole.left - cardW - 24 > 0) side = "left";
+  }
+  const finalTop = side && hole ? Math.min(Math.max(12, hole.top + hole.height / 2 - 110), vw.h - 240) : hole && hole.height > 280 ? vw.h - 250 : cardTop;
+  const finalLeft = side === "right" && hole ? hole.left + hole.width + 20 : side === "left" && hole ? hole.left - cardW - 20 : hole && hole.height > 280 ? vw.w - cardW - 16 : cardLeft;
+  const showArrow = !!hole && !side && hole.height <= 280;
   const arrowLeft = hole ? Math.min(Math.max(16, hole.left + hole.width / 2 - cardLeft - 10), cardW - 36) : 0;
   const needsTrip = !rect && step.path && !location.pathname.startsWith(step.path);
   const waiting = step.mode !== "next";
@@ -158,13 +170,14 @@ export function GuidedTour({ userId }: { userId: string }) {
         <div className="fixed inset-0 z-[45] bg-[oklch(0.05_0.01_260/0.74)] backdrop-blur-[2px]" aria-hidden />
       )}
       <div
-        role="dialog"
+        role="region"
+        aria-live="polite"
         aria-label={step.title}
         data-tour-card
         className="glass-apple fixed z-[60] rounded-2xl p-5 text-foreground animate-in fade-in-0 zoom-in-95"
-        style={{ top: cardTop, left: cardLeft, width: cardW }}
+        style={{ top: finalTop, left: finalLeft, width: cardW }}
       >
-        {hole && (
+        {showArrow && (
           <span className={cn("tour-arrow absolute text-primary", below ? "-top-6" : "-bottom-6")} style={{ left: arrowLeft }}>
             {below ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
           </span>
