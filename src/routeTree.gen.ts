@@ -30,6 +30,7 @@ import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
 import { Route as AuthenticatedMeuDiaRouteImport } from './routes/_authenticated/meu-dia'
 import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
+import { Route as AuthenticatedTutoriaisRouteImport } from './routes/_authenticated/tutoriais'
 import { Route as AuthenticatedVideosRouteImport } from './routes/_authenticated/videos'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedWorkflowRouteImport } from './routes/_authenticated/workflow'
@@ -152,6 +153,11 @@ const AuthenticatedTarefasRoute = AuthenticatedTarefasRouteImport.update({
   path: '/tarefas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTutoriaisRoute = AuthenticatedTutoriaisRouteImport.update({
+  id: '/tutoriais',
+  path: '/tutoriais',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedVideosRoute = AuthenticatedVideosRouteImport.update({
   id: '/videos',
   path: '/videos',
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/marketing': typeof AuthenticatedMarketingRoute
   '/meu-dia': typeof AuthenticatedMeuDiaRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
+  '/tutoriais': typeof AuthenticatedTutoriaisRoute
   '/videos': typeof AuthenticatedVideosRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/workflow': typeof AuthenticatedWorkflowRoute
@@ -276,6 +283,7 @@ export interface FileRoutesByTo {
   '/marketing': typeof AuthenticatedMarketingRoute
   '/meu-dia': typeof AuthenticatedMeuDiaRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
+  '/tutoriais': typeof AuthenticatedTutoriaisRoute
   '/videos': typeof AuthenticatedVideosRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/workflow': typeof AuthenticatedWorkflowRoute
@@ -313,6 +321,7 @@ export interface FileRoutesById {
   '/_authenticated/marketing': typeof AuthenticatedMarketingRoute
   '/_authenticated/meu-dia': typeof AuthenticatedMeuDiaRoute
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
+  '/_authenticated/tutoriais': typeof AuthenticatedTutoriaisRoute
   '/_authenticated/videos': typeof AuthenticatedVideosRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/_authenticated/workflow': typeof AuthenticatedWorkflowRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/marketing'
     | '/meu-dia'
     | '/tarefas'
+    | '/tutoriais'
     | '/videos'
     | '/whatsapp'
     | '/workflow'
@@ -385,6 +395,7 @@ export interface FileRouteTypes {
     | '/marketing'
     | '/meu-dia'
     | '/tarefas'
+    | '/tutoriais'
     | '/videos'
     | '/whatsapp'
     | '/workflow'
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing'
     | '/_authenticated/meu-dia'
     | '/_authenticated/tarefas'
+    | '/_authenticated/tutoriais'
     | '/_authenticated/videos'
     | '/_authenticated/whatsapp'
     | '/_authenticated/workflow'
@@ -604,6 +616,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTarefasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/tutoriais': {
+      id: '/_authenticated/tutoriais'
+      path: '/tutoriais'
+      fullPath: '/tutoriais'
+      preLoaderRoute: typeof AuthenticatedTutoriaisRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/videos': {
       id: '/_authenticated/videos'
       path: '/videos'
@@ -713,6 +732,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRoute
   AuthenticatedMeuDiaRoute: typeof AuthenticatedMeuDiaRoute
   AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
+  AuthenticatedTutoriaisRoute: typeof AuthenticatedTutoriaisRoute
   AuthenticatedVideosRoute: typeof AuthenticatedVideosRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedWorkflowRoute: typeof AuthenticatedWorkflowRoute
@@ -734,6 +754,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMarketingRoute: AuthenticatedMarketingRoute,
   AuthenticatedMeuDiaRoute: AuthenticatedMeuDiaRoute,
   AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
+  AuthenticatedTutoriaisRoute: AuthenticatedTutoriaisRoute,
   AuthenticatedVideosRoute: AuthenticatedVideosRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedWorkflowRoute: AuthenticatedWorkflowRoute,

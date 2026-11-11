@@ -4,6 +4,7 @@ import {
   Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone, Volume2, VolumeX, Sparkles, MessageCircle,
   Wrench, ShieldCheck, ChevronDown,
+  GraduationCap,
 } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -52,6 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: "/financeiro", label: "Financeiro", icon: Wallet },
     { to: "/equipe", label: "Equipe", icon: UsersRound },
     { to: "/ferramentas", label: "Ferramentas", icon: Wrench },
+    { to: "/tutoriais", label: "Tutoriais", icon: GraduationCap },
     { to: "/contas", label: "Contas", icon: ShieldCheck, ownerOnly: true },
   ] },
 ];
