@@ -4,6 +4,7 @@ import {
   Wallet, Settings, UsersRound, LogOut, Loader2,
   CheckSquare, Megaphone, Volume2, VolumeX, Sparkles, MessageCircle,
   Wrench, ShieldCheck, ChevronDown,
+  GraduationCap,
 } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
