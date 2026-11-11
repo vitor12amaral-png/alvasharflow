@@ -166,7 +166,7 @@ export function DueBadge({ due, time, className, muted }: { due: string | null; 
       )}
     >
       <CalendarClock className="h-3 w-3" />
-      {due ? formatDue(due, time) : "prazo"}
+      {due ? formatDue(due, time) : "Definir prazo"}
     </span>
   );
 }
