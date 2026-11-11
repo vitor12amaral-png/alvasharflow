@@ -3,43 +3,17 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { getTour, ONBOARDING_ID, shouldAutoStart, type TourStep } from "@/lib/tours";
 
-type Mode = "next" | "route" | "click" | "dialog-close";
-type Step = {
-  title: string;
-  body: string;
-  /** Seletor do elemento destacado; sem ele o passo aparece no centro. */
-  target?: string;
-  /** Como o passo avança: botão, chegar numa tela, clicar no alvo ou concluir a janela. */
-  mode: Mode;
-  /** Tela onde o passo acontece (para o atalho "Me leve até lá"). */
-  path?: string;
-  /** Pula o passo quando já estiver nesta tela. */
-  skipIfAt?: string;
-  /** Afasta a caixa do alvo (ex.: abrir espaço para o menu que surge). */
-  offset?: number;
-};
-
-export const TOUR_STEPS: Step[] = [
-  { mode: "next", title: "Bem-vindo ao AlvasharFlow", body: "Em 1 minuto você aprende o essencial fazendo de verdade: criar seu primeiro cliente, lançar uma leva e acompanhar no Workflow." },
-  { mode: "next", target: '[data-tour="nav"]', title: "Suas abas", body: "Tudo fica aqui no topo. Passe o mouse sobre um grupo e as opções aparecem na hora, sem clicar." },
-  { mode: "route", target: '[data-tour="nav-clientes"]', path: "/clientes", skipIfAt: "/clientes", offset: 230, title: "Abra seus clientes", body: "Passe o mouse em Clientes e escolha Clientes." },
-  { mode: "click", target: '[data-tour="new-client"]', path: "/clientes", title: "Crie seu primeiro cliente", body: "Clique em Novo cliente." },
-  { mode: "dialog-close", target: '[role="dialog"]:not([data-tour-card])', path: "/clientes", title: "Preencha e salve", body: "Digite o nome do cliente e o pacote, depois clique em Salvar. Pode ser um cliente de teste." },
-  { mode: "route", target: '[data-tour="nav-trabalho"]', path: "/workflow", skipIfAt: "/workflow", offset: 230, title: "Vá para o Workflow", body: "Passe o mouse em Trabalho e escolha Workflow. É aqui que os vídeos andam." },
-  { mode: "next", target: '[data-tour="new-batch"]', path: "/workflow", title: "Nova leva", body: "Aqui você lança os vídeos do mês de um cliente de uma vez. O mês da leva é independente do prazo." },
-  { mode: "next", target: '[data-tour="board"]', path: "/workflow", title: "Seu quadro", body: "Arraste os cartões entre as etapas. Passe o mouse num cartão para avançar etapa ou escolher o editor na hora." },
-  { mode: "next", target: '[data-tour="copilot"]', title: "Seu copiloto", body: "Toque na bolinha e fale. Ele cria levas, move vídeos e responde por voz." },
-  { mode: "next", title: "Tudo pronto!", body: "Em Configurações → Aparência você troca as cores do app inteiro, e pode refazer este tutorial quando quiser." },
-];
-
+type Step = TourStep;
 const doneKey = (userId: string) => `alvashar-tour-done:${userId}`;
 const STEP_KEY = "alvashar-tour-step";
 export const TOUR_START_EVENT = "alvashar-tour-start";
 
-/** Reinicia o tutorial (usado em Configurações). */
-export function restartTour() {
-  window.dispatchEvent(new CustomEvent(TOUR_START_EVENT));
+/** Inicia um tutorial (o de primeiros passos por padrão). */
+export function restartTour(id: string = ONBOARDING_ID) {
+  window.dispatchEvent(new CustomEvent(TOUR_START_EVENT, { detail: id }));
 }
 
 type Rect = { top: number; left: number; width: number; height: number };
@@ -59,39 +33,62 @@ export function GuidedTour({ userId }: { userId: string }) {
   const [vw, setVw] = useState({ w: 1280, h: 800 });
   const location = useLocation();
   const navigate = useNavigate();
+  const [tourId, setTourId] = useState(ONBOARDING_ID);
+  const TOUR_STEPS = getTour(tourId).steps;
   const step = index === null ? null : TOUR_STEPS[index];
   const sawDialog = useRef(false);
 
-  // Abre sozinho na primeira entrada; pode ser reaberto pelo evento.
+  // Abre sozinho só para quem nunca concluiu nem pulou (salvo na conta).
   useEffect(() => {
+    let alive = true;
+    const savedId = sessionStorage.getItem(STEP_KEY + ":id") ?? ONBOARDING_ID;
     const saved = Number(sessionStorage.getItem(STEP_KEY));
-    if (localStorage.getItem(doneKey(userId)) !== "1") setIndex(Number.isFinite(saved) && saved > 0 && saved < TOUR_STEPS.length ? saved : 0);
-    const start = () => { setIndex(0); };
+    if (sessionStorage.getItem(STEP_KEY) !== null && Number.isFinite(saved)) { setTourId(savedId); setIndex(saved); }
+    else if (localStorage.getItem(doneKey(userId)) !== "1") {
+      supabase.from("profiles").select("tour_completed_at").eq("id", userId).maybeSingle().then(({ data }) => {
+        if (!alive) return;
+        if (data && shouldAutoStart(data.tour_completed_at)) { setTourId(ONBOARDING_ID); setIndex(0); }
+        else if (data) localStorage.setItem(doneKey(userId), "1");
+      });
+    }
+    const start = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail || ONBOARDING_ID;
+      const t = getTour(id);
+      setTourId(t.id);
+      if (t.path && !window.location.pathname.startsWith(t.path)) navigate({ to: t.path });
+      setIndex(0);
+    };
     window.addEventListener(TOUR_START_EVENT, start);
-    return () => window.removeEventListener(TOUR_START_EVENT, start);
-  }, [userId]);
+    return () => { alive = false; window.removeEventListener(TOUR_START_EVENT, start); };
+  }, [userId, navigate]);
+
+  const markDone = useCallback(() => {
+    if (tourId !== ONBOARDING_ID) return;
+    localStorage.setItem(doneKey(userId), "1");
+    void supabase.from("profiles").update({ tour_completed_at: new Date().toISOString() }).eq("id", userId);
+  }, [userId, tourId]);
 
   const finish = useCallback(() => {
-    localStorage.setItem(doneKey(userId), "1");
+    markDone();
     setIndex(null);
     setRect(null);
-  }, [userId]);
+  }, [markDone]);
 
   const next = useCallback(() => {
     setIndex((i) => {
       if (i === null) return null;
       let n = i + 1;
       while (n < TOUR_STEPS.length && TOUR_STEPS[n].skipIfAt && window.location.pathname.startsWith(TOUR_STEPS[n].skipIfAt!)) n++;
-      if (n >= TOUR_STEPS.length) { localStorage.setItem(doneKey(userId), "1"); return null; }
+      if (n >= TOUR_STEPS.length) { markDone(); return null; }
       return n;
     });
-  }, [userId]);
+  }, [markDone, TOUR_STEPS]);
 
   useEffect(() => {
     sawDialog.current = false;
-    if (index === null) sessionStorage.removeItem(STEP_KEY);
-    else sessionStorage.setItem(STEP_KEY, String(index));
-  }, [index]);
+    if (index === null) { sessionStorage.removeItem(STEP_KEY); sessionStorage.removeItem(STEP_KEY + ":id"); }
+    else { sessionStorage.setItem(STEP_KEY, String(index)); sessionStorage.setItem(STEP_KEY + ":id", tourId); }
+  }, [index, tourId]);
 
   // Acompanha a posição do alvo (ele pode surgir, mover ou rolar).
   useLayoutEffect(() => {
@@ -148,15 +145,22 @@ export function GuidedTour({ userId }: { userId: string }) {
   const cardTop = hole ? (below ? Math.min(hole.top + hole.height + 18, vw.h - 200) : Math.max(12, hole.top - 18 - 190)) : vw.h / 2 - 110;
   const off = step.offset ?? 0;
   const cardLeft = hole && off ? Math.min(hole.left + off, vw.w - cardW - 12) : hole ? Math.min(Math.max(12, hole.left + hole.width / 2 - cardW / 2), vw.w - cardW - 12) : vw.w / 2 - cardW / 2;
-  // Alvo grande (ex.: janela de cadastro): caixa ao lado, sem cobrir.
+  // Alvo grande (ex.: janela de cadastro): caixa ao lado; sem espaço, vira uma faixa compacta no maior vão livre.
+  const big = !!hole && hole.height > 280;
   let side: "left" | "right" | null = null;
-  if (hole && hole.height > 280) {
+  if (big && hole) {
     if (hole.left + hole.width + cardW + 24 < vw.w) side = "right";
     else if (hole.left - cardW - 24 > 0) side = "left";
   }
-  const finalTop = side && hole ? Math.min(Math.max(12, hole.top + hole.height / 2 - 110), vw.h - 240) : hole && hole.height > 280 ? vw.h - 250 : cardTop;
-  const finalLeft = side === "right" && hole ? hole.left + hole.width + 20 : side === "left" && hole ? hole.left - cardW - 20 : hole && hole.height > 280 ? vw.w - cardW - 16 : cardLeft;
-  const showArrow = !!hole && !side && hole.height <= 280;
+  const compact = big && !side;
+  const gapTop = hole ? hole.top : 0;
+  const gapBottom = hole ? vw.h - (hole.top + hole.height) : 0;
+  const compactW = Math.min(420, vw.w - 16);
+  const finalTop = side && hole ? Math.min(Math.max(12, hole.top + hole.height / 2 - 110), vw.h - 240)
+    : compact ? (gapBottom > gapTop ? vw.h - 8 - 92 : 8) : cardTop;
+  const finalLeft = side === "right" && hole ? hole.left + hole.width + 20 : side === "left" && hole ? hole.left - cardW - 20
+    : compact ? vw.w / 2 - compactW / 2 : cardLeft;
+  const showArrow = !!hole && !big;
   const arrowLeft = hole ? Math.min(Math.max(16, hole.left + hole.width / 2 - cardLeft - 10), cardW - 36) : 0;
   const needsTrip = !rect && step.path && !location.pathname.startsWith(step.path);
   const waiting = step.mode !== "next";
@@ -164,7 +168,7 @@ export function GuidedTour({ userId }: { userId: string }) {
 
   return (
     <>
-      {hole ? (
+      {step.mode === "dialog-close" && hole ? null : hole ? (
         <div className="tour-hole" style={{ ...hole, zIndex: 45 }} aria-hidden />
       ) : (
         <div className="fixed inset-0 z-[45] bg-[oklch(0.05_0.01_260/0.74)] backdrop-blur-[2px]" aria-hidden />
@@ -174,9 +178,21 @@ export function GuidedTour({ userId }: { userId: string }) {
         aria-live="polite"
         aria-label={step.title}
         data-tour-card
-        className="glass-apple fixed z-[60] rounded-2xl p-5 text-foreground animate-in fade-in-0 zoom-in-95"
-        style={{ top: finalTop, left: finalLeft, width: cardW }}
+        className="glass-apple fixed z-[60] text-foreground", compact ? "rounded-2xl p-3" : "rounded-2xl p-5", " animate-in fade-in-0 zoom-in-95"
+        style={{ top: finalTop, left: finalLeft, width: compact ? compactW : cardW, pointerEvents: "auto" }}
+        onPointerDown={(e) => e.stopPropagation()}
       >
+        {compact ? (
+          <div className="flex items-center gap-3 px-1">
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{step.title}</p>
+              <p className="line-clamp-2 text-xs text-muted-foreground">{step.body}</p>
+            </div>
+            <Button size="sm" variant="ghost" onClick={next}>Pular passo</Button>
+            <button onClick={finish} className="rounded-full p-1 text-muted-foreground hover:text-foreground" aria-label="Fechar tutorial"><X className="h-4 w-4" /></button>
+          </div>
+        ) : (<>
         {showArrow && (
           <span className={cn("tour-arrow absolute text-primary", below ? "-top-6" : "-bottom-6")} style={{ left: arrowLeft }}>
             {below ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
@@ -206,6 +222,7 @@ export function GuidedTour({ userId }: { userId: string }) {
             )}
           </div>
         </div>
+        </>)}
       </div>
     </>
   );
