@@ -178,7 +178,7 @@ export function GuidedTour({ userId }: { userId: string }) {
         aria-live="polite"
         aria-label={step.title}
         data-tour-card
-        className="glass-apple fixed z-[60] text-foreground", compact ? "rounded-2xl p-3" : "rounded-2xl p-5", " animate-in fade-in-0 zoom-in-95"
+        className={cn("glass-apple fixed z-[60] text-foreground animate-in fade-in-0 zoom-in-95", compact ? "rounded-2xl p-3" : "rounded-2xl p-5")}
         style={{ top: finalTop, left: finalLeft, width: compact ? compactW : cardW, pointerEvents: "auto" }}
         onPointerDown={(e) => e.stopPropagation()}
       >
