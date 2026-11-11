@@ -33,6 +33,8 @@ import { NEXT_ACTION, useWorkflowTeam, VideoHistory } from "@/components/workflo
 import { sfx } from "@/lib/sfx";
 import { ColorPicker, colorValue, TAG_COLORS } from "@/components/color-tag";
 import { DueDatePopover, DueBadge } from "@/components/due-date-popover";
+import { MonthlyBars } from "@/components/monthly-bars";
+import { buildMonthlySeries } from "@/lib/monthly-series";
 import { VideoChecklist, parseChecklist } from "@/components/video-checklist";
 import { WeekBoard } from "@/components/week-board";
 import { suggestPerVideo } from "@/lib/pricing";
@@ -705,7 +707,7 @@ function WorkflowBoard({ clientId, clients, primaryView, initialVideoId, openNew
             </div>
           }
         />
-        <MonthStats videos={currentMonthVideos} priceByClient={priceByClient ?? {}} />
+        <MonthStats videos={currentMonthVideos} allVideos={allVideos ?? []} ym={ym} priceByClient={priceByClient ?? {}} />
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
           <Segmented
             value={primaryView}
@@ -1008,6 +1010,7 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
           </div>
         </div>
       ))}
+      <MonthlyBars className="col-span-2 md:col-span-4" points={buildMonthlySeries(allVideos, ym, 6, (id) => priceByClient[id] ?? 0)} title="Entregas por mês" />
     </div>
   );
 }
@@ -1315,8 +1318,6 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
   const drop = useDroppable({ id: `drop::${video.id}` });
   const tint = colorValue(video.color);
   const done = video.status === "entregue" || video.status === "aprovado";
-  const stageIdx = VIDEO_STAGES.findIndex((st) => st.id === video.status);
-  const nextStage = stageIdx >= 0 ? VIDEO_STAGES[stageIdx + 1] : undefined;
   void onMove; void moving; void onEstimate; void mutedDue; void anySelected; void clients; void parentId; void brandName; void onSetClient;
   return (
     <div ref={(node) => { setNodeRef(node); drop.setNodeRef(node); }} data-vid={video.id}
@@ -1352,32 +1353,24 @@ function VideoCard({ video, selected, onToggle, onExpand, anySelected, selectedC
         <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
       </button>
       </div>
-      {/* Ações rápidas: aparecem ao passar o mouse (sempre visíveis no toque) */}
-      <div className="grid grid-rows-[1fr] transition-[grid-template-rows,opacity] duration-200 md:grid-rows-[0fr] md:opacity-0 md:group-hover:grid-rows-[1fr] md:group-hover:opacity-100 md:group-focus-within:grid-rows-[1fr] md:group-focus-within:opacity-100">
-        <div className="min-h-0 overflow-hidden">
-          <div className="mt-2 flex items-center gap-1.5 border-t border-border/50 pt-2">
-            {onSetStatus && nextStage && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onSetStatus(nextStage.id); }}
-                className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary transition-colors hover:bg-primary/25"
-                title={`Avançar para ${nextStage.label}`}
-              >
-                <ChevronRight className="h-3 w-3" /> {nextStage.label}
-              </button>
-            )}
-            <select
-              value={video.editor_id ?? ""}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => onAssign(e.target.value || null)}
-              className="h-6 min-w-0 flex-1 truncate py-0 pl-2 text-[10px]"
-              aria-label="Editor responsável"
-            >
-              <option value="">Sem editor</option>
-              {team.map((m) => <option key={m.id} value={m.id}>{m.full_name ?? "Sem nome"}</option>)}
-            </select>
-            <button onClick={(e) => { e.stopPropagation(); onExpand(); }} className="rounded-full px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground">Abrir</button>
-          </div>
-        </div>
+      {/* Linha fixa (sem expandir no hover): prazo e editor */}
+      <div className="mt-1.5 flex items-center gap-1.5 pl-5">
+        <DueDatePopover table="videos" ids={[video.id]} due={video.due_date} time={video.due_time} invalidate={[["videos-workflow"], ["fila-videos"], ["dashboard"]]}>
+          <button onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} aria-label="Definir prazo" className="shrink-0">
+            <DueBadge due={video.due_date} time={video.due_time} muted={done} />
+          </button>
+        </DueDatePopover>
+        <select
+          value={video.editor_id ?? ""}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onChange={(e) => onAssign(e.target.value || null)}
+          className="h-5 min-w-0 flex-1 truncate rounded border-0 bg-transparent py-0 pl-1 text-[10px] text-muted-foreground hover:text-foreground"
+          aria-label="Editor responsável"
+        >
+          <option value="">Sem editor</option>
+          {team.map((m) => <option key={m.id} value={m.id}>{m.full_name ?? "Sem nome"}</option>)}
+        </select>
       </div>
     </div>
   );
@@ -1841,7 +1834,7 @@ function GroupPopover({ onGroup }: { onGroup: (name: string | null, color: strin
 }
 
 /** Resumo do mês no mesmo formato do painel da página de vendas. */
-function MonthStats({ videos, priceByClient }: { videos: VideoRow[]; priceByClient: Record<string, number> }) {
+function MonthStats({ videos, allVideos, ym, priceByClient }: { videos: VideoRow[]; allVideos: VideoRow[]; ym: string; priceByClient: Record<string, number> }) {
   const today = new Date().toISOString().slice(0, 10);
   const done = videos.filter((v) => v.status === "aprovado" || v.status === "entregue").length;
   const late = videos.filter((v) => v.due_date && v.due_date < today && v.status !== "aprovado" && v.status !== "entregue").length;
@@ -1862,11 +1855,9 @@ function MonthStats({ videos, priceByClient }: { videos: VideoRow[]; priceByClie
             <p className="truncate font-display text-xl font-semibold">{s.value}</p>
             {s.note && <span className={cn("text-[10px] font-semibold", s.tone)}>{s.note}</span>}
           </div>
-          <svg viewBox="0 0 100 24" className="mt-2 h-5 w-full text-primary" fill="none" aria-hidden>
-            <path d="M0 18 L12 14 L24 16 L36 9 L48 12 L60 6 L72 10 L84 4 L100 7" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
         </div>
       ))}
+      <MonthlyBars className="col-span-2 md:col-span-4" points={buildMonthlySeries(allVideos, ym, 6, (id) => priceByClient[id] ?? 0)} title="Entregas por mês" />
     </div>
   );
 }
