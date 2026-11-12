@@ -1010,7 +1010,6 @@ function QueueView({ videos, mode, onOpen, onToday, onStatus }: {
           </div>
         </div>
       ))}
-      <MonthlyBars className="col-span-2 md:col-span-4" points={buildMonthlySeries(allVideos, ym, 6, (id) => priceByClient[id] ?? 0)} title="Entregas por mês" />
     </div>
   );
 }

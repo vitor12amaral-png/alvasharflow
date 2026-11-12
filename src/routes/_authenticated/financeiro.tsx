@@ -12,6 +12,8 @@ import { formatBRL, formatDate, daysUntil } from "@/lib/format";
 import { PACKAGE_LABEL } from "@/lib/video-workflow";
 import type { PackageSize } from "@/lib/video-workflow";
 import { MonthPicker, useMonthFromSearch } from "@/components/month-picker";
+import { MonthlyBars } from "@/components/monthly-bars";
+import { buildMonthlySeries, shiftYm } from "@/lib/monthly-series";
 import { monthFinance, packageUsage, type FinClient, type FinPackage, type FinVideo } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/financeiro")({
@@ -80,6 +82,16 @@ function FinanceiroPage() {
         <StatCard label="Falta entregar" value={formatBRL(fin.pendingValue)} note={`${fin.total - fin.delivered} vídeos`} tone="warning" icon={Hourglass} progress={fin.forecast > 0 ? (fin.pendingValue / fin.forecast) * 100 : 0} />
         <StatCard label="Pacotes ativos" value={formatBRL(recurring)} note={`${active.length} ativos`} icon={DollarSign} footer="Receita recorrente dos pacotes" />
       </div>
+
+      <MonthlyBars className="mt-3" metric="revenue" title="Faturamento por mês" points={(() => {
+        const base = buildMonthlySeries(videos, ym, 6);
+        return base.map((pt, i) => {
+          const revenue = monthFinance(videos, pt.ym, packages, clients).forecast;
+          const prevRev = i > 0 ? monthFinance(videos, shiftYm(pt.ym, -1), packages, clients).forecast : 0;
+          const delta = i > 0 && prevRev > 0 ? Math.round(((revenue - prevRev) / prevRev) * 100) : null;
+          return { ...pt, revenue, delta, tone: revenue === 0 ? "neutral" as const : delta !== null && delta < 0 ? "bad" as const : "good" as const };
+        });
+      })()} />
 
       <Card className="mt-3 flex flex-wrap items-center gap-x-8 gap-y-3 p-4">
         <div className="flex items-center gap-2">

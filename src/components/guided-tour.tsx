@@ -142,7 +142,7 @@ export function GuidedTour({ userId }: { userId: string }) {
   const hole = rect ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 } : null;
   const cardW = Math.min(340, vw.w - 24);
   const below = hole ? hole.top + hole.height + 210 < vw.h || hole.top < 220 : false;
-  const cardTop = hole ? (below ? Math.min(hole.top + hole.height + 18, vw.h - 200) : Math.max(12, hole.top - 18 - 190)) : vw.h / 2 - 110;
+  const cardTop = hole ? (below ? Math.min(hole.top + hole.height + 30, vw.h - 200) : Math.max(12, hole.top - 30 - 190)) : vw.h / 2 - 110;
   const off = step.offset ?? 0;
   const cardLeft = hole && off ? Math.min(hole.left + off, vw.w - cardW - 12) : hole ? Math.min(Math.max(12, hole.left + hole.width / 2 - cardW / 2), vw.w - cardW - 12) : vw.w / 2 - cardW / 2;
   // Alvo grande (ex.: janela de cadastro): caixa ao lado; sem espaço, vira uma faixa compacta no maior vão livre.
@@ -161,7 +161,6 @@ export function GuidedTour({ userId }: { userId: string }) {
   const finalLeft = side === "right" && hole ? hole.left + hole.width + 20 : side === "left" && hole ? hole.left - cardW - 20
     : compact ? vw.w / 2 - compactW / 2 : cardLeft;
   const showArrow = !!hole && !big;
-  const arrowLeft = hole ? Math.min(Math.max(16, hole.left + hole.width / 2 - cardLeft - 10), cardW - 36) : 0;
   const needsTrip = !rect && step.path && !location.pathname.startsWith(step.path);
   const waiting = step.mode !== "next";
   const isLast = index === TOUR_STEPS.length - 1;
@@ -172,6 +171,12 @@ export function GuidedTour({ userId }: { userId: string }) {
         <div className="tour-hole" style={{ ...hole, zIndex: 45 }} aria-hidden />
       ) : (
         <div className="fixed inset-0 z-[45] bg-[oklch(0.05_0.01_260/0.74)] backdrop-blur-[2px]" aria-hidden />
+      )}
+      {showArrow && hole && (
+        <span className="tour-arrow pointer-events-none fixed z-[61] text-primary" aria-hidden
+          style={{ left: hole.left + hole.width / 2 - 10, top: below ? hole.top + hole.height + 2 : hole.top - 24 }}>
+          {below ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
+        </span>
       )}
       <div
         role="region"
@@ -193,11 +198,6 @@ export function GuidedTour({ userId }: { userId: string }) {
             <button onClick={finish} className="rounded-full p-1 text-muted-foreground hover:text-foreground" aria-label="Fechar tutorial"><X className="h-4 w-4" /></button>
           </div>
         ) : (<>
-        {showArrow && (
-          <span className={cn("tour-arrow absolute text-primary", below ? "-top-6" : "-bottom-6")} style={{ left: arrowLeft }}>
-            {below ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
-          </span>
-        )}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-primary" /> Passo {index + 1} de {TOUR_STEPS.length}

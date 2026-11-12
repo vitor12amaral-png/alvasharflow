@@ -30,7 +30,7 @@ export const TOURS: Tour[] = [
       { mode: "dialog-close", target: '[role="dialog"]:not([data-tour-card])', path: "/clientes", title: "Preencha e salve", body: "Digite o nome e o pacote, depois clique em Salvar. Pode ser um cliente de teste." },
       { mode: "route", target: '[data-tour="nav-trabalho"]', path: "/workflow", skipIfAt: "/workflow", offset: 230, title: "Vá para o Workflow", body: "Passe o mouse em Trabalho e escolha Workflow. É aqui que os vídeos andam." },
       { mode: "next", target: '[data-tour="new-batch"]', path: "/workflow", title: "Nova leva", body: "Aqui você lança os vídeos do mês de um cliente de uma vez. O mês da leva é independente do prazo." },
-      { mode: "next", target: '[data-tour="board"]', path: "/workflow", title: "Seu quadro", body: "Arraste os cartões entre as etapas. Passe o mouse num cartão para avançar etapa ou escolher o editor na hora." },
+      { mode: "next", target: '[data-tour="board"]', path: "/workflow", title: "Seu quadro", body: "Arraste os cartões entre as etapas. Em cada cartão você define o prazo e o editor direto." },
       { mode: "next", target: '[data-tour="copilot"]', title: "Seu copiloto", body: "Toque na bolinha e fale. Ele cria levas, move vídeos e responde por voz." },
       { mode: "next", title: "Tudo pronto!", body: "Na aba Tutoriais (em Gestão) você encontra um passo a passo de cada ferramenta, quando quiser." },
     ],
@@ -44,7 +44,7 @@ export const TOURS: Tour[] = [
   { id: "workflow", title: "Workflow", path: "/workflow", description: "Levas do mês, etapas, editores e prazos.", steps: [
     { mode: "next", target: T, path: "/workflow", title: "O mês em andamento", body: "O Workflow abre no mês selecionado. Troque o mês para ver outras levas." },
     { mode: "next", target: '[data-tour="new-batch"]', path: "/workflow", title: "Nova leva", body: "Lance vários vídeos de um cliente para o mês de uma vez." },
-    { mode: "next", target: '[data-tour="board"]', path: "/workflow", title: "Etapas", body: "Arraste cartões entre colunas. Passe o mouse num cartão para avançar etapa, trocar editor ou abrir detalhes." },
+    { mode: "next", target: '[data-tour="board"]', path: "/workflow", title: "Etapas", body: "Arraste cartões entre colunas. Em cada cartão você define o prazo, troca o editor ou abre os detalhes." },
   ] },
   { id: "tarefas", title: "Tarefas", path: "/tarefas", description: "Pendências da equipe fora dos vídeos.", steps: [
     { mode: "next", target: T, path: "/tarefas", title: "Tarefas", body: "Organize pendências que não são vídeos: reuniões, roteiros, cobranças." },

@@ -30,7 +30,7 @@ export function MonthlyBars({ points, title = "Desempenho por mês", metric = "d
         <div className="text-right">
           <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
             p.tone === "bad" ? "bg-destructive/15 text-destructive" : p.tone === "good" ? "bg-success/15 text-success" : "bg-foreground/[0.06] text-muted-foreground")}>
-            <Trend className="h-3 w-3" />{p.delta === null ? "—" : `${p.delta > 0 ? "+" : ""}${p.delta}%`} vs mês anterior
+            <Trend className="h-3 w-3" />{p.delta === null ? "Sem comparação" : `${p.delta > 0 ? "+" : ""}${p.delta}% vs mês anterior`}
           </span>
           <p className="mt-1 text-[11px] text-muted-foreground">{verdict} · {p.pct}% concluído{metric === "done" && p.revenue > 0 ? ` · ${formatBRL(p.revenue)}` : ""}</p>
         </div>

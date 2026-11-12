@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildMonthlySeries } from "./monthly-series.ts";
+import { buildMonthlySeries } from "./monthly-series";
 
 const v = (m: string, status: string) => ({ competence_month: `${m}-01`, status, client_id: "c" });
 

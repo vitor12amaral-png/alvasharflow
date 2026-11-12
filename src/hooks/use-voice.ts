@@ -121,17 +121,45 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
     raf = requestAnimationFrame(tick);
   }, [transcribe]);
 
+  // Voz gratuita do próprio aparelho: escolhe a mais natural em português disponível.
+  const pickVoice = () => {
+    const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().replace("_", "-").startsWith("pt"));
+    const rank = (v: SpeechSynthesisVoice) => {
+      const n = v.name.toLowerCase();
+      let r = 0;
+      if (v.lang.toLowerCase().replace("_", "-").startsWith("pt-br")) r += 10;
+      if (/natural|neural|online|premium|enhanced|aprimorad/.test(n)) r += 8;
+      if (/google/.test(n)) r += 6;
+      if (/francisca|thalita|antonio|luciana|felipe|maria|daniel/.test(n)) r += 4;
+      if (/compact|espeak/.test(n)) r -= 10;
+      return r;
+    };
+    return voices.sort((a, b) => rank(b) - rank(a))[0] ?? null;
+  };
   const browserSpeak = useCallback((text: string) => {
     if (!window.speechSynthesis) { setState((s) => (s === "speaking" ? "idle" : s)); return; }
-    const u = new SpeechSynthesisUtterance(cleanForSpeech(text));
+    const clean = cleanForSpeech(text);
+    if (!clean) return;
+    const u = new SpeechSynthesisUtterance(clean);
     u.lang = "pt-BR";
-    u.rate = 1.05;
-    const voices = window.speechSynthesis.getVoices();
-    u.voice = voices.find((v) => v.lang.toLowerCase().startsWith("pt-br")) ?? voices.find((v) => v.lang.toLowerCase().startsWith("pt")) ?? null;
-    u.onstart = () => setState("speaking");
-    u.onend = u.onerror = () => setState((s) => (s === "speaking" ? "idle" : s));
+    u.rate = 1.02;
+    u.pitch = 1;
+    u.voice = pickVoice();
+    u.onstart = () => {
+      setState("speaking");
+      cancelAnimationFrame(speakRafRef.current);
+      const loop = () => { levelRef.current = 0.35 + Math.abs(Math.sin(performance.now() / 140)) * 0.4; speakRafRef.current = requestAnimationFrame(loop); };
+      speakRafRef.current = requestAnimationFrame(loop);
+    };
+    u.onend = u.onerror = () => {
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
+      cancelAnimationFrame(speakRafRef.current);
+      levelRef.current = 0;
+      setState((s) => (s === "speaking" ? "idle" : s));
+    };
     window.speechSynthesis.speak(u);
   }, []);
+  useEffect(() => { window.speechSynthesis?.getVoices(); }, []);
 
   const getQueue = useCallback(() => {
     if (!queueRef.current) {
@@ -164,14 +192,17 @@ export function useVoice({ onTranscript }: { onTranscript: (text: string, final:
   /** Adds a sentence to the neural voice queue; plays in order, starting immediately. */
   const speak = useCallback((text: string) => {
     if (!voiceEnabled || !text.trim()) return;
-    getQueue().enqueue(text);
-  }, [voiceEnabled, getQueue]);
+    // Sem custo: usa sempre a voz do aparelho (não gasta créditos de IA).
+    browserSpeak(text);
+  }, [voiceEnabled, browserSpeak]);
 
   const unlockAudio = useCallback(() => getQueue().unlock(), [getQueue]);
 
   const stopSpeaking = useCallback(() => {
     queueRef.current?.stop();
     window.speechSynthesis?.cancel();
+    cancelAnimationFrame(speakRafRef.current);
+    levelRef.current = 0;
     setState((s) => (s === "speaking" ? "idle" : s));
   }, []);
 
