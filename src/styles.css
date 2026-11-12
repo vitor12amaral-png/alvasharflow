@@ -474,12 +474,13 @@
   width: 55vw;
   height: 55vw;
   border-radius: 9999px;
-  filter: blur(120px);
-  opacity: 0.3;
+  opacity: 0.55;
+  will-change: transform;
   animation: ambient-drift 18s ease-in-out infinite;
 }
-.ambient-lights::before { top: -20vw; left: -12vw; background: var(--primary); }
-.ambient-lights::after { bottom: -25vw; right: -15vw; background: var(--violet); animation-delay: -9s; }
+/* Gradiente suave no lugar de filter: blur(120px) — mesma luz, sem custo de GPU a cada quadro */
+.ambient-lights::before { top: -20vw; left: -12vw; background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 60%, transparent), transparent); }
+.ambient-lights::after { bottom: -25vw; right: -15vw; background: radial-gradient(closest-side, color-mix(in oklab, var(--violet) 60%, transparent), transparent); animation-delay: -9s; }
 .cursor-glow {
   position: fixed;
   left: 0;
@@ -493,6 +494,7 @@
   border-radius: 9999px;
   background: radial-gradient(circle, color-mix(in oklab, var(--violet) 16%, transparent), color-mix(in oklab, var(--primary) 6%, transparent) 40%, transparent 70%);
   transform: translate3d(var(--gx, -999px), var(--gy, -999px), 0);
+  will-change: transform;
   transition: opacity 0.4s ease;
 }
 @media (hover: none) { .cursor-glow { display: none; } }

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sparkles, Send, Plus, Loader2, Wrench, Check, AlertCircle, Mic, Square, Volume2, VolumeX, X, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getBrain } from "@/lib/copilot-model";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -42,7 +43,7 @@ export function CopilotButton() {
     headers: async (): Promise<Record<string, string>> => {
       const { data } = await supabase.auth.getSession();
       const t = data.session?.access_token;
-      return t ? { Authorization: `Bearer ${t}` } : {};
+      return { "X-Copilot-Brain": getBrain(), ...(t ? { Authorization: `Bearer ${t}` } : {}) };
     },
   }), []);
 

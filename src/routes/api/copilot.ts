@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createLovableResponsesProvider, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader, LOVABLE_AIG_RUN_ID_HEADER } from "@/lib/ai-gateway.server";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { parseBrain } from "@/lib/copilot-model";
+import { createLovableAiGatewayRunIdFetch, createLovableResponsesProvider, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader, LOVABLE_AIG_RUN_ID_HEADER } from "@/lib/ai-gateway.server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
@@ -754,7 +756,8 @@ export const Route = createFileRoute("/api/copilot")({
         };
 
         const initialRunId = getLovableAiGatewayRunId(request);
-        const gateway = createLovableResponsesProvider(key, initialRunId);
+        const brain = parseBrain(request.headers.get("X-Copilot-Brain"));
+        const gateway = brain === "claude" ? createLovableAiGatewayRunIdFetch(initialRunId) : createLovableResponsesProvider(key, initialRunId);
         const today = new Date().toISOString().slice(0, 10);
         const system = `Você é o Copiloto do AlvasharFlow — sistema de gestão para creators, filmmakers e editores de vídeo. Data de hoje: ${today}. Usuário: ${profile?.full_name ?? "editor"} (papel: ${wsRole}).
 
@@ -776,20 +779,33 @@ Regras de interpretação (seja proativo, não pergunte o óbvio):
 Lembretes armazenados pelo usuário (use como contexto, mas não cite a menos que relevante):
 ${memoryText || "Nenhum ainda."}`;
 
+        const anthropic = brain === "claude"
+          ? createAnthropic({
+              baseURL: "https://ai.gateway.lovable.dev/v1",
+              apiKey: key,
+              headers: { "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
+              fetch: gateway.fetch,
+            })
+          : null;
         const result = streamText({
-          model: gateway.responses("openai/gpt-6-astra"),
+          model: anthropic
+            ? anthropic("anthropic/claude-sonnet-5")
+            : (gateway as ReturnType<typeof createLovableResponsesProvider>).responses("openai/gpt-6-astra"),
           system,
           messages: await convertToModelMessages(body.messages),
           tools,
-          providerOptions: {
-            openai: {
-              forceReasoning: true,
-              reasoningEffort: "low",
-              reasoningSummary: "auto",
-              store: false,
-              include: ["reasoning.encrypted_content"],
-            },
-          },
+          maxRetries: anthropic ? 0 : undefined,
+          providerOptions: anthropic
+            ? { anthropic: { thinking: { type: "disabled" } } }
+            : {
+                openai: {
+                  forceReasoning: true,
+                  reasoningEffort: "low",
+                  reasoningSummary: "auto",
+                  store: false,
+                  include: ["reasoning.encrypted_content"],
+                },
+              },
           stopWhen: stepCountIs(50),
         });
 

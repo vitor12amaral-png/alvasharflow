@@ -1,5 +1,6 @@
+import { BRAINS, getBrain, setBrain, type CopilotBrain } from "@/lib/copilot-model";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -167,6 +168,7 @@ function CopilotMemoryTab() {
           {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{editingId ? "Salvar alteração" : "Adicionar memória"}
         </Button>
       </Card>
+      <BrainPicker />
       <Card className="p-5">
         <p className="font-display text-sm font-semibold">O que o copiloto aprendeu</p>
         {query.isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div> : (query.data ?? []).length === 0 ? (
@@ -185,6 +187,27 @@ function CopilotMemoryTab() {
         )}
       </Card>
     </div>
+  );
+}
+
+function BrainPicker() {
+  const [brain, setB] = useState<CopilotBrain>("gpt");
+  useEffect(() => { setB(getBrain()); }, []);
+  return (
+    <Card className="p-5">
+      <p className="font-display text-sm font-semibold">Inteligência do copiloto</p>
+      <p className="mt-1 text-xs text-muted-foreground">Escolha qual IA entende e executa seus comandos. As ferramentas são as mesmas nas duas.</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {BRAINS.map((o) => (
+          <button key={o.id} type="button" onClick={() => { setBrain(o.id); setB(o.id); toast.success(`Copiloto usando ${o.label}`); }}
+            className={cn("rounded-xl border p-3 text-left transition-colors", brain === o.id ? "border-primary bg-primary/10" : "border-border hover:bg-foreground/[0.04]")}
+            aria-pressed={brain === o.id}>
+            <p className="text-sm font-medium">{o.label}</p>
+            <p className="text-xs text-muted-foreground">{o.desc}</p>
+          </button>
+        ))}
+      </div>
+    </Card>
   );
 }
 
