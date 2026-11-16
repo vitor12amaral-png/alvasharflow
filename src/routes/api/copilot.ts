@@ -784,12 +784,12 @@ ${memoryText || "Nenhum ainda."}`;
               baseURL: "https://ai.gateway.lovable.dev/v1",
               apiKey: key,
               headers: { "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-              fetch: gateway.fetch,
+              fetch: (gateway as ReturnType<typeof createLovableAiGatewayRunIdFetch>).fetch,
             })
           : null;
         const result = streamText({
           model: anthropic
-            ? anthropic("anthropic/claude-sonnet-5")
+            ? (anthropic("anthropic/claude-sonnet-5") as unknown as Parameters<typeof streamText>[0]["model"])
             : (gateway as ReturnType<typeof createLovableResponsesProvider>).responses("openai/gpt-6-astra"),
           system,
           messages: await convertToModelMessages(body.messages),
